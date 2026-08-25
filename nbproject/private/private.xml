@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/admin-appointments.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/admin-dashboard.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/controller/PatientNotificationsServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/service/impl/AppointmentServiceImpl.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/doctor-notifications.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/dao/impl/AppointmentDAOImpl.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/patient-notifications.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/controller/AdminNotificationsServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/patient-dashboard.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/controller/AdminDecisionServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/doctor-appointments.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/doctor-dashboard.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/service/impl/UserServiceImpl.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/controller/DoctorAppointmentsServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/controller/DoctorDecisionServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/web/admin-notifications.jsp</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/controller/AdminAppointmentsServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/controller/DoctorNotificationsServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/dao/impl/NotificationDAOImpl.java</file>
+            <file>file:/C:/Users/HP/Documents/NetBeansProjects/Sunrise_Dental_Clinic/Dental_Clinic/src/java/dao/NotificationDAO.java</file>
+        </group>
+    </open-files>
+</project-private>
