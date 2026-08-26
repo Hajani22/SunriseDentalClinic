@@ -26,6 +26,17 @@ public interface AppointmentService {
     List<Appointment> getAdminAppointments()
             throws SQLException;
 
+    // NEW
+    List<Appointment> getAllAppointments()
+            throws SQLException;
+
+    // NEW
+    List<Appointment> filterAdminAppointments(
+            String doctorId,
+            String appointmentDate,
+            String status)
+            throws SQLException;
+
     Appointment getById(
             int id)
             throws SQLException;

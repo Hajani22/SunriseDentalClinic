@@ -1,24 +1,25 @@
 <%@page import="java.util.List"%>
+<%@page import="java.math.BigDecimal"%>
+
 <%@page import="model.Appointment"%>
+
 <%@page import="service.AppointmentService"%>
 <%@page import="service.impl.AppointmentServiceImpl"%>
+
+<%@page import="service.PaymentService"%>
+<%@page import="service.impl.PaymentServiceImpl"%>
+
 <%@page import="dao.NotificationDAO"%>
 <%@page import="dao.impl.NotificationDAOImpl"%>
 
-<%@page contentType="text/html"
-        pageEncoding="UTF-8"%>
-
 <%
-    /*
-     * =========================================================
-     * PATIENT SESSION
-     * =========================================================
-     */
+    /* =========================================================
+       PATIENT SESSION
+       ========================================================= */
 
     if (session.getAttribute("user") == null) {
 
         response.sendRedirect("Login.jsp");
-
         return;
     }
 
@@ -37,11 +38,9 @@
     }
 
 
-    /*
-     * =========================================================
-     * PATIENT ID
-     * =========================================================
-     */
+    /* =========================================================
+       PATIENT ID
+       ========================================================= */
     Object userIdObject
             = session.getAttribute("userId");
 
@@ -60,11 +59,9 @@
             );
 
 
-    /*
-     * =========================================================
-     * PATIENT NAME
-     * =========================================================
-     */
+    /* =========================================================
+       PATIENT NAME
+       ========================================================= */
     String patientName
             = (String) session.getAttribute(
                     "userName"
@@ -77,22 +74,25 @@
     }
 
 
-    /*
-     * =========================================================
-     * LOAD APPOINTMENTS
-     * =========================================================
-     */
+    /* =========================================================
+       SERVICES
+       ========================================================= */
     AppointmentService appointmentService
             = new AppointmentServiceImpl();
+
+    PaymentService paymentService
+            = new PaymentServiceImpl();
 
     NotificationDAO notificationDAO
             = new NotificationDAOImpl();
 
-    List<Appointment> appointments
-            = null;
 
-    List<String[]> notifications
-            = null;
+    /* =========================================================
+       DATA
+       ========================================================= */
+    List<Appointment> appointments = null;
+
+    List<String[]> notifications = null;
 
     try {
 
@@ -114,11 +114,9 @@
     }
 
 
-    /*
-     * =========================================================
-     * DASHBOARD COUNTS
-     * =========================================================
-     */
+    /* =========================================================
+       DASHBOARD COUNTS
+       ========================================================= */
     int upcomingCount = 0;
 
     int pendingCount = 0;
@@ -127,8 +125,7 @@
 
     int unreadNotifications = 0;
 
-    Appointment nextAppointment
-            = null;
+    Appointment nextAppointment = null;
 
     if (appointments != null) {
 
@@ -138,49 +135,31 @@
             String status
                     = appointment.getStatus();
 
-
-            /*
-             * PENDING
-             */
             if ("PENDING_DOCTOR".equals(status)
                     || "PENDING_ADMIN".equals(status)) {
 
                 pendingCount++;
             }
 
-
-            /*
-             * CONFIRMED
-             */
             if ("CONFIRMED".equals(status)) {
 
                 confirmedCount++;
 
                 upcomingCount++;
 
-
-                /*
-                 * Find nearest appointment
-                 */
                 if (nextAppointment == null) {
 
                     nextAppointment
                             = appointment;
-
                 }
-
             }
-
         }
-
     }
 
 
-    /*
-     * =========================================================
-     * UNREAD NOTIFICATIONS
-     * =========================================================
-     */
+    /* =========================================================
+       UNREAD NOTIFICATIONS
+       ========================================================= */
     if (notifications != null) {
 
         for (String[] notification
@@ -193,17 +172,13 @@
 
                 unreadNotifications++;
             }
-
         }
-
     }
 
 
-    /*
-     * =========================================================
-     * NEXT APPOINTMENT
-     * =========================================================
-     */
+    /* =========================================================
+       FALLBACK NEXT APPOINTMENT
+       ========================================================= */
     if (nextAppointment == null
             && appointments != null
             && !appointments.isEmpty()) {
@@ -222,9 +197,87 @@
 
                 break;
             }
-
         }
+    }
 
+
+    /* =========================================================
+       PAYMENT VARIABLES
+       ========================================================= */
+    BigDecimal consultationPaid
+            = BigDecimal.ZERO;
+
+    BigDecimal treatmentPaid
+            = BigDecimal.ZERO;
+
+    BigDecimal treatmentAmount
+            = BigDecimal.ZERO;
+
+    BigDecimal treatmentBalance
+            = BigDecimal.ZERO;
+
+    Appointment billingAppointment
+            = null;
+
+
+    /*
+     * Find the first confirmed appointment
+     * that can be displayed in the payment section.
+     */
+    if (appointments != null) {
+
+        for (Appointment appointment
+                : appointments) {
+
+            if ("CONFIRMED".equals(
+                    appointment.getStatus()
+            )) {
+
+                try {
+
+                    consultationPaid
+                            = paymentService
+                                    .getConsultationPaid(
+                                            appointment.getId()
+                                    );
+
+                    treatmentPaid
+                            = paymentService
+                                    .getTreatmentPaid(
+                                            appointment.getId()
+                                    );
+
+                    treatmentAmount
+                            = paymentService
+                                    .getTreatmentAmount(
+                                            appointment
+                                                    .getTreatmentType()
+                                    );
+
+                    treatmentBalance
+                            = treatmentAmount.subtract(
+                                    treatmentPaid
+                            );
+
+                    if (treatmentBalance.compareTo(
+                            BigDecimal.ZERO
+                    ) < 0) {
+
+                        treatmentBalance
+                                = BigDecimal.ZERO;
+                    }
+
+                    billingAppointment
+                            = appointment;
+
+                    break;
+
+                } catch (Exception e) {
+
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
 %>
@@ -247,14 +300,14 @@
         </title>
 
 
-        <!-- Google Fonts -->
+        <!-- GOOGLE FONT -->
 
         <link
             href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap"
             rel="stylesheet">
 
 
-        <!-- Font Awesome -->
+        <!-- FONT AWESOME -->
 
         <link
             rel="stylesheet"
@@ -263,11 +316,9 @@
 
         <style>
 
-            /*
-             * =====================================================
-             * GLOBAL
-             * =====================================================
-             */
+            /* =========================================================
+               GLOBAL
+               ========================================================= */
 
             * {
                 box-sizing: border-box;
@@ -287,7 +338,6 @@
 
                 color:
                     #475569;
-
             }
 
 
@@ -296,26 +346,21 @@
             }
 
 
-            /*
-             * =====================================================
-             * LAYOUT
-             * =====================================================
-             */
+            /* =========================================================
+               LAYOUT
+               ========================================================= */
 
             .dashboard {
 
                 display: flex;
 
                 min-height: 100vh;
-
             }
 
 
-            /*
-             * =====================================================
-             * SIDEBAR
-             * =====================================================
-             */
+            /* =========================================================
+               SIDEBAR
+               ========================================================= */
 
             .sidebar {
 
@@ -339,7 +384,6 @@
                 padding: 25px 16px;
 
                 z-index: 1000;
-
             }
 
 
@@ -359,7 +403,6 @@
                     rgba(255,255,255,.08);
 
                 margin-bottom: 22px;
-
             }
 
 
@@ -376,10 +419,10 @@
                 display: flex;
 
                 align-items: center;
+
                 justify-content: center;
 
                 font-size: 20px;
-
             }
 
 
@@ -392,7 +435,6 @@
                 font-size: 19px;
 
                 font-weight: 700;
-
             }
 
 
@@ -408,7 +450,6 @@
                 font-weight: 400;
 
                 margin-top: 2px;
-
             }
 
 
@@ -426,7 +467,6 @@
 
                 padding:
                     0 12px 10px;
-
             }
 
 
@@ -452,7 +492,6 @@
 
                 transition:
                     .2s;
-
             }
 
 
@@ -461,7 +500,6 @@
                 width: 19px;
 
                 text-align: center;
-
             }
 
 
@@ -473,14 +511,12 @@
 
                 color:
                     white;
-
             }
 
 
             .notification-link {
 
                 position: relative;
-
             }
 
 
@@ -510,7 +546,6 @@
                 justify-content: center;
 
                 font-weight: 700;
-
             }
 
 
@@ -523,7 +558,6 @@
                 right: 16px;
 
                 bottom: 20px;
-
             }
 
 
@@ -534,15 +568,12 @@
                     rgba(255,255,255,.08);
 
                 padding-top: 15px;
-
             }
 
 
-            /*
-             * =====================================================
-             * MAIN
-             * =====================================================
-             */
+            /* =========================================================
+               MAIN
+               ========================================================= */
 
             .main {
 
@@ -552,15 +583,12 @@
                     calc(100% - 255px);
 
                 min-height: 100vh;
-
             }
 
 
-            /*
-             * =====================================================
-             * TOPBAR
-             * =====================================================
-             */
+            /* =========================================================
+               TOPBAR
+               ========================================================= */
 
             .topbar {
 
@@ -581,7 +609,6 @@
 
                 justify-content:
                     space-between;
-
             }
 
 
@@ -593,7 +620,6 @@
                     #94a3b8;
 
                 margin-bottom: 3px;
-
             }
 
 
@@ -609,7 +635,6 @@
                 font-size: 21px;
 
                 font-weight: 700;
-
             }
 
 
@@ -620,7 +645,6 @@
                 align-items: center;
 
                 gap: 11px;
-
             }
 
 
@@ -642,7 +666,6 @@
                 align-items: center;
 
                 justify-content: center;
-
             }
 
 
@@ -654,7 +677,6 @@
                 font-weight: 600;
 
                 font-size: 13px;
-
             }
 
 
@@ -664,15 +686,12 @@
                     #94a3b8;
 
                 font-size: 11px;
-
             }
 
 
-            /*
-             * =====================================================
-             * CONTENT
-             * =====================================================
-             */
+            /* =========================================================
+               CONTENT
+               ========================================================= */
 
             .content {
 
@@ -681,15 +700,12 @@
                 max-width: 1500px;
 
                 margin: auto;
-
             }
 
 
-            /*
-             * =====================================================
-             * HERO
-             * =====================================================
-             */
+            /* =========================================================
+               HERO
+               ========================================================= */
 
             .hero {
 
@@ -716,7 +732,6 @@
                 box-shadow:
                     0 10px 30px
                     rgba(6,163,218,.18);
-
             }
 
 
@@ -736,7 +751,6 @@
 
                 background:
                     rgba(255,255,255,.08);
-
             }
 
 
@@ -754,7 +768,6 @@
                 align-items: center;
 
                 gap: 20px;
-
             }
 
 
@@ -777,7 +790,6 @@
                 font-size: 11px;
 
                 margin-bottom: 10px;
-
             }
 
 
@@ -790,7 +802,6 @@
                 font-size: 30px;
 
                 margin-bottom: 7px;
-
             }
 
 
@@ -800,7 +811,6 @@
                     rgba(255,255,255,.86);
 
                 font-size: 14px;
-
             }
 
 
@@ -826,26 +836,12 @@
                 box-shadow:
                     0 5px 15px
                     rgba(0,0,0,.10);
-
             }
 
 
-            .hero-button:hover {
-
-                color:
-                    #087eac;
-
-                transform:
-                    translateY(-1px);
-
-            }
-
-
-            /*
-             * =====================================================
-             * STAT CARDS
-             * =====================================================
-             */
+            /* =========================================================
+               STATISTICS
+               ========================================================= */
 
             .stats {
 
@@ -857,7 +853,6 @@
                 gap: 18px;
 
                 margin-bottom: 25px;
-
             }
 
 
@@ -876,7 +871,6 @@
                 box-shadow:
                     0 5px 18px
                     rgba(15,23,42,.035);
-
             }
 
 
@@ -890,7 +884,6 @@
                     space-between;
 
                 margin-bottom: 16px;
-
             }
 
 
@@ -904,6 +897,7 @@
                 display: flex;
 
                 align-items: center;
+
                 justify-content: center;
 
                 background:
@@ -911,7 +905,6 @@
 
                 color:
                     #06a3da;
-
             }
 
 
@@ -927,7 +920,6 @@
                 font-size: 27px;
 
                 font-weight: 700;
-
             }
 
 
@@ -937,15 +929,12 @@
                     #64748b;
 
                 font-size: 12px;
-
             }
 
 
-            /*
-             * =====================================================
-             * GRID
-             * =====================================================
-             */
+            /* =========================================================
+               GRID
+               ========================================================= */
 
             .dashboard-grid {
 
@@ -956,7 +945,6 @@
                     minmax(300px, 1fr);
 
                 gap: 22px;
-
             }
 
 
@@ -977,7 +965,6 @@
                     rgba(15,23,42,.035);
 
                 margin-bottom: 22px;
-
             }
 
 
@@ -991,7 +978,6 @@
                     space-between;
 
                 margin-bottom: 18px;
-
             }
 
 
@@ -1007,7 +993,6 @@
                 font-size: 17px;
 
                 font-weight: 700;
-
             }
 
 
@@ -1019,15 +1004,12 @@
                 font-size: 12px;
 
                 font-weight: 600;
-
             }
 
 
-            /*
-             * =====================================================
-             * NEXT APPOINTMENT
-             * =====================================================
-             */
+            /* =========================================================
+               NEXT APPOINTMENT
+               ========================================================= */
 
             .next-card {
 
@@ -1044,7 +1026,6 @@
                     1px solid #d8f1f8;
 
                 padding: 20px;
-
             }
 
 
@@ -1055,7 +1036,6 @@
                 align-items: center;
 
                 gap: 13px;
-
             }
 
 
@@ -1074,10 +1054,10 @@
                 display: flex;
 
                 align-items: center;
+
                 justify-content: center;
 
                 font-size: 18px;
-
             }
 
 
@@ -1089,7 +1069,6 @@
                     #0b2447;
 
                 font-size: 14px;
-
             }
 
 
@@ -1101,7 +1080,6 @@
                 font-size: 12px;
 
                 margin-top: 3px;
-
             }
 
 
@@ -1115,7 +1093,6 @@
                 gap: 10px;
 
                 margin-top: 18px;
-
             }
 
 
@@ -1130,7 +1107,6 @@
 
                 border:
                     1px solid #e7edf3;
-
             }
 
 
@@ -1145,7 +1121,6 @@
                     uppercase;
 
                 margin-bottom: 4px;
-
             }
 
 
@@ -1157,15 +1132,12 @@
                 font-size: 12px;
 
                 font-weight: 600;
-
             }
 
 
-            /*
-             * =====================================================
-             * STATUS
-             * =====================================================
-             */
+            /* =========================================================
+               STATUS
+               ========================================================= */
 
             .status {
 
@@ -1183,7 +1155,6 @@
                 font-size: 10px;
 
                 font-weight: 700;
-
             }
 
 
@@ -1194,7 +1165,6 @@
 
                 background:
                     #dcfce7;
-
             }
 
 
@@ -1205,7 +1175,6 @@
 
                 background:
                     #fef9c3;
-
             }
 
 
@@ -1216,15 +1185,12 @@
 
                 background:
                     #fee2e2;
-
             }
 
 
-            /*
-             * =====================================================
-             * APPOINTMENT LIST
-             * =====================================================
-             */
+            /* =========================================================
+               APPOINTMENT LIST
+               ========================================================= */
 
             .appointment-item {
 
@@ -1242,7 +1208,6 @@
 
                 border-bottom:
                     1px solid #edf1f5;
-
             }
 
 
@@ -1252,7 +1217,6 @@
                     none;
 
                 padding-bottom: 0;
-
             }
 
 
@@ -1265,7 +1229,6 @@
                 gap: 12px;
 
                 min-width: 0;
-
             }
 
 
@@ -1287,8 +1250,8 @@
                 display: flex;
 
                 align-items: center;
-                justify-content: center;
 
+                justify-content: center;
             }
 
 
@@ -1300,7 +1263,6 @@
                 font-weight: 700;
 
                 font-size: 13px;
-
             }
 
 
@@ -1312,7 +1274,6 @@
                 font-size: 11px;
 
                 margin-top: 3px;
-
             }
 
 
@@ -1321,7 +1282,6 @@
                 text-align: right;
 
                 flex-shrink: 0;
-
             }
 
 
@@ -1333,22 +1293,18 @@
                 font-size: 11px;
 
                 margin-bottom: 5px;
-
             }
 
 
-            /*
-             * =====================================================
-             * QUICK ACTIONS
-             * =====================================================
-             */
+            /* =========================================================
+               QUICK ACTIONS
+               ========================================================= */
 
             .quick-actions {
 
                 display: grid;
 
                 gap: 10px;
-
             }
 
 
@@ -1372,7 +1328,6 @@
 
                 transition:
                     .2s;
-
             }
 
 
@@ -1386,7 +1341,6 @@
 
                 transform:
                     translateX(2px);
-
             }
 
 
@@ -1406,8 +1360,8 @@
                 display: flex;
 
                 align-items: center;
-                justify-content: center;
 
+                justify-content: center;
             }
 
 
@@ -1419,7 +1373,6 @@
                     #0b2447;
 
                 font-size: 12px;
-
             }
 
 
@@ -1433,25 +1386,519 @@
                 font-size: 10px;
 
                 margin-top: 2px;
-
             }
 
 
-            /*
-             * =====================================================
-             * EMPTY
-             * =====================================================
-             */
+            /* =========================================================
+               BILLING
+               ========================================================= */
 
-            .empty {
+            .billing-panel {
 
-                text-align: center;
+                border:
+                    1px solid #d8edf5;
 
-                padding: 28px 10px;
+                background:
+                    linear-gradient(
+                    135deg,
+                    #ffffff,
+                    #f7fcfe
+                    );
+            }
+
+
+            .billing-header {
+
+                display: flex;
+
+                justify-content:
+                    space-between;
+
+                align-items: center;
+
+                margin-bottom: 20px;
+            }
+
+
+            .billing-title {
+
+                display: flex;
+
+                align-items: center;
+
+                gap: 10px;
+
+                color:
+                    #0b2447;
+
+                font-family:
+                    "Jost",
+                    sans-serif;
+
+                font-size: 18px;
+
+                font-weight: 700;
+            }
+
+
+            .billing-title i {
+
+                color:
+                    #06a3da;
+            }
+
+
+            .billing-subtitle {
 
                 color:
                     #94a3b8;
 
+                font-size: 11px;
+
+                margin-top: 3px;
+            }
+
+
+            .bill-box {
+
+                border:
+                    1px solid #e4edf2;
+
+                background:
+                    white;
+
+                border-radius: 12px;
+
+                padding: 18px;
+
+                margin-bottom: 14px;
+            }
+
+
+            .bill-top {
+
+                display: flex;
+
+                justify-content:
+                    space-between;
+
+                gap: 15px;
+
+                margin-bottom: 16px;
+            }
+
+
+            .bill-patient {
+
+                color:
+                    #0b2447;
+
+                font-size: 14px;
+
+                font-weight: 700;
+            }
+
+
+            .bill-number {
+
+                color:
+                    #94a3b8;
+
+                font-size: 10px;
+
+                margin-top: 4px;
+            }
+
+
+            .payment-status {
+
+                display: inline-flex;
+
+                align-items: center;
+
+                gap: 5px;
+
+                padding:
+                    6px 10px;
+
+                border-radius: 20px;
+
+                font-size: 10px;
+
+                font-weight: 700;
+            }
+
+
+            .payment-paid {
+
+                background:
+                    #dcfce7;
+
+                color:
+                    #15803d;
+            }
+
+
+            .payment-due {
+
+                background:
+                    #fff7ed;
+
+                color:
+                    #c2410c;
+            }
+
+
+            .payment-treatment {
+
+                background:
+                    #f1f5f9;
+
+                color:
+                    #475569;
+            }
+
+
+            .bill-grid {
+
+                display: grid;
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+                gap: 10px;
+
+                margin-bottom: 16px;
+            }
+
+
+            .bill-line {
+
+                background:
+                    #f8fafc;
+
+                border-radius: 8px;
+
+                padding: 11px;
+            }
+
+
+            .bill-line span {
+
+                display: block;
+
+                font-size: 10px;
+
+                color:
+                    #94a3b8;
+
+                margin-bottom: 4px;
+            }
+
+
+            .bill-line strong {
+
+                color:
+                    #334155;
+
+                font-size: 13px;
+            }
+
+
+            .bill-summary {
+
+                border-top:
+                    1px solid #edf1f5;
+
+                padding-top: 14px;
+            }
+
+
+            .amount-row {
+
+                display: flex;
+
+                justify-content:
+                    space-between;
+
+                padding: 5px 0;
+
+                color:
+                    #64748b;
+
+                font-size: 12px;
+            }
+
+
+            .amount-row strong {
+
+                color:
+                    #334155;
+            }
+
+
+            .amount-row.total {
+
+                margin-top: 6px;
+
+                padding-top: 10px;
+
+                border-top:
+                    1px dashed #dbe4ea;
+
+                color:
+                    #0b2447;
+
+                font-size: 15px;
+
+                font-weight: 700;
+            }
+
+
+            .amount-row.total strong {
+
+                color:
+                    #06a3da;
+
+                font-size: 17px;
+            }
+
+
+            .pay-box {
+
+                background:
+                    #f0fbfe;
+
+                border:
+                    1px solid #d6f0f7;
+
+                border-radius: 10px;
+
+                padding: 15px;
+
+                margin-top: 15px;
+            }
+
+
+            .pay-box-title {
+
+                color:
+                    #0b2447;
+
+                font-size: 13px;
+
+                font-weight: 700;
+
+                margin-bottom: 10px;
+            }
+
+
+            .payment-form {
+
+                display: flex;
+
+                gap: 10px;
+
+                flex-wrap: wrap;
+            }
+
+
+            .payment-select {
+
+                flex: 1;
+
+                min-width: 180px;
+
+                border:
+                    1px solid #dbe5eb;
+
+                border-radius: 8px;
+
+                padding: 11px;
+
+                background:
+                    white;
+
+                color:
+                    #334155;
+
+                font-size: 12px;
+            }
+
+
+            .pay-button {
+
+                border:
+                    none;
+
+                background:
+                    #06a3da;
+
+                color:
+                    white;
+
+                padding:
+                    11px 18px;
+
+                border-radius: 8px;
+
+                font-size: 12px;
+
+                font-weight: 700;
+
+                cursor: pointer;
+
+                transition:
+                    .2s;
+            }
+
+
+            .pay-button:hover {
+
+                background:
+                    #087eac;
+
+                transform:
+                    translateY(-1px);
+            }
+
+
+            .paid-message {
+
+                background:
+                    #ecfdf5;
+
+                border:
+                    1px solid #bbf7d0;
+
+                color:
+                    #15803d;
+
+                padding: 12px;
+
+                border-radius: 9px;
+
+                font-size: 12px;
+
+                font-weight: 600;
+            }
+
+
+            .no-bill {
+
+                text-align:
+                    center;
+
+                padding: 25px 10px;
+
+                color:
+                    #94a3b8;
+            }
+
+
+            .no-bill i {
+
+                font-size: 30px;
+
+                margin-bottom: 10px;
+
+                color:
+                    #cbd5e1;
+            }
+
+
+            .no-bill p {
+
+                font-size: 12px;
+            }
+
+
+            /* =========================================================
+               NOTIFICATIONS
+               ========================================================= */
+
+            .notification-item {
+
+                display: flex;
+
+                gap: 12px;
+
+                padding:
+                    13px 0;
+
+                border-bottom:
+                    1px solid #edf1f5;
+            }
+
+
+            .notification-item:last-child {
+
+                border-bottom:
+                    none;
+            }
+
+
+            .notification-icon {
+
+                width: 36px;
+                height: 36px;
+
+                flex-shrink: 0;
+
+                border-radius: 9px;
+
+                background:
+                    #eaf8fc;
+
+                color:
+                    #06a3da;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+            }
+
+
+            .notification-title {
+
+                color:
+                    #0b2447;
+
+                font-size: 12px;
+
+                font-weight: 700;
+            }
+
+
+            .notification-message {
+
+                color:
+                    #64748b;
+
+                font-size: 10px;
+
+                margin-top: 3px;
+
+                line-height: 1.4;
+            }
+
+
+            /* =========================================================
+               EMPTY
+               ========================================================= */
+
+            .empty {
+
+                text-align:
+                    center;
+
+                padding:
+                    28px 10px;
+
+                color:
+                    #94a3b8;
             }
 
 
@@ -1463,22 +1910,18 @@
 
                 color:
                     #cbd5e1;
-
             }
 
 
             .empty p {
 
                 font-size: 12px;
-
             }
 
 
-            /*
-             * =====================================================
-             * MOBILE
-             * =====================================================
-             */
+            /* =========================================================
+               RESPONSIVE
+               ========================================================= */
 
             @media(max-width:1100px) {
 
@@ -1486,16 +1929,13 @@
 
                     grid-template-columns:
                         repeat(2, 1fr);
-
                 }
 
                 .dashboard-grid {
 
                     grid-template-columns:
                         1fr;
-
                 }
-
             }
 
 
@@ -1507,7 +1947,6 @@
 
                     padding:
                         20px 9px;
-
                 }
 
 
@@ -1518,7 +1957,6 @@
 
                     padding:
                         5px 0 20px;
-
                 }
 
 
@@ -1529,7 +1967,6 @@
 
                     display:
                         none;
-
                 }
 
 
@@ -1540,7 +1977,6 @@
 
                     padding:
                         13px;
-
                 }
 
 
@@ -1555,7 +1991,6 @@
                     height: 16px;
 
                     font-size: 8px;
-
                 }
 
 
@@ -1565,7 +2000,6 @@
 
                     width:
                         calc(100% - 72px);
-
                 }
 
 
@@ -1573,7 +2007,6 @@
 
                     padding:
                         0 18px;
-
                 }
 
 
@@ -1581,7 +2014,6 @@
 
                     padding:
                         18px;
-
                 }
 
 
@@ -1592,7 +2024,6 @@
 
                     flex-direction:
                         column;
-
                 }
 
 
@@ -1603,9 +2034,7 @@
 
                     text-align:
                         center;
-
                 }
-
             }
 
 
@@ -1617,21 +2046,18 @@
                         1fr 1fr;
 
                     gap: 10px;
-
                 }
 
 
                 .stat-card {
 
                     padding: 14px;
-
                 }
 
 
                 .stat-number {
 
                     font-size: 22px;
-
                 }
 
 
@@ -1639,14 +2065,12 @@
 
                     padding:
                         22px;
-
                 }
 
 
                 .hero h1 {
 
                     font-size: 23px;
-
                 }
 
 
@@ -1654,15 +2078,14 @@
 
                     padding:
                         17px;
-
                 }
 
 
-                .appointment-details {
+                .appointment-details,
+                .bill-grid {
 
                     grid-template-columns:
                         1fr;
-
                 }
 
 
@@ -1671,9 +2094,14 @@
 
                     display:
                         none;
-
                 }
 
+
+                .bill-top {
+
+                    flex-direction:
+                        column;
+                }
             }
 
         </style>
@@ -1757,6 +2185,18 @@
                 </a>
 
 
+                <a href="#billing"
+                   class="nav-link">
+
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+
+                    <span>
+                        My Bills
+                    </span>
+
+                </a>
+
+
                 <a href="PatientNotificationsServlet"
                    class="nav-link notification-link">
 
@@ -1812,7 +2252,6 @@
 
                 <header class="topbar">
 
-
                     <div>
 
                         <div class="welcome-small">
@@ -1822,7 +2261,7 @@
                         <div class="welcome-title">
 
                             Welcome back,
-                            <%= patientName%> 👋
+                            <%= patientName%> ?
 
                         </div>
 
@@ -1830,7 +2269,6 @@
 
 
                     <div class="profile">
-
 
                         <div>
 
@@ -1851,9 +2289,7 @@
 
                         </div>
 
-
                     </div>
-
 
                 </header>
 
@@ -1869,9 +2305,7 @@
 
                     <div class="hero">
 
-
                         <div class="hero-content">
-
 
                             <div>
 
@@ -1890,8 +2324,9 @@
 
 
                                 <p>
-                                    Manage your appointments and
-                                    stay connected with Sunrise Dental Clinic.
+                                    Manage your appointments,
+                                    payments and dental care
+                                    with Sunrise Dental Clinic.
                                 </p>
 
                             </div>
@@ -1908,9 +2343,7 @@
 
                             </a>
 
-
                         </div>
-
 
                     </div>
 
@@ -1921,8 +2354,6 @@
 
                     <div class="stats">
 
-
-                        <!-- Upcoming -->
 
                         <div class="stat-card">
 
@@ -1936,11 +2367,9 @@
 
                             </div>
 
-
                             <div class="stat-number">
                                 <%= upcomingCount%>
                             </div>
-
 
                             <div class="stat-label">
                                 Upcoming Appointments
@@ -1948,8 +2377,6 @@
 
                         </div>
 
-
-                        <!-- Pending -->
 
                         <div class="stat-card">
 
@@ -1963,11 +2390,9 @@
 
                             </div>
 
-
                             <div class="stat-number">
                                 <%= pendingCount%>
                             </div>
-
 
                             <div class="stat-label">
                                 Pending Requests
@@ -1975,8 +2400,6 @@
 
                         </div>
 
-
-                        <!-- Confirmed -->
 
                         <div class="stat-card">
 
@@ -1990,11 +2413,9 @@
 
                             </div>
 
-
                             <div class="stat-number">
                                 <%= confirmedCount%>
                             </div>
-
 
                             <div class="stat-label">
                                 Confirmed Appointments
@@ -2003,32 +2424,46 @@
                         </div>
 
 
-                        <!-- Notifications -->
-
                         <div class="stat-card">
 
                             <div class="stat-top">
 
                                 <div class="stat-icon">
 
-                                    <i class="fa-solid fa-bell"></i>
+                                    <i class="fa-solid fa-file-invoice-dollar"></i>
 
                                 </div>
 
                             </div>
 
-
                             <div class="stat-number">
-                                <%= unreadNotifications%>
+
+                                <%
+                                    if (billingAppointment != null
+                                            && treatmentBalance.compareTo(
+                                                    BigDecimal.ZERO
+                                            ) > 0) {
+                                %>
+
+                                Rs. <%= treatmentBalance%>
+
+                                <%
+                                } else {
+                                %>
+
+                                0
+
+                                <%
+                                    }
+                                %>
+
                             </div>
 
-
                             <div class="stat-label">
-                                Unread Notifications
+                                Outstanding Treatment Balance
                             </div>
 
                         </div>
-
 
                     </div>
 
@@ -2050,7 +2485,6 @@
                             <!-- NEXT APPOINTMENT -->
 
                             <div class="panel">
-
 
                                 <div class="panel-header">
 
@@ -2081,12 +2515,9 @@
 
                                 <% if (nextAppointment != null) {%>
 
-
                                 <div class="next-card">
 
-
                                     <div class="appointment-header">
-
 
                                         <div class="doctor-avatar">
 
@@ -2112,7 +2543,6 @@
                                             </div>
 
                                         </div>
-
 
                                     </div>
 
@@ -2183,14 +2613,15 @@
                                                 Status
                                             </div>
 
-
                                             <div class="detail-value">
 
                                                 <%
                                                     String nextStatus
                                                             = nextAppointment.getStatus();
 
-                                                    if ("CONFIRMED".equals(nextStatus)) {
+                                                    if ("CONFIRMED".equals(
+                                                            nextStatus
+                                                    )) {
                                                 %>
 
                                                 <span class="status status-confirmed">
@@ -2224,12 +2655,9 @@
 
                                     </div>
 
-
                                 </div>
 
-
                                 <% } else { %>
-
 
                                 <div class="empty">
 
@@ -2241,6 +2669,458 @@
 
                                 </div>
 
+                                <% } %>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 BILLING / PAYMENTS
+                                 ================================================= -->
+
+                            <div class="panel billing-panel"
+                                 id="billing">
+
+                                <div class="billing-header">
+
+                                    <div>
+
+                                        <div class="billing-title">
+
+                                            <i class="fa-solid fa-file-invoice-dollar"></i>
+
+                                            My Bills & Payments
+
+                                        </div>
+
+                                        <div class="billing-subtitle">
+
+                                            Pay your consultation fee and
+                                            treatment balance securely.
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <% if (billingAppointment != null) {%>
+
+
+                                <div class="bill-box">
+
+
+                                    <div class="bill-top">
+
+                                        <div>
+
+                                            <div class="bill-patient">
+
+                                                Dr.
+                                                <%= billingAppointment.getDoctorName()%>
+
+                                            </div>
+
+                                            <div class="bill-number">
+
+                                                Appointment:
+                                                <%= billingAppointment.getAppointmentNo()%>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <div>
+
+                                            <% if (consultationPaid.compareTo(
+                                                    BigDecimal.ZERO
+                                            ) > 0) { %>
+
+                                            <span class="payment-status payment-paid">
+
+                                                <i class="fa-solid fa-check"></i>
+
+                                                Consultation Paid
+
+                                            </span>
+
+                                            <% } else { %>
+
+                                            <span class="payment-status payment-due">
+
+                                                <i class="fa-solid fa-clock"></i>
+
+                                                Consultation Due
+
+                                            </span>
+
+                                            <% }%>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- BILL INFORMATION -->
+
+                                    <div class="bill-grid">
+
+
+                                        <div class="bill-line">
+
+                                            <span>
+                                                Appointment Date
+                                            </span>
+
+                                            <strong>
+                                                <%= billingAppointment.getAppointmentDate()%>
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="bill-line">
+
+                                            <span>
+                                                Treatment
+                                            </span>
+
+                                            <strong>
+                                                <%= billingAppointment.getTreatmentType()%>
+                                            </strong>
+
+                                        </div>
+
+
+                                    </div>
+
+
+                                    <!-- BILL SUMMARY -->
+
+                                    <div class="bill-summary">
+
+
+                                        <div class="amount-row">
+
+                                            <span>
+                                                Consultation Fee
+                                            </span>
+
+                                            <strong>
+                                                Rs. 2,000.00
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="amount-row">
+
+                                            <span>
+                                                Consultation Paid
+                                            </span>
+
+                                            <strong>
+                                                Rs. <%= consultationPaid%>
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="amount-row">
+
+                                            <span>
+                                                Treatment Amount
+                                            </span>
+
+                                            <strong>
+                                                Rs. <%= treatmentAmount%>
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="amount-row">
+
+                                            <span>
+                                                Treatment Paid
+                                            </span>
+
+                                            <strong>
+                                                Rs. <%= treatmentPaid%>
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="amount-row total">
+
+                                            <span>
+                                                Treatment Balance
+                                            </span>
+
+                                            <strong>
+                                                Rs. <%= treatmentBalance%>
+                                            </strong>
+
+                                        </div>
+
+
+                                    </div>
+
+
+                                    <!-- =================================================
+                                         CONSULTATION PAYMENT
+                                         ================================================= -->
+
+                                    <% if (consultationPaid.compareTo(
+                                            BigDecimal.ZERO
+                                    ) <= 0) {%>
+
+
+                                    <div class="pay-box">
+
+                                        <div class="pay-box-title">
+
+                                            <i class="fa-solid fa-stethoscope"></i>
+
+                                            Consultation Fee Payment
+
+                                        </div>
+
+
+                                        <p style="
+                                           font-size:11px;
+                                           color:#64748b;
+                                           margin-bottom:12px;
+                                           ">
+
+                                            Please pay the consultation
+                                            fee before seeing the doctor.
+
+                                        </p>
+
+
+                                        <form
+                                            method="post"
+                                            action="PatientPaymentServlet"
+                                            class="payment-form">
+
+
+                                            <input
+                                                type="hidden"
+                                                name="appointmentId"
+                                                value="<%= billingAppointment.getId()%>">
+
+
+                                            <input
+                                                type="hidden"
+                                                name="appointmentNo"
+                                                value="<%= billingAppointment.getAppointmentNo()%>">
+
+
+                                            <input
+                                                type="hidden"
+                                                name="paymentType"
+                                                value="CONSULTATION">
+
+
+                                            <select
+                                                name="paymentMethod"
+                                                class="payment-select"
+                                                required>
+
+                                                <option value="">
+                                                    Select Payment Method
+                                                </option>
+
+                                                <option value="CASH">
+                                                    Cash
+                                                </option>
+
+                                                <option value="CARD">
+                                                    Card
+                                                </option>
+
+                                                <option value="BANK_TRANSFER">
+                                                    Bank Transfer
+                                                </option>
+
+                                            </select>
+
+
+                                            <button
+                                                type="submit"
+                                                class="pay-button">
+
+                                                <i class="fa-solid fa-credit-card"></i>
+
+                                                Pay Rs. 2,000
+
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+
+                                    <% } else { %>
+
+
+                                    <div class="paid-message">
+
+                                        <i class="fa-solid fa-circle-check"></i>
+
+                                        Consultation fee paid successfully.
+
+                                    </div>
+
+
+                                    <% } %>
+
+
+                                    <!-- =================================================
+                                         TREATMENT PAYMENT
+                                         ================================================= -->
+
+                                    <% if (consultationPaid.compareTo(
+                                                BigDecimal.ZERO
+                                        ) > 0
+                                                && treatmentBalance.compareTo(
+                                                    BigDecimal.ZERO
+                                            ) > 0) {%>
+
+
+                                    <div class="pay-box"
+                                         style="margin-top:12px;">
+
+                                        <div class="pay-box-title">
+
+                                            <i class="fa-solid fa-tooth"></i>
+
+                                            Treatment Balance Payment
+
+                                        </div>
+
+
+                                        <p style="
+                                           font-size:11px;
+                                           color:#64748b;
+                                           margin-bottom:12px;
+                                           ">
+
+                                            Your treatment has been billed.
+                                            Please pay the remaining balance.
+
+                                        </p>
+
+
+                                        <form
+                                            method="post"
+                                            action="PatientPaymentServlet"
+                                            class="payment-form">
+
+
+                                            <input
+                                                type="hidden"
+                                                name="appointmentId"
+                                                value="<%= billingAppointment.getId()%>">
+
+
+                                            <input
+                                                type="hidden"
+                                                name="appointmentNo"
+                                                value="<%= billingAppointment.getAppointmentNo()%>">
+
+
+                                            <input
+                                                type="hidden"
+                                                name="paymentType"
+                                                value="TREATMENT">
+
+
+                                            <select
+                                                name="paymentMethod"
+                                                class="payment-select"
+                                                required>
+
+                                                <option value="">
+                                                    Select Payment Method
+                                                </option>
+
+                                                <option value="CASH">
+                                                    Cash
+                                                </option>
+
+                                                <option value="CARD">
+                                                    Card
+                                                </option>
+
+                                                <option value="BANK_TRANSFER">
+                                                    Bank Transfer
+                                                </option>
+
+                                            </select>
+
+
+                                            <button
+                                                type="submit"
+                                                class="pay-button">
+
+                                                <i class="fa-solid fa-money-bill-wave"></i>
+
+                                                Pay Rs.
+                                                <%= treatmentBalance%>
+
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+
+                                    <% } else if (consultationPaid.compareTo(
+                                            BigDecimal.ZERO
+                                    ) > 0
+                                            && treatmentAmount.compareTo(
+                                                    BigDecimal.ZERO
+                                            ) > 0
+                                            && treatmentBalance.compareTo(
+                                                    BigDecimal.ZERO
+                                            ) <= 0) { %>
+
+
+                                    <div class="paid-message"
+                                         style="margin-top:12px;">
+
+                                        <i class="fa-solid fa-circle-check"></i>
+
+                                        Treatment payment completed.
+
+                                    </div>
+
+
+                                    <% } %>
+
+
+                                </div>
+
+
+                                <% } else { %>
+
+
+                                <div class="no-bill">
+
+                                    <i class="fa-solid fa-file-circle-check"></i>
+
+                                    <p>
+                                        No confirmed appointment is currently
+                                        available for billing.
+                                    </p>
+
+                                </div>
+
 
                                 <% } %>
 
@@ -2248,7 +3128,9 @@
                             </div>
 
 
-                            <!-- RECENT APPOINTMENTS -->
+                            <!-- =================================================
+                                 RECENT APPOINTMENTS
+                                 ================================================= -->
 
                             <div class="panel">
 
@@ -2497,6 +3379,33 @@
                                     </a>
 
 
+                                    <a href="#billing"
+                                       class="quick-action">
+
+
+                                        <div class="quick-action-icon">
+
+                                            <i class="fa-solid fa-file-invoice-dollar"></i>
+
+                                        </div>
+
+
+                                        <div class="quick-action-text">
+
+                                            <strong>
+                                                My Bills
+                                            </strong>
+
+                                            <span>
+                                                View and pay your bills
+                                            </span>
+
+                                        </div>
+
+
+                                    </a>
+
+
                                     <a href="PatientNotificationsServlet"
                                        class="quick-action">
 
@@ -2530,7 +3439,9 @@
                             </div>
 
 
-                            <!-- NOTIFICATION PREVIEW -->
+                            <!-- =================================================
+                                 LATEST NOTIFICATIONS
+                                 ================================================= -->
 
                             <div class="panel">
 
@@ -2572,36 +3483,34 @@
                                 %>
 
 
-                                <div class="appointment-item">
+                                <div class="notification-item">
 
 
-                                    <div class="appointment-info">
+                                    <div class="notification-icon">
+
+                                        <i class="fa-solid fa-bell"></i>
+
+                                    </div>
 
 
-                                        <div class="appointment-icon">
+                                    <div>
 
-                                            <i class="fa-solid fa-bell"></i>
+                                        <div class="notification-title">
 
-                                        </div>
-
-
-                                        <div>
-
-                                            <div class="appointment-doctor">
-
-                                                <%= n[1]%>
-
-                                            </div>
-
-
-                                            <div class="appointment-service">
-
-                                                <%= n[2]%>
-
-                                            </div>
+                                            <%= n.length > 1
+                                                    ? n[1]
+                                                    : "Notification"%>
 
                                         </div>
 
+
+                                        <div class="notification-message">
+
+                                            <%= n.length > 2
+                                                    ? n[2]
+                                                    : ""%>
+
+                                        </div>
 
                                     </div>
 

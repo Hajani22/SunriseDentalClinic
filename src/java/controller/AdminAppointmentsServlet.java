@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import model.Appointment;
+import model.DoctorOption;
 
 import service.AppointmentService;
 import service.impl.AppointmentServiceImpl;
@@ -28,8 +29,9 @@ public class AdminAppointmentsServlet
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session
-                = request.getSession(false);
+        HttpSession session =
+                request.getSession(false);
+
 
         if (session == null
                 || session.getAttribute("user") == null) {
@@ -42,12 +44,14 @@ public class AdminAppointmentsServlet
             return;
         }
 
-        String role
-                = String.valueOf(
+
+        String role =
+                String.valueOf(
                         session.getAttribute(
                                 "userRole"
                         )
                 );
+
 
         if (!"admin".equalsIgnoreCase(role)) {
 
@@ -59,15 +63,88 @@ public class AdminAppointmentsServlet
             return;
         }
 
+
         try {
 
-            List<Appointment> appointments
-                    = service.getAdminAppointments();
+            String doctorId =
+                    request.getParameter("doctor");
+
+            String appointmentDate =
+                    request.getParameter("date");
+
+            String status =
+                    request.getParameter("status");
+
+
+            List<Appointment> appointments;
+
+
+            boolean filtering =
+                    (doctorId != null
+                    && !doctorId.trim().isEmpty()
+                    && !"all".equalsIgnoreCase(doctorId))
+
+                    ||
+
+                    (appointmentDate != null
+                    && !appointmentDate.trim().isEmpty())
+
+                    ||
+
+                    (status != null
+                    && !status.trim().isEmpty()
+                    && !"ALL".equalsIgnoreCase(status));
+
+
+            if (filtering) {
+
+                appointments =
+                        service.filterAdminAppointments(
+                                doctorId,
+                                appointmentDate,
+                                status
+                        );
+
+            } else {
+
+                appointments =
+                        service.getAllAppointments();
+            }
+
+
+            List<DoctorOption> doctors =
+                    service.getDoctors();
+
 
             request.setAttribute(
                     "appointments",
                     appointments
             );
+
+
+            request.setAttribute(
+                    "doctors",
+                    doctors
+            );
+
+
+            request.setAttribute(
+                    "selectedDoctor",
+                    doctorId
+            );
+
+
+            request.setAttribute(
+                    "selectedDate",
+                    appointmentDate
+            );
+
+
+            request.setAttribute(
+                    "selectedStatus",
+                    status
+            );
+
 
             request.getRequestDispatcher(
                     "/admin-appointments.jsp"
@@ -75,6 +152,7 @@ public class AdminAppointmentsServlet
                     request,
                     response
             );
+
 
         } catch (Exception e) {
 

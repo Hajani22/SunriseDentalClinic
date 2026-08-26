@@ -34,10 +34,9 @@ public class AppointmentDAOImpl
                 + "ORDER BY first_name,last_name";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql); ResultSet rs
-                = ps.executeQuery()) {
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
 
@@ -74,9 +73,8 @@ public class AppointmentDAOImpl
                 + "'CONFIRMED')";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, doctorId);
 
@@ -90,9 +88,7 @@ public class AppointmentDAOImpl
                     Time.valueOf(time + ":00")
             );
 
-            try (
-                    ResultSet rs
-                    = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
 
                 rs.next();
 
@@ -121,9 +117,8 @@ public class AppointmentDAOImpl
                 + "VALUES (?,?,?,?,?,?,?,?,?,?)";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(
                         sql,
                         Statement.RETURN_GENERATED_KEYS
                 )) {
@@ -183,18 +178,16 @@ public class AppointmentDAOImpl
                     "PENDING_DOCTOR"
             );
 
-            int rows
-                    = ps.executeUpdate();
+            int rows = ps.executeUpdate();
 
             if (rows != 1) {
                 return false;
             }
 
-            try (
-                    ResultSet keys
-                    = ps.getGeneratedKeys()) {
+            try (ResultSet keys = ps.getGeneratedKeys()) {
 
                 if (keys.next()) {
+
                     appointment.setId(
                             keys.getInt(1)
                     );
@@ -258,6 +251,95 @@ public class AppointmentDAOImpl
         );
     }
 
+    // =========================================================
+    // NEW: GET ALL APPOINTMENTS
+    // =========================================================
+
+    @Override
+    public List<Appointment> getAllAppointments()
+            throws SQLException {
+
+        return getList(
+                selectSQL()
+                + "ORDER BY a.appointment_date ASC,"
+                + "a.appointment_time ASC"
+        );
+    }
+
+    // =========================================================
+    // NEW: FILTER APPOINTMENTS
+    // =========================================================
+
+    @Override
+    public List<Appointment> filterAdminAppointments(
+            String doctorId,
+            String appointmentDate,
+            String status)
+            throws SQLException {
+
+        StringBuilder sql
+                = new StringBuilder(
+                        selectSQL()
+                        + "WHERE 1=1 "
+                );
+
+        List<Object> values
+                = new ArrayList<>();
+
+        /*
+         * Doctor filter
+         */
+        if (doctorId != null
+                && !doctorId.trim().isEmpty()
+                && !"all".equalsIgnoreCase(doctorId)) {
+
+            sql.append("AND a.doctor_id=? ");
+
+            values.add(
+                    Integer.parseInt(doctorId)
+            );
+        }
+
+        /*
+         * Date filter
+         */
+        if (appointmentDate != null
+                && !appointmentDate.trim().isEmpty()) {
+
+            sql.append(
+                    "AND a.appointment_date=? "
+            );
+
+            values.add(
+                    Date.valueOf(appointmentDate)
+            );
+        }
+
+        /*
+         * Status filter
+         */
+        if (status != null
+                && !status.trim().isEmpty()
+                && !"ALL".equalsIgnoreCase(status)) {
+
+            sql.append(
+                    "AND a.status=? "
+            );
+
+            values.add(status);
+        }
+
+        sql.append(
+                "ORDER BY a.appointment_date ASC,"
+                + "a.appointment_time ASC"
+        );
+
+        return getList(
+                sql.toString(),
+                values.toArray()
+        );
+    }
+
     @Override
     public Appointment getById(
             int id)
@@ -284,9 +366,8 @@ public class AppointmentDAOImpl
                 = new ArrayList<>();
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             for (int i = 0;
                     i < values.length;
@@ -298,9 +379,7 @@ public class AppointmentDAOImpl
                 );
             }
 
-            try (
-                    ResultSet rs
-                    = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
 
                 while (rs.next()) {
 
@@ -312,9 +391,7 @@ public class AppointmentDAOImpl
                     );
 
                     a.setAppointmentNo(
-                            rs.getString(
-                                    "appointment_no"
-                            )
+                            rs.getString("appointment_no")
                     );
 
                     a.setPatientId(
@@ -326,75 +403,51 @@ public class AppointmentDAOImpl
                     );
 
                     a.setPatientName(
-                            rs.getString(
-                                    "patient_name"
-                            )
+                            rs.getString("patient_name")
                     );
 
                     a.setPatientPhone(
-                            rs.getString(
-                                    "patient_phone"
-                            )
+                            rs.getString("patient_phone")
                     );
 
                     a.setPatientAddress(
-                            rs.getString(
-                                    "patient_address"
-                            )
+                            rs.getString("patient_address")
                     );
 
                     a.setDoctorName(
-                            rs.getString(
-                                    "doctor_name"
-                            )
+                            rs.getString("doctor_name")
                     );
 
                     a.setSpecialization(
-                            rs.getString(
-                                    "specialization"
-                            )
+                            rs.getString("specialization")
                     );
 
                     a.setTreatmentType(
-                            rs.getString(
-                                    "treatment_type"
-                            )
+                            rs.getString("treatment_type")
                     );
 
                     a.setAppointmentDate(
-                            rs.getString(
-                                    "appointment_date"
-                            )
+                            rs.getString("appointment_date")
                     );
 
                     a.setAppointmentTime(
-                            rs.getString(
-                                    "appointment_time"
-                            )
+                            rs.getString("appointment_time")
                     );
 
                     a.setStatus(
-                            rs.getString(
-                                    "status"
-                            )
+                            rs.getString("status")
                     );
 
                     a.setDoctorNote(
-                            rs.getString(
-                                    "doctor_note"
-                            )
+                            rs.getString("doctor_note")
                     );
 
                     a.setAdminNote(
-                            rs.getString(
-                                    "admin_note"
-                            )
+                            rs.getString("admin_note")
                     );
 
                     a.setCreatedAt(
-                            rs.getString(
-                                    "created_at"
-                            )
+                            rs.getString("created_at")
                     );
 
                     list.add(a);
@@ -415,8 +468,8 @@ public class AppointmentDAOImpl
 
         String status
                 = approve
-                        ? "PENDING_ADMIN"
-                        : "REJECTED_BY_DOCTOR";
+                ? "PENDING_ADMIN"
+                : "REJECTED_BY_DOCTOR";
 
         String sql
                 = "UPDATE appointments "
@@ -426,9 +479,8 @@ public class AppointmentDAOImpl
                 + "AND status='PENDING_DOCTOR'";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, status);
             ps.setString(2, note);
@@ -448,8 +500,8 @@ public class AppointmentDAOImpl
 
         String status
                 = approve
-                        ? "CONFIRMED"
-                        : "REJECTED_BY_ADMIN";
+                ? "CONFIRMED"
+                : "REJECTED_BY_ADMIN";
 
         String sql
                 = "UPDATE appointments "
@@ -458,9 +510,8 @@ public class AppointmentDAOImpl
                 + "AND status='PENDING_ADMIN'";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection();
+                PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, status);
             ps.setString(2, note);
