@@ -2217,6 +2217,26 @@
 
                 </a>
 
+                <a href="<%= request.getContextPath()%>/PatientMedicalHistoryServlet">
+
+                    <i class="fa-solid fa-file-medical"></i>
+
+                    <span>
+                        Medical History
+                    </span>
+
+                </a>
+
+                <a href="Help.jsp">
+
+                    <i class="fa-solid fa-circle-question"></i>
+
+                    <span>
+                        Help & Support
+                    </span>
+
+                </a>
+
 
                 <div class="logout-area">
 
@@ -2735,8 +2755,8 @@
                                         <div>
 
                                             <% if (consultationPaid.compareTo(
-                                                    BigDecimal.ZERO
-                                            ) > 0) { %>
+                                                        BigDecimal.ZERO
+                                                ) > 0) { %>
 
                                             <span class="payment-status payment-paid">
 
@@ -2875,8 +2895,8 @@
                                          ================================================= -->
 
                                     <% if (consultationPaid.compareTo(
-                                            BigDecimal.ZERO
-                                    ) <= 0) {%>
+                                                BigDecimal.ZERO
+                                        ) <= 0) {%>
 
 
                                     <div class="pay-box">
@@ -2988,8 +3008,8 @@
                                                 BigDecimal.ZERO
                                         ) > 0
                                                 && treatmentBalance.compareTo(
-                                                    BigDecimal.ZERO
-                                            ) > 0) {%>
+                                                        BigDecimal.ZERO
+                                                ) > 0) {%>
 
 
                                     <div class="pay-box"
@@ -3163,7 +3183,7 @@
 
 
                                 <% if (appointments != null
-                                    && !appointments.isEmpty()) { %>
+                                            && !appointments.isEmpty()) { %>
 
 
                                 <%
@@ -3466,7 +3486,7 @@
 
 
                                 <% if (notifications != null
-                                    && !notifications.isEmpty()) { %>
+                                            && !notifications.isEmpty()) { %>
 
 
                                 <%

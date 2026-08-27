@@ -72,10 +72,8 @@
                     Contact
                 </a>
 
-                <!-- HELP -->
-                <a href="Help.jsp">
-                    <i class="fa-solid fa-circle-question"></i>
-                    Help
+                <a href="<%= request.getContextPath()%>/Help.jsp">
+                    Help & Support
                 </a>
 
                 <!-- LOGIN -->
@@ -1275,7 +1273,7 @@
 
                     <a href="Help.jsp">
                         <i class="fa-solid fa-circle-question"></i>
-                        Help
+                        Help & Support
                     </a>
 
                 </div>

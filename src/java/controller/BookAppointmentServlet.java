@@ -14,14 +14,16 @@ import service.impl.AppointmentServiceImpl;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import service.DoctorScheduleService;
+import service.impl.DoctorScheduleServiceImpl;
 
 /**
  * Controller for patient appointment booking.
  *
- * Design patterns used:
- * - MVC Controller: receives the HTTP request and selects the response.
- * - Service Layer: business validation is delegated to AppointmentService.
- * - DAO: persistence is delegated through AppointmentService -> AppointmentDAO.
+ * Design patterns used: - MVC Controller: receives the HTTP request and selects
+ * the response. - Service Layer: business validation is delegated to
+ * AppointmentService. - DAO: persistence is delegated through
+ * AppointmentService -> AppointmentDAO.
  */
 @WebServlet("/BookAppointmentServlet")
 public class BookAppointmentServlet extends HttpServlet {
@@ -39,35 +41,59 @@ public class BookAppointmentServlet extends HttpServlet {
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
+        HttpSession session
+                = request.getSession(false);
 
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null
+                || session.getAttribute("user") == null) {
+
             response.sendRedirect(
-                    request.getContextPath() + "/Login.jsp?error=session");
+                    request.getContextPath()
+                    + "/Login.jsp?error=session"
+            );
+
             return;
         }
 
-        String role = String.valueOf(
-                session.getAttribute("userRole")
-        );
+        String role
+                = String.valueOf(
+                        session.getAttribute("userRole")
+                );
 
         if (!"patient".equalsIgnoreCase(role)) {
+
             response.sendRedirect(
-                    request.getContextPath() + "/Login.jsp?error=access");
+                    request.getContextPath()
+                    + "/Login.jsp?error=access"
+            );
+
             return;
         }
 
         try {
+
+            DoctorScheduleService scheduleService
+                    = new DoctorScheduleServiceImpl();
+
             request.setAttribute(
                     "doctors",
                     appointmentService.getDoctors()
             );
 
+            request.setAttribute(
+                    "schedules",
+                    scheduleService.getAllSchedules()
+            );
+
             request.getRequestDispatcher(
                     "/book-appointment.jsp"
-            ).forward(request, response);
+            ).forward(
+                    request,
+                    response
+            );
 
         } catch (SQLException e) {
+
             e.printStackTrace();
 
             response.sendRedirect(
@@ -120,23 +146,23 @@ public class BookAppointmentServlet extends HttpServlet {
 
             User user = (User) session.getAttribute("user");
 
-            String doctorIdValue =
-                    request.getParameter("doctorId");
+            String doctorIdValue
+                    = request.getParameter("doctorId");
 
-            String treatmentType =
-                    clean(request.getParameter("treatmentType"));
+            String treatmentType
+                    = clean(request.getParameter("treatmentType"));
 
-            String appointmentDate =
-                    clean(request.getParameter("appointmentDate"));
+            String appointmentDate
+                    = clean(request.getParameter("appointmentDate"));
 
-            String appointmentTime =
-                    clean(request.getParameter("appointmentTime"));
+            String appointmentTime
+                    = clean(request.getParameter("appointmentTime"));
 
-            String phone =
-                    clean(request.getParameter("phone"));
+            String phone
+                    = clean(request.getParameter("phone"));
 
-            String address =
-                    clean(request.getParameter("address"));
+            String address
+                    = clean(request.getParameter("address"));
 
             if (doctorIdValue == null
                     || doctorIdValue.isEmpty()
@@ -170,8 +196,8 @@ public class BookAppointmentServlet extends HttpServlet {
                 phone = user.getPhone();
             }
 
-            String patientName =
-                    user.getFirstName()
+            String patientName
+                    = user.getFirstName()
                     + " "
                     + user.getLastName();
 
@@ -186,8 +212,8 @@ public class BookAppointmentServlet extends HttpServlet {
             appointment.setAppointmentDate(appointmentDate);
             appointment.setAppointmentTime(appointmentTime);
 
-            boolean created =
-                    appointmentService.bookAppointment(
+            boolean created
+                    = appointmentService.bookAppointment(
                             appointment
                     );
 

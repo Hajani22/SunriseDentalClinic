@@ -10,12 +10,15 @@
 
 <%
     /* =========================================================
-       ADMIN SESSION
+       ADMIN SESSION SECURITY
        ========================================================= */
 
     if (session.getAttribute("user") == null) {
 
-        response.sendRedirect("Login.jsp");
+        response.sendRedirect(
+                request.getContextPath() + "/Login.jsp"
+        );
+
         return;
     }
 
@@ -27,7 +30,8 @@
     if (!"admin".equalsIgnoreCase(role)) {
 
         response.sendRedirect(
-                "Login.jsp?error=access"
+                request.getContextPath()
+                + "/Login.jsp?error=access"
         );
 
         return;
@@ -43,25 +47,38 @@
     if (userIdObject == null) {
 
         response.sendRedirect(
-                "Login.jsp?error=session"
+                request.getContextPath()
+                + "/Login.jsp?error=session"
         );
 
         return;
     }
 
-    int adminId
-            = Integer.parseInt(
-                    userIdObject.toString()
-            );
+    int adminId;
+
+    try {
+
+        adminId
+                = Integer.parseInt(
+                        userIdObject.toString()
+                );
+
+    } catch (NumberFormatException e) {
+
+        response.sendRedirect(
+                request.getContextPath()
+                + "/Login.jsp?error=session"
+        );
+
+        return;
+    }
 
 
     /* =========================================================
        ADMIN NAME
        ========================================================= */
     String adminName
-            = (String) session.getAttribute(
-                    "userName"
-            );
+            = (String) session.getAttribute("userName");
 
     if (adminName == null
             || adminName.trim().isEmpty()) {
@@ -79,11 +96,9 @@
     NotificationDAO notificationDAO
             = new NotificationDAOImpl();
 
-    List<Appointment> appointments
-            = null;
+    List<Appointment> appointments = null;
 
-    List<String[]> notifications
-            = null;
+    List<String[]> notifications = null;
 
     try {
 
@@ -92,14 +107,18 @@
                         .getAdminAppointments();
 
         notifications
-                = notificationDAO.getForUser(
-                        adminId,
-                        "admin"
-                );
+                = notificationDAO
+                        .getForUser(
+                                adminId,
+                                "admin"
+                        );
 
     } catch (Exception e) {
 
-        e.printStackTrace();
+        application.log(
+                "Error loading admin dashboard data.",
+                e
+        );
     }
 
 
@@ -107,10 +126,17 @@
        STATISTICS
        ========================================================= */
     int totalAppointments = 0;
+
     int pendingDoctor = 0;
+
     int pendingAdmin = 0;
+
     int confirmedAppointments = 0;
+
     int rejectedAppointments = 0;
+
+    int cancelledAppointments = 0;
+
     int unreadNotifications = 0;
 
     if (appointments != null) {
@@ -124,33 +150,37 @@
             String status
                     = appointment.getStatus();
 
-            if ("PENDING_DOCTOR".equals(status)) {
+            if ("PENDING_DOCTOR"
+                    .equalsIgnoreCase(status)) {
 
                 pendingDoctor++;
-
             }
 
-            if ("PENDING_ADMIN".equals(status)) {
+            if ("PENDING_ADMIN"
+                    .equalsIgnoreCase(status)) {
 
                 pendingAdmin++;
-
             }
 
-            if ("CONFIRMED".equals(status)) {
+            if ("CONFIRMED"
+                    .equalsIgnoreCase(status)) {
 
                 confirmedAppointments++;
-
             }
 
             if (status != null
-                    && status.startsWith("REJECTED")) {
+                    && status.toUpperCase()
+                            .startsWith("REJECTED")) {
 
                 rejectedAppointments++;
-
             }
 
-        }
+            if ("CANCELLED"
+                    .equalsIgnoreCase(status)) {
 
+                cancelledAppointments++;
+            }
+        }
     }
 
 
@@ -162,17 +192,15 @@
         for (String[] notification
                 : notifications) {
 
-            if (notification.length > 3
+            if (notification != null
+                    && notification.length > 3
                     && "0".equals(
                             notification[3]
                     )) {
 
                 unreadNotifications++;
-
             }
-
         }
-
     }
 
 %>
@@ -186,8 +214,9 @@
 
         <meta charset="UTF-8">
 
-        <meta name="viewport"
-              content="width=device-width, initial-scale=1.0">
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0">
 
         <title>
             Admin Dashboard | Sunrise Dental Clinic
@@ -224,12 +253,12 @@
 
                 color:
                     #475569;
-
             }
 
 
             a {
-                text-decoration: none;
+                text-decoration:
+                    none;
             }
 
 
@@ -239,10 +268,11 @@
 
             .dashboard {
 
-                display: flex;
+                display:
+                    flex;
 
-                min-height: 100vh;
-
+                min-height:
+                    100vh;
             }
 
 
@@ -252,13 +282,20 @@
 
             .sidebar {
 
-                width: 255px;
+                width:
+                    255px;
 
-                position: fixed;
+                position:
+                    fixed;
 
-                top: 0;
-                bottom: 0;
-                left: 0;
+                top:
+                    0;
+
+                bottom:
+                    0;
+
+                left:
+                    0;
 
                 background:
                     linear-gradient(
@@ -267,22 +304,27 @@
                     #0b2b50 100%
                     );
 
-                color: white;
+                color:
+                    white;
 
-                padding: 25px 16px;
+                padding:
+                    25px 16px;
 
-                z-index: 1000;
-
+                z-index:
+                    1000;
             }
 
 
             .brand {
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 12px;
+                gap:
+                    12px;
 
                 padding:
                     8px 12px 30px;
@@ -291,29 +333,36 @@
                     1px solid
                     rgba(255,255,255,.08);
 
-                margin-bottom: 22px;
-
+                margin-bottom:
+                    22px;
             }
 
 
             .brand-icon {
 
-                width: 42px;
-                height: 42px;
+                width:
+                    42px;
 
-                border-radius: 12px;
+                height:
+                    42px;
+
+                border-radius:
+                    12px;
 
                 background:
                     #06a3da;
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                justify-content: center;
+                justify-content:
+                    center;
 
-                font-size: 20px;
-
+                font-size:
+                    20px;
             }
 
 
@@ -323,32 +372,37 @@
                     "Jost",
                     sans-serif;
 
-                font-size: 19px;
+                font-size:
+                    19px;
 
-                font-weight: 700;
-
+                font-weight:
+                    700;
             }
 
 
             .brand-text span {
 
-                display: block;
+                display:
+                    block;
 
-                font-size: 11px;
+                font-size:
+                    11px;
 
                 color:
                     #94a9bf;
 
-                font-weight: 400;
+                font-weight:
+                    400;
 
-                margin-top: 2px;
-
+                margin-top:
+                    2px;
             }
 
 
             .menu-title {
 
-                font-size: 10px;
+                font-size:
+                    10px;
 
                 color:
                     #7890a9;
@@ -356,21 +410,24 @@
                 text-transform:
                     uppercase;
 
-                letter-spacing: 1.3px;
+                letter-spacing:
+                    1.3px;
 
                 padding:
                     0 12px 10px;
-
             }
 
 
             .nav-link {
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 13px;
+                gap:
+                    13px;
 
                 color:
                     #bdcbd9;
@@ -378,24 +435,27 @@
                 padding:
                     13px 14px;
 
-                margin-bottom: 5px;
+                margin-bottom:
+                    5px;
 
-                border-radius: 9px;
+                border-radius:
+                    9px;
 
-                font-size: 14px;
+                font-size:
+                    14px;
 
                 transition:
                     .2s;
-
             }
 
 
             .nav-link i {
 
-                width: 19px;
+                width:
+                    19px;
 
-                text-align: center;
-
+                text-align:
+                    center;
             }
 
 
@@ -407,57 +467,69 @@
 
                 color:
                     white;
-
             }
 
 
             .notification-link {
 
-                position: relative;
-
+                position:
+                    relative;
             }
 
 
             .notification-count {
 
-                margin-left: auto;
+                margin-left:
+                    auto;
 
-                min-width: 20px;
+                min-width:
+                    20px;
 
-                height: 20px;
+                height:
+                    20px;
 
-                padding: 0 6px;
+                padding:
+                    0 6px;
 
-                border-radius: 20px;
+                border-radius:
+                    20px;
 
                 background:
                     #ef4444;
 
-                color: white;
+                color:
+                    white;
 
-                font-size: 10px;
+                font-size:
+                    10px;
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                justify-content: center;
+                justify-content:
+                    center;
 
-                font-weight: 700;
-
+                font-weight:
+                    700;
             }
 
 
             .logout-area {
 
-                position: absolute;
+                position:
+                    absolute;
 
-                left: 16px;
+                left:
+                    16px;
 
-                right: 16px;
+                right:
+                    16px;
 
-                bottom: 20px;
-
+                bottom:
+                    20px;
             }
 
 
@@ -467,8 +539,8 @@
                     1px solid
                     rgba(255,255,255,.08);
 
-                padding-top: 15px;
-
+                padding-top:
+                    15px;
             }
 
 
@@ -478,13 +550,14 @@
 
             .main {
 
-                margin-left: 255px;
+                margin-left:
+                    255px;
 
                 width:
                     calc(100% - 255px);
 
-                min-height: 100vh;
-
+                min-height:
+                    100vh;
             }
 
 
@@ -497,7 +570,8 @@
                 background:
                     white;
 
-                height: 76px;
+                height:
+                    76px;
 
                 border-bottom:
                     1px solid #e7edf3;
@@ -505,25 +579,27 @@
                 padding:
                     0 32px;
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
                 justify-content:
                     space-between;
-
             }
 
 
             .welcome-small {
 
-                font-size: 12px;
+                font-size:
+                    12px;
 
                 color:
                     #94a3b8;
 
-                margin-bottom: 3px;
-
+                margin-bottom:
+                    3px;
             }
 
 
@@ -536,30 +612,37 @@
                 color:
                     #0b2447;
 
-                font-size: 21px;
+                font-size:
+                    21px;
 
-                font-weight: 700;
-
+                font-weight:
+                    700;
             }
 
 
             .profile {
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 11px;
-
+                gap:
+                    11px;
             }
 
 
             .profile-avatar {
 
-                width: 42px;
-                height: 42px;
+                width:
+                    42px;
 
-                border-radius: 50%;
+                height:
+                    42px;
+
+                border-radius:
+                    50%;
 
                 background:
                     #e6f7fc;
@@ -567,12 +650,14 @@
                 color:
                     #06a3da;
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                justify-content: center;
-
+                justify-content:
+                    center;
             }
 
 
@@ -581,10 +666,11 @@
                 color:
                     #0b2447;
 
-                font-weight: 600;
+                font-weight:
+                    600;
 
-                font-size: 13px;
-
+                font-size:
+                    13px;
             }
 
 
@@ -593,8 +679,8 @@
                 color:
                     #94a3b8;
 
-                font-size: 11px;
-
+                font-size:
+                    11px;
             }
 
 
@@ -604,12 +690,14 @@
 
             .content {
 
-                padding: 30px;
+                padding:
+                    30px;
 
-                max-width: 1500px;
+                max-width:
+                    1500px;
 
-                margin: auto;
-
+                margin:
+                    auto;
             }
 
 
@@ -619,11 +707,14 @@
 
             .hero {
 
-                position: relative;
+                position:
+                    relative;
 
-                overflow: hidden;
+                overflow:
+                    hidden;
 
-                border-radius: 18px;
+                border-radius:
+                    18px;
 
                 padding:
                     30px 32px;
@@ -635,42 +726,50 @@
                     #06a3da
                     );
 
-                color: white;
+                color:
+                    white;
 
-                margin-bottom: 25px;
+                margin-bottom:
+                    25px;
 
                 box-shadow:
                     0 10px 30px
                     rgba(6,163,218,.18);
-
             }
 
 
             .hero-content {
 
-                position: relative;
+                position:
+                    relative;
 
-                z-index: 2;
+                z-index:
+                    2;
 
-                display: flex;
+                display:
+                    flex;
 
                 justify-content:
                     space-between;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 20px;
-
+                gap:
+                    20px;
             }
 
 
             .hero-label {
 
-                display: inline-flex;
+                display:
+                    inline-flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 7px;
+                gap:
+                    7px;
 
                 background:
                     rgba(255,255,255,.16);
@@ -678,12 +777,14 @@
                 padding:
                     6px 11px;
 
-                border-radius: 20px;
+                border-radius:
+                    20px;
 
-                font-size: 11px;
+                font-size:
+                    11px;
 
-                margin-bottom: 10px;
-
+                margin-bottom:
+                    10px;
             }
 
 
@@ -693,10 +794,11 @@
                     "Jost",
                     sans-serif;
 
-                font-size: 30px;
+                font-size:
+                    30px;
 
-                margin-bottom: 7px;
-
+                margin-bottom:
+                    7px;
             }
 
 
@@ -705,8 +807,8 @@
                 color:
                     rgba(255,255,255,.86);
 
-                font-size: 14px;
-
+                font-size:
+                    14px;
             }
 
 
@@ -721,14 +823,31 @@
                 padding:
                     13px 19px;
 
-                border-radius: 9px;
+                border-radius:
+                    9px;
 
-                font-size: 13px;
+                font-size:
+                    13px;
 
-                font-weight: 700;
+                font-weight:
+                    700;
 
-                white-space: nowrap;
+                white-space:
+                    nowrap;
 
+                transition:
+                    .2s;
+            }
+
+
+            .hero-button:hover {
+
+                transform:
+                    translateY(-2px);
+
+                box-shadow:
+                    0 5px 15px
+                    rgba(0,0,0,.12);
             }
 
 
@@ -738,15 +857,17 @@
 
             .stats {
 
-                display: grid;
+                display:
+                    grid;
 
                 grid-template-columns:
                     repeat(4, 1fr);
 
-                gap: 18px;
+                gap:
+                    18px;
 
-                margin-bottom: 25px;
-
+                margin-bottom:
+                    25px;
             }
 
 
@@ -758,23 +879,28 @@
                 border:
                     1px solid #e8eef4;
 
-                border-radius: 14px;
+                border-radius:
+                    14px;
 
-                padding: 20px;
+                padding:
+                    20px;
 
                 box-shadow:
                     0 5px 18px
                     rgba(15,23,42,.035);
-
             }
 
 
             .stat-icon {
 
-                width: 43px;
-                height: 43px;
+                width:
+                    43px;
 
-                border-radius: 11px;
+                height:
+                    43px;
+
+                border-radius:
+                    11px;
 
                 background:
                     #e9f8fc;
@@ -782,14 +908,17 @@
                 color:
                     #06a3da;
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                justify-content: center;
+                justify-content:
+                    center;
 
-                margin-bottom: 15px;
-
+                margin-bottom:
+                    15px;
             }
 
 
@@ -802,10 +931,11 @@
                     "Jost",
                     sans-serif;
 
-                font-size: 27px;
+                font-size:
+                    27px;
 
-                font-weight: 700;
-
+                font-weight:
+                    700;
             }
 
 
@@ -814,8 +944,8 @@
                 color:
                     #64748b;
 
-                font-size: 12px;
-
+                font-size:
+                    12px;
             }
 
 
@@ -825,14 +955,15 @@
 
             .dashboard-grid {
 
-                display: grid;
+                display:
+                    grid;
 
                 grid-template-columns:
                     minmax(0, 1.7fr)
                     minmax(300px, 1fr);
 
-                gap: 22px;
-
+                gap:
+                    22px;
             }
 
 
@@ -844,30 +975,34 @@
                 border:
                     1px solid #e8eef4;
 
-                border-radius: 14px;
+                border-radius:
+                    14px;
 
-                padding: 23px;
+                padding:
+                    23px;
 
                 box-shadow:
                     0 5px 18px
                     rgba(15,23,42,.035);
 
-                margin-bottom: 22px;
-
+                margin-bottom:
+                    22px;
             }
 
 
             .panel-header {
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
                 justify-content:
                     space-between;
 
-                margin-bottom: 18px;
-
+                margin-bottom:
+                    18px;
             }
 
 
@@ -880,10 +1015,11 @@
                 color:
                     #0b2447;
 
-                font-size: 17px;
+                font-size:
+                    17px;
 
-                font-weight: 700;
-
+                font-weight:
+                    700;
             }
 
 
@@ -892,34 +1028,44 @@
                 color:
                     #06a3da;
 
-                font-size: 12px;
+                font-size:
+                    12px;
 
-                font-weight: 600;
+                font-weight:
+                    600;
+            }
 
+
+            .view-all:hover {
+
+                text-decoration:
+                    underline;
             }
 
 
             /* =====================================================
-               APPOINTMENT
+               APPOINTMENTS
                ===================================================== */
 
             .appointment-item {
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
                 justify-content:
                     space-between;
 
-                gap: 15px;
+                gap:
+                    15px;
 
                 padding:
                     15px 0;
 
                 border-bottom:
                     1px solid #edf1f5;
-
             }
 
 
@@ -927,31 +1073,38 @@
 
                 border-bottom:
                     none;
-
             }
 
 
             .appointment-info {
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 12px;
+                gap:
+                    12px;
 
-                min-width: 0;
-
+                min-width:
+                    0;
             }
 
 
             .appointment-icon {
 
-                width: 42px;
-                height: 42px;
+                width:
+                    42px;
 
-                flex-shrink: 0;
+                height:
+                    42px;
 
-                border-radius: 10px;
+                flex-shrink:
+                    0;
+
+                border-radius:
+                    10px;
 
                 background:
                     #edf9fc;
@@ -959,12 +1112,14 @@
                 color:
                     #06a3da;
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                justify-content: center;
-
+                justify-content:
+                    center;
             }
 
 
@@ -973,10 +1128,11 @@
                 color:
                     #0b2447;
 
-                font-weight: 700;
+                font-weight:
+                    700;
 
-                font-size: 13px;
-
+                font-size:
+                    13px;
             }
 
 
@@ -985,10 +1141,11 @@
                 color:
                     #94a3b8;
 
-                font-size: 11px;
+                font-size:
+                    11px;
 
-                margin-top: 3px;
-
+                margin-top:
+                    3px;
             }
 
 
@@ -997,8 +1154,8 @@
                 text-align:
                     right;
 
-                flex-shrink: 0;
-
+                flex-shrink:
+                    0;
             }
 
 
@@ -1007,10 +1164,11 @@
                 color:
                     #475569;
 
-                font-size: 11px;
+                font-size:
+                    11px;
 
-                margin-bottom: 6px;
-
+                margin-bottom:
+                    6px;
             }
 
 
@@ -1020,21 +1178,26 @@
 
             .status {
 
-                display: inline-flex;
+                display:
+                    inline-flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 5px;
+                gap:
+                    5px;
 
                 padding:
                     5px 9px;
 
-                border-radius: 20px;
+                border-radius:
+                    20px;
 
-                font-size: 10px;
+                font-size:
+                    10px;
 
-                font-weight: 700;
-
+                font-weight:
+                    700;
             }
 
 
@@ -1045,7 +1208,6 @@
 
                 background:
                     #fef9c3;
-
             }
 
 
@@ -1056,7 +1218,6 @@
 
                 background:
                     #dcfce7;
-
             }
 
 
@@ -1067,7 +1228,16 @@
 
                 background:
                     #fee2e2;
+            }
 
+
+            .status-cancelled {
+
+                color:
+                    #7c3aed;
+
+                background:
+                    #ede9fe;
             }
 
 
@@ -1077,33 +1247,39 @@
 
             .actions {
 
-                display: flex;
+                display:
+                    flex;
 
-                gap: 6px;
+                gap:
+                    6px;
 
-                margin-top: 7px;
+                margin-top:
+                    7px;
 
                 justify-content:
                     flex-end;
-
             }
 
 
             .btn {
 
-                border: none;
+                border:
+                    none;
 
                 padding:
                     7px 10px;
 
-                border-radius: 6px;
+                border-radius:
+                    6px;
 
-                font-size: 10px;
+                font-size:
+                    10px;
 
-                font-weight: 700;
+                font-weight:
+                    700;
 
-                cursor: pointer;
-
+                cursor:
+                    pointer;
             }
 
 
@@ -1112,8 +1288,8 @@
                 background:
                     #198754;
 
-                color: white;
-
+                color:
+                    white;
             }
 
 
@@ -1122,8 +1298,8 @@
                 background:
                     #dc3545;
 
-                color: white;
-
+                color:
+                    white;
             }
 
 
@@ -1133,34 +1309,39 @@
 
             .quick-actions {
 
-                display: grid;
+                display:
+                    grid;
 
-                gap: 10px;
-
+                gap:
+                    10px;
             }
 
 
             .quick-action {
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                gap: 12px;
+                gap:
+                    12px;
 
-                padding: 13px;
+                padding:
+                    13px;
 
                 border:
                     1px solid #e8eef4;
 
-                border-radius: 10px;
+                border-radius:
+                    10px;
 
                 color:
                     #334155;
 
                 transition:
                     .2s;
-
             }
 
 
@@ -1172,15 +1353,21 @@
                 background:
                     #f5fcfe;
 
+                transform:
+                    translateX(2px);
             }
 
 
             .quick-action-icon {
 
-                width: 36px;
-                height: 36px;
+                width:
+                    36px;
 
-                border-radius: 9px;
+                height:
+                    36px;
+
+                border-radius:
+                    9px;
 
                 background:
                     #eaf8fc;
@@ -1188,38 +1375,67 @@
                 color:
                     #06a3da;
 
-                display: flex;
+                display:
+                    flex;
 
-                align-items: center;
+                align-items:
+                    center;
 
-                justify-content: center;
-
+                justify-content:
+                    center;
             }
 
 
             .quick-action-text strong {
 
-                display: block;
+                display:
+                    block;
 
                 color:
                     #0b2447;
 
-                font-size: 12px;
-
+                font-size:
+                    12px;
             }
 
 
             .quick-action-text span {
 
-                display: block;
+                display:
+                    block;
 
                 color:
                     #94a3b8;
 
-                font-size: 10px;
+                font-size:
+                    10px;
 
-                margin-top: 2px;
+                margin-top:
+                    2px;
+            }
 
+
+            /* =====================================================
+               REPORTS QUICK ACTION
+               ===================================================== */
+
+            .reports-action {
+
+                border-color:
+                    #c8edf7;
+
+                background:
+                    #f7fdff;
+            }
+
+
+            .reports-action .quick-action-icon {
+
+                background:
+                    #06a3da;
+
+                color:
+                    white;
             }
 
 
@@ -1234,7 +1450,6 @@
 
                 border-bottom:
                     1px solid #edf1f5;
-
             }
 
 
@@ -1242,7 +1457,6 @@
 
                 border-bottom:
                     none;
-
             }
 
 
@@ -1251,12 +1465,14 @@
                 color:
                     #0b2447;
 
-                font-size: 12px;
+                font-size:
+                    12px;
 
-                font-weight: 700;
+                font-weight:
+                    700;
 
-                margin-bottom: 4px;
-
+                margin-bottom:
+                    4px;
             }
 
 
@@ -1265,10 +1481,11 @@
                 color:
                     #64748b;
 
-                font-size: 11px;
+                font-size:
+                    11px;
 
-                line-height: 1.5;
-
+                line-height:
+                    1.5;
             }
 
 
@@ -1286,26 +1503,26 @@
 
                 color:
                     #94a3b8;
-
             }
 
 
             .empty i {
 
-                font-size: 30px;
+                font-size:
+                    30px;
 
-                margin-bottom: 10px;
+                margin-bottom:
+                    10px;
 
                 color:
                     #cbd5e1;
-
             }
 
 
             .empty p {
 
-                font-size: 12px;
-
+                font-size:
+                    12px;
             }
 
 
@@ -1319,7 +1536,6 @@
 
                     grid-template-columns:
                         repeat(2, 1fr);
-
                 }
 
 
@@ -1327,9 +1543,7 @@
 
                     grid-template-columns:
                         1fr;
-
                 }
-
             }
 
 
@@ -1337,11 +1551,11 @@
 
                 .sidebar {
 
-                    width: 72px;
+                    width:
+                        72px;
 
                     padding:
                         20px 9px;
-
                 }
 
 
@@ -1352,7 +1566,6 @@
 
                     padding:
                         5px 0 20px;
-
                 }
 
 
@@ -1363,7 +1576,6 @@
 
                     display:
                         none;
-
                 }
 
 
@@ -1374,34 +1586,38 @@
 
                     padding:
                         13px;
-
                 }
 
 
                 .notification-count {
 
-                    position: absolute;
+                    position:
+                        absolute;
 
-                    top: 3px;
+                    top:
+                        3px;
 
-                    right: 3px;
+                    right:
+                        3px;
 
-                    min-width: 16px;
+                    min-width:
+                        16px;
 
-                    height: 16px;
+                    height:
+                        16px;
 
-                    font-size: 8px;
-
+                    font-size:
+                        8px;
                 }
 
 
                 .main {
 
-                    margin-left: 72px;
+                    margin-left:
+                        72px;
 
                     width:
                         calc(100% - 72px);
-
                 }
 
 
@@ -1409,7 +1625,6 @@
 
                     padding:
                         0 18px;
-
                 }
 
 
@@ -1417,7 +1632,6 @@
 
                     padding:
                         18px;
-
                 }
 
 
@@ -1428,7 +1642,6 @@
 
                     align-items:
                         flex-start;
-
                 }
 
 
@@ -1439,9 +1652,7 @@
 
                     text-align:
                         center;
-
                 }
-
             }
 
 
@@ -1452,22 +1663,22 @@
                     grid-template-columns:
                         1fr 1fr;
 
-                    gap: 10px;
-
+                    gap:
+                        10px;
                 }
 
 
                 .stat-card {
 
-                    padding: 14px;
-
+                    padding:
+                        14px;
                 }
 
 
                 .stat-number {
 
-                    font-size: 22px;
-
+                    font-size:
+                        22px;
                 }
 
 
@@ -1475,14 +1686,13 @@
 
                     padding:
                         22px;
-
                 }
 
 
                 .hero h1 {
 
-                    font-size: 23px;
-
+                    font-size:
+                        23px;
                 }
 
 
@@ -1490,7 +1700,6 @@
 
                     padding:
                         17px;
-
                 }
 
 
@@ -1499,7 +1708,6 @@
 
                     display:
                         none;
-
                 }
 
 
@@ -1507,7 +1715,6 @@
 
                     align-items:
                         flex-start;
-
                 }
 
 
@@ -1515,9 +1722,7 @@
 
                     max-width:
                         145px;
-
                 }
-
             }
 
         </style>
@@ -1561,12 +1766,17 @@
 
 
                 <div class="menu-title">
+
                     Administration
+
                 </div>
 
 
-                <a href="admin-dashboard.jsp"
-                   class="nav-link active">
+                <!-- DASHBOARD -->
+
+                <a
+                    href="<%=request.getContextPath()%>/admin-dashboard.jsp"
+                    class="nav-link active">
 
                     <i class="fa-solid fa-chart-pie"></i>
 
@@ -1577,8 +1787,11 @@
                 </a>
 
 
-                <a href="AdminAppointmentsServlet"
-                   class="nav-link">
+                <!-- APPOINTMENTS -->
+
+                <a
+                    href="<%=request.getContextPath()%>/AdminAppointmentsServlet"
+                    class="nav-link">
 
                     <i class="fa-solid fa-calendar-check"></i>
 
@@ -1589,8 +1802,28 @@
                 </a>
 
 
-                <a href="AdminNotificationsServlet"
-                   class="nav-link notification-link">
+                <!-- =================================================
+                     NEW: REPORTS & ANALYTICS
+                     ================================================= -->
+
+                <a
+                    href="<%=request.getContextPath()%>/AdminReportsServlet"
+                    class="nav-link">
+
+                    <i class="fa-solid fa-chart-line"></i>
+
+                    <span>
+                        Reports & Analytics
+                    </span>
+
+                </a>
+
+
+                <!-- NOTIFICATIONS -->
+
+                <a
+                    href="<%=request.getContextPath()%>/AdminNotificationsServlet"
+                    class="nav-link notification-link">
 
                     <i class="fa-solid fa-bell"></i>
 
@@ -1612,12 +1845,58 @@
                 </a>
 
 
+                <div
+                    class="menu-title"
+                    style="margin-top:25px;">
+
+                    System
+
+                </div>
+
+
+                <!-- =================================================
+                     TREATMENT MANAGEMENT
+                     Ready for your Treatment Management requirement
+                     ================================================= -->
+
+                <a
+                    href="<%=request.getContextPath()%>/TreatmentManagementServlet"
+                    class="nav-link">
+
+                    <i class="fa-solid fa-tooth"></i>
+
+                    <span>
+                        Treatments
+                    </span>
+
+                </a>
+
+
+                <!-- =================================================
+                     DOCTOR LEAVE MANAGEMENT
+                     Ready for your Doctor Leave requirement
+                     ================================================= -->
+
+                <a
+                    href="<%=request.getContextPath()%>/DoctorLeaveServlet"
+                    class="nav-link">
+
+                    <i class="fa-solid fa-user-clock"></i>
+
+                    <span>
+                        Doctor Leave
+                    </span>
+
+                </a>
+
+
                 <div class="logout-area">
 
                     <div class="logout">
 
-                        <a href="LogoutServlet"
-                           class="nav-link">
+                        <a
+                            href="<%=request.getContextPath()%>/LogoutServlet"
+                            class="nav-link">
 
                             <i class="fa-solid fa-right-from-bracket"></i>
 
@@ -1635,6 +1914,7 @@
             </aside>
 
 
+
             <!-- =====================================================
                  MAIN
                  ===================================================== -->
@@ -1642,7 +1922,9 @@
             <main class="main">
 
 
-                <!-- TOPBAR -->
+                <!-- =================================================
+                     TOPBAR
+                     ================================================= -->
 
                 <header class="topbar">
 
@@ -1650,14 +1932,17 @@
                     <div>
 
                         <div class="welcome-small">
+
                             Administration Portal
+
                         </div>
 
 
                         <div class="welcome-title">
 
                             Welcome back,
-                            <%= adminName%> 👋
+                            <%= adminName%>
+                            👋
 
                         </div>
 
@@ -1698,7 +1983,10 @@
                 </header>
 
 
-                <!-- CONTENT -->
+
+                <!-- =================================================
+                     CONTENT
+                     ================================================= -->
 
                 <section class="content">
 
@@ -1725,20 +2013,25 @@
 
 
                                 <h1>
+
                                     Clinic Overview
+
                                 </h1>
 
 
                                 <p>
-                                    Review doctor-approved appointments,
-                                    confirm bookings and monitor clinic updates.
+
+                                    Review appointments, monitor clinic
+                                    performance and access reports & analytics.
+
                                 </p>
 
                             </div>
 
 
-                            <a href="AdminAppointmentsServlet"
-                               class="hero-button">
+                            <a
+                                href="<%=request.getContextPath()%>/AdminAppointmentsServlet"
+                                class="hero-button">
 
                                 <i class="fa-solid fa-calendar-check"></i>
 
@@ -1755,6 +2048,7 @@
                     </div>
 
 
+
                     <!-- =================================================
                          STATISTICS
                          ================================================= -->
@@ -1762,7 +2056,7 @@
                     <div class="stats">
 
 
-                        <!-- Total -->
+                        <!-- TOTAL APPOINTMENTS -->
 
                         <div class="stat-card">
 
@@ -1789,7 +2083,8 @@
                         </div>
 
 
-                        <!-- Pending Admin -->
+
+                        <!-- PENDING ADMIN -->
 
                         <div class="stat-card">
 
@@ -1816,7 +2111,8 @@
                         </div>
 
 
-                        <!-- Confirmed -->
+
+                        <!-- CONFIRMED -->
 
                         <div class="stat-card">
 
@@ -1843,7 +2139,8 @@
                         </div>
 
 
-                        <!-- Notifications -->
+
+                        <!-- NOTIFICATIONS -->
 
                         <div class="stat-card">
 
@@ -1873,6 +2170,7 @@
                     </div>
 
 
+
                     <!-- =================================================
                          MAIN GRID
                          ================================================= -->
@@ -1887,7 +2185,9 @@
                         <div>
 
 
-                            <!-- PENDING ADMIN APPOINTMENTS -->
+                            <!-- =================================================
+                                 PENDING ADMIN APPOINTMENTS
+                                 ================================================= -->
 
                             <div class="panel">
 
@@ -1897,8 +2197,9 @@
 
                                     <div class="panel-title">
 
-                                        <i class="fa-solid fa-calendar-check"
-                                           style="color:#06a3da;">
+                                        <i
+                                            class="fa-solid fa-calendar-check"
+                                            style="color:#06a3da;">
                                         </i>
 
                                         &nbsp;
@@ -1908,12 +2209,15 @@
                                     </div>
 
 
-                                    <a href="AdminAppointmentsServlet"
-                                       class="view-all">
+                                    <a
+                                        href="<%=request.getContextPath()%>/AdminAppointmentsServlet"
+                                        class="view-all">
 
                                         View All
 
-                                        <i class="fa-solid fa-arrow-right"></i>
+                                        <i
+                                            class="fa-solid fa-arrow-right">
+                                        </i>
 
                                     </a>
 
@@ -1922,8 +2226,7 @@
 
 
                                 <%
-                                    boolean hasPendingAdmin
-                                            = false;
+                                    boolean hasPendingAdmin = false;
 
                                     if (appointments != null) {
 
@@ -1931,16 +2234,14 @@
                                                 : appointments) {
 
                                             if (!"PENDING_ADMIN"
-                                                    .equals(
+                                                    .equalsIgnoreCase(
                                                             appointment.getStatus()
                                                     )) {
 
                                                 continue;
-
                                             }
 
                                             hasPendingAdmin = true;
-
                                 %>
 
 
@@ -1952,7 +2253,9 @@
 
                                         <div class="appointment-icon">
 
-                                            <i class="fa-solid fa-user"></i>
+                                            <i
+                                                class="fa-solid fa-user">
+                                            </i>
 
                                         </div>
 
@@ -1985,6 +2288,7 @@
 
                                             </div>
 
+
                                         </div>
 
 
@@ -2008,11 +2312,12 @@
                                         <div class="actions">
 
 
+                                            <!-- CONFIRM -->
+
                                             <form
                                                 method="post"
-                                                action="AdminDecisionServlet"
+                                                action="<%=request.getContextPath()%>/AdminDecisionServlet"
                                                 style="display:inline;">
-
 
                                                 <input
                                                     type="hidden"
@@ -2026,21 +2331,23 @@
                                                     value="confirm"
                                                     class="btn btn-confirm">
 
-                                                    <i class="fa-solid fa-check"></i>
+                                                    <i
+                                                        class="fa-solid fa-check">
+                                                    </i>
 
                                                     Confirm
 
                                                 </button>
 
-
                                             </form>
 
 
+                                            <!-- REJECT -->
+
                                             <form
                                                 method="post"
-                                                action="AdminDecisionServlet"
+                                                action="<%=request.getContextPath()%>/AdminDecisionServlet"
                                                 style="display:inline;">
-
 
                                                 <input
                                                     type="hidden"
@@ -2060,12 +2367,13 @@
                                                     value="reject"
                                                     class="btn btn-reject">
 
-                                                    <i class="fa-solid fa-xmark"></i>
+                                                    <i
+                                                        class="fa-solid fa-xmark">
+                                                    </i>
 
                                                     Reject
 
                                                 </button>
-
 
                                             </form>
 
@@ -2089,11 +2397,15 @@
 
                                 <div class="empty">
 
-                                    <i class="fa-regular fa-calendar-check"></i>
+                                    <i
+                                        class="fa-regular fa-calendar-check">
+                                    </i>
 
                                     <p>
+
                                         No appointments are waiting
                                         for admin confirmation.
+
                                     </p>
 
                                 </div>
@@ -2107,7 +2419,10 @@
                             </div>
 
 
-                            <!-- RECENT APPOINTMENTS -->
+
+                            <!-- =================================================
+                                 RECENT APPOINTMENTS
+                                 ================================================= -->
 
                             <div class="panel">
 
@@ -2122,8 +2437,9 @@
                                     </div>
 
 
-                                    <a href="AdminAppointmentsServlet"
-                                       class="view-all">
+                                    <a
+                                        href="<%=request.getContextPath()%>/AdminAppointmentsServlet"
+                                        class="view-all">
 
                                         View All
 
@@ -2143,6 +2459,7 @@
                                                 : appointments) {
 
                                             if (count >= 6) {
+
                                                 break;
                                             }
 
@@ -2158,7 +2475,7 @@
                                                     = "Pending";
 
                                             if ("CONFIRMED"
-                                                    .equals(status)) {
+                                                    .equalsIgnoreCase(status)) {
 
                                                 statusClass
                                                         = "status-confirmed";
@@ -2167,9 +2484,10 @@
                                                         = "Confirmed";
 
                                             } else if (status != null
-                                                    && status.startsWith(
-                                                            "REJECTED"
-                                                    )) {
+                                                    && status.toUpperCase()
+                                                            .startsWith(
+                                                                    "REJECTED"
+                                                            )) {
 
                                                 statusClass
                                                         = "status-rejected";
@@ -2177,8 +2495,15 @@
                                                 statusText
                                                         = "Rejected";
 
-                                            }
+                                            } else if ("CANCELLED"
+                                                    .equalsIgnoreCase(status)) {
 
+                                                statusClass
+                                                        = "status-cancelled";
+
+                                                statusText
+                                                        = "Cancelled";
+                                            }
                                 %>
 
 
@@ -2190,7 +2515,9 @@
 
                                         <div class="appointment-icon">
 
-                                            <i class="fa-solid fa-tooth"></i>
+                                            <i
+                                                class="fa-solid fa-tooth">
+                                            </i>
 
                                         </div>
 
@@ -2236,7 +2563,8 @@
                                         </div>
 
 
-                                        <span class="status <%= statusClass%>">
+                                        <span
+                                            class="status <%= statusClass%>">
 
                                             <%= statusText%>
 
@@ -2258,10 +2586,14 @@
 
                                 <div class="empty">
 
-                                    <i class="fa-regular fa-calendar"></i>
+                                    <i
+                                        class="fa-regular fa-calendar">
+                                    </i>
 
                                     <p>
+
                                         No appointments found.
+
                                     </p>
 
                                 </div>
@@ -2278,6 +2610,7 @@
                         </div>
 
 
+
                         <!-- =================================================
                              RIGHT COLUMN
                              ================================================= -->
@@ -2285,7 +2618,9 @@
                         <div>
 
 
-                            <!-- QUICK ACTIONS -->
+                            <!-- =================================================
+                                 QUICK ACTIONS
+                                 ================================================= -->
 
                             <div class="panel">
 
@@ -2304,13 +2639,17 @@
                                 <div class="quick-actions">
 
 
-                                    <a href="AdminAppointmentsServlet"
-                                       class="quick-action">
+                                    <!-- APPOINTMENT APPROVAL -->
 
+                                    <a
+                                        href="<%=request.getContextPath()%>/AdminAppointmentsServlet"
+                                        class="quick-action">
 
                                         <div class="quick-action-icon">
 
-                                            <i class="fa-solid fa-calendar-check"></i>
+                                            <i
+                                                class="fa-solid fa-calendar-check">
+                                            </i>
 
                                         </div>
 
@@ -2327,17 +2666,54 @@
 
                                         </div>
 
+                                    </a>
+
+
+
+                                    <!-- =================================================
+                                         REPORTS & ANALYTICS
+                                         ================================================= -->
+
+                                    <a
+                                        href="<%=request.getContextPath()%>/AdminReportsServlet"
+                                        class="quick-action reports-action">
+
+                                        <div class="quick-action-icon">
+
+                                            <i
+                                                class="fa-solid fa-chart-line">
+                                            </i>
+
+                                        </div>
+
+
+                                        <div class="quick-action-text">
+
+                                            <strong>
+                                                Reports & Analytics
+                                            </strong>
+
+                                            <span>
+                                                View appointments, revenue and treatments
+                                            </span>
+
+                                        </div>
 
                                     </a>
 
 
-                                    <a href="AdminNotificationsServlet"
-                                       class="quick-action">
 
+                                    <!-- NOTIFICATIONS -->
+
+                                    <a
+                                        href="<%=request.getContextPath()%>/AdminNotificationsServlet"
+                                        class="quick-action">
 
                                         <div class="quick-action-icon">
 
-                                            <i class="fa-solid fa-bell"></i>
+                                            <i
+                                                class="fa-solid fa-bell">
+                                            </i>
 
                                         </div>
 
@@ -2357,13 +2733,78 @@
                                     </a>
 
 
+
+                                    <!-- TREATMENTS -->
+
+                                    <a
+                                        href="<%=request.getContextPath()%>/TreatmentManagementServlet"
+                                        class="quick-action">
+
+                                        <div class="quick-action-icon">
+
+                                            <i
+                                                class="fa-solid fa-tooth">
+                                            </i>
+
+                                        </div>
+
+
+                                        <div class="quick-action-text">
+
+                                            <strong>
+                                                Treatment Management
+                                            </strong>
+
+                                            <span>
+                                                Manage treatments and prices
+                                            </span>
+
+                                        </div>
+
+                                    </a>
+
+
+
+                                    <!-- DOCTOR LEAVE -->
+
+                                    <a
+                                        href="<%=request.getContextPath()%>/DoctorLeaveServlet"
+                                        class="quick-action">
+
+                                        <div class="quick-action-icon">
+
+                                            <i
+                                                class="fa-solid fa-user-clock">
+                                            </i>
+
+                                        </div>
+
+
+                                        <div class="quick-action-text">
+
+                                            <strong>
+                                                Doctor Leave
+                                            </strong>
+
+                                            <span>
+                                                Manage doctor availability
+                                            </span>
+
+                                        </div>
+
+                                    </a>
+
+
                                 </div>
 
 
                             </div>
 
 
-                            <!-- STATUS SUMMARY -->
+
+                            <!-- =================================================
+                                 APPOINTMENT STATUS
+                                 ================================================= -->
 
                             <div class="panel">
 
@@ -2379,14 +2820,19 @@
                                 </div>
 
 
+                                <!-- DOCTOR REVIEW -->
+
                                 <div class="appointment-item">
 
 
                                     <div class="appointment-info">
 
+
                                         <div class="appointment-icon">
 
-                                            <i class="fa-solid fa-user-doctor"></i>
+                                            <i
+                                                class="fa-solid fa-user-doctor">
+                                            </i>
 
                                         </div>
 
@@ -2411,7 +2857,8 @@
                                     </div>
 
 
-                                    <span class="status status-pending">
+                                    <span
+                                        class="status status-pending">
 
                                         <%= pendingDoctor%>
 
@@ -2421,14 +2868,20 @@
                                 </div>
 
 
+
+                                <!-- ADMIN REVIEW -->
+
                                 <div class="appointment-item">
 
 
                                     <div class="appointment-info">
 
+
                                         <div class="appointment-icon">
 
-                                            <i class="fa-solid fa-user-shield"></i>
+                                            <i
+                                                class="fa-solid fa-user-shield">
+                                            </i>
 
                                         </div>
 
@@ -2453,7 +2906,8 @@
                                     </div>
 
 
-                                    <span class="status status-pending">
+                                    <span
+                                        class="status status-pending">
 
                                         <%= pendingAdmin%>
 
@@ -2463,14 +2917,20 @@
                                 </div>
 
 
+
+                                <!-- CONFIRMED -->
+
                                 <div class="appointment-item">
 
 
                                     <div class="appointment-info">
 
+
                                         <div class="appointment-icon">
 
-                                            <i class="fa-solid fa-circle-check"></i>
+                                            <i
+                                                class="fa-solid fa-circle-check">
+                                            </i>
 
                                         </div>
 
@@ -2495,7 +2955,8 @@
                                     </div>
 
 
-                                    <span class="status status-confirmed">
+                                    <span
+                                        class="status status-confirmed">
 
                                         <%= confirmedAppointments%>
 
@@ -2505,14 +2966,20 @@
                                 </div>
 
 
+
+                                <!-- REJECTED -->
+
                                 <div class="appointment-item">
 
 
                                     <div class="appointment-info">
 
+
                                         <div class="appointment-icon">
 
-                                            <i class="fa-solid fa-circle-xmark"></i>
+                                            <i
+                                                class="fa-solid fa-circle-xmark">
+                                            </i>
 
                                         </div>
 
@@ -2537,9 +3004,59 @@
                                     </div>
 
 
-                                    <span class="status status-rejected">
+                                    <span
+                                        class="status status-rejected">
 
                                         <%= rejectedAppointments%>
+
+                                    </span>
+
+
+                                </div>
+
+
+
+                                <!-- CANCELLED -->
+
+                                <div class="appointment-item">
+
+
+                                    <div class="appointment-info">
+
+
+                                        <div class="appointment-icon">
+
+                                            <i
+                                                class="fa-solid fa-ban">
+                                            </i>
+
+                                        </div>
+
+
+                                        <div>
+
+                                            <div class="patient-name">
+
+                                                Cancelled
+
+                                            </div>
+
+
+                                            <div class="patient-service">
+
+                                                Cancelled appointments
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <span
+                                        class="status status-cancelled">
+
+                                        <%= cancelledAppointments%>
 
                                     </span>
 
@@ -2550,7 +3067,10 @@
                             </div>
 
 
-                            <!-- NOTIFICATIONS -->
+
+                            <!-- =================================================
+                                 NOTIFICATIONS
+                                 ================================================= -->
 
                             <div class="panel">
 
@@ -2565,8 +3085,9 @@
                                     </div>
 
 
-                                    <a href="AdminNotificationsServlet"
-                                       class="view-all">
+                                    <a
+                                        href="<%=request.getContextPath()%>/AdminNotificationsServlet"
+                                        class="view-all">
 
                                         View All
 
@@ -2586,12 +3107,27 @@
                                     for (String[] n
                                             : notifications) {
 
+                                        if (n == null) {
+
+                                            continue;
+                                        }
+
                                         if (notificationCount >= 3) {
+
                                             break;
                                         }
 
                                         notificationCount++;
 
+                                        String notificationTitle
+                                                = n.length > 1
+                                                        ? n[1]
+                                                        : "Notification";
+
+                                        String notificationMessage
+                                                = n.length > 2
+                                                        ? n[2]
+                                                        : "";
                                 %>
 
 
@@ -2600,20 +3136,21 @@
 
                                     <div class="notification-title">
 
-                                        <i class="fa-solid fa-bell"
-                                           style="color:#06a3da;">
+                                        <i
+                                            class="fa-solid fa-bell"
+                                            style="color:#06a3da;">
                                         </i>
 
                                         &nbsp;
 
-                                        <%= n[1]%>
+                                        <%= notificationTitle%>
 
                                     </div>
 
 
                                     <div class="notification-message">
 
-                                        <%= n[2]%>
+                                        <%= notificationMessage%>
 
                                     </div>
 
@@ -2631,10 +3168,14 @@
 
                                 <div class="empty">
 
-                                    <i class="fa-regular fa-bell-slash"></i>
+                                    <i
+                                        class="fa-regular fa-bell-slash">
+                                    </i>
 
                                     <p>
+
                                         No notifications yet.
+
                                     </p>
 
                                 </div>
