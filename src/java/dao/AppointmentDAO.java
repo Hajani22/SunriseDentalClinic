@@ -32,11 +32,9 @@ public interface AppointmentDAO {
     List<Appointment> getAdminAppointments()
             throws SQLException;
 
-    // NEW
     List<Appointment> getAllAppointments()
             throws SQLException;
 
-    // NEW
     List<Appointment> filterAdminAppointments(
             String doctorId,
             String appointmentDate,
@@ -58,5 +56,37 @@ public interface AppointmentDAO {
             int appointmentId,
             boolean approve,
             String note)
+            throws SQLException;
+
+
+    /*
+     * =========================================================
+     * RESCHEDULE
+     * =========================================================
+     */
+    boolean isSlotBookedForReschedule(
+            int appointmentId,
+            int doctorId,
+            String date,
+            String time)
+            throws SQLException;
+
+    boolean rescheduleAppointment(
+            int appointmentId,
+            int patientId,
+            String date,
+            String time)
+            throws SQLException;
+
+
+    /*
+     * =========================================================
+     * CANCELLATION
+     * =========================================================
+     */
+    boolean cancelAppointment(
+            int appointmentId,
+            int patientId,
+            String reason)
             throws SQLException;
 }

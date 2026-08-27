@@ -1,15 +1,17 @@
 package service.billing;
 
 /**
- * Factory Pattern. Creates the appropriate billing calculation strategy.
+ * Factory Design Pattern.
+ *
+ * Creates the correct billing calculation strategy.
  */
 public final class BillingStrategyFactory {
 
     private BillingStrategyFactory() {
     }
 
-    public static BillingCalculationStrategy
-            getStrategy(String type) {
+    public static BillingCalculationStrategy getStrategy(
+            String type) {
 
         String normalized
                 = type == null
@@ -17,6 +19,7 @@ public final class BillingStrategyFactory {
                         : type.trim().toUpperCase();
 
         switch (normalized) {
+
             case "STANDARD":
             default:
                 return new StandardDentalBillingStrategy();

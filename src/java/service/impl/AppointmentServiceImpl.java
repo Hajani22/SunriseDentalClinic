@@ -1,47 +1,98 @@
 package service.impl;
 
 import dao.AppointmentDAO;
-import dao.NotificationDAO;
-
 import dao.impl.AppointmentDAOImpl;
-import dao.impl.NotificationDAOImpl;
 
 import model.Appointment;
 import model.DoctorOption;
 
 import service.AppointmentService;
+import service.NotificationService;
+
+import service.decorator.LoggingNotificationServiceDecorator;
+
+import service.observer.AppointmentEvent;
+import service.observer.AppointmentEventPublisher;
+import service.observer.DoctorAppointmentObserver;
+
+import service.validation.AppointmentDateHandler;
+import service.validation.AppointmentSlotHandler;
+import service.validation.AppointmentTimeHandler;
+import service.validation.AppointmentValidationHandler;
+import service.validation.RequiredAppointmentFieldsHandler;
 
 import java.sql.SQLException;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
 
 import java.util.List;
 import java.util.UUID;
 
-
+/**
+ * Appointment Service Implementation.
+ *
+ * Design Patterns already used:
+ *
+ * 1. Chain of Responsibility 2. Observer 3. Decorator
+ */
 public class AppointmentServiceImpl
         implements AppointmentService {
-
-
-    /*
-     * ============================================================
-     * DAO OBJECTS
-     * ============================================================
-     */
 
     private final AppointmentDAO dao
             = new AppointmentDAOImpl();
 
-    private final NotificationDAO notificationDAO
-            = new NotificationDAOImpl();
+
+    /*
+     * Decorator Pattern
+     */
+    private final NotificationService notificationService
+            = new LoggingNotificationServiceDecorator(
+                    new NotificationServiceImpl()
+            );
 
 
     /*
-     * ============================================================
-     * GET ALL DOCTORS
-     * ============================================================
+     * Observer Pattern
      */
+    private final AppointmentEventPublisher eventPublisher
+            = new AppointmentEventPublisher();
+
+
+    /*
+     * Chain of Responsibility
+     */
+    private final AppointmentValidationHandler validationChain
+            = buildValidationChain();
+
+    public AppointmentServiceImpl() {
+
+        eventPublisher.subscribe(
+                new DoctorAppointmentObserver(
+                        notificationService
+                )
+        );
+    }
+
+    private AppointmentValidationHandler
+            buildValidationChain() {
+
+        AppointmentValidationHandler required
+                = new RequiredAppointmentFieldsHandler();
+
+        AppointmentValidationHandler date
+                = new AppointmentDateHandler();
+
+        AppointmentValidationHandler time
+                = new AppointmentTimeHandler();
+
+        AppointmentValidationHandler slot
+                = new AppointmentSlotHandler();
+
+        required
+                .setNext(date)
+                .setNext(time)
+                .setNext(slot);
+
+        return required;
+    }
 
     @Override
     public List<DoctorOption> getDoctors()
@@ -50,88 +101,15 @@ public class AppointmentServiceImpl
         return dao.getDoctors();
     }
 
-
-    /*
-     * ============================================================
-     * BOOK NEW APPOINTMENT
-     * ============================================================
-     */
-
     @Override
     public boolean bookAppointment(
             Appointment appointment)
             throws SQLException {
 
-
-        /*
-         * Basic null validation
-         */
-
-        if (appointment == null) {
-
-            return false;
-        }
-
-
-        /*
-         * Check whether selected doctor/time slot
-         * is already booked.
-         */
-
-        if (dao.isSlotBooked(
-                appointment.getDoctorId(),
-                appointment.getAppointmentDate(),
-                appointment.getAppointmentTime()
-        )) {
-
-            return false;
-        }
-
-
-        /*
-         * Convert appointment date and time
-         * into Java LocalDate and LocalTime.
-         */
-
-        LocalDate date
-                = LocalDate.parse(
-                        appointment.getAppointmentDate()
-                );
-
-        LocalTime time
-                = LocalTime.parse(
-                        appointment.getAppointmentTime()
-                );
-
-
-        /*
-         * Appointment date cannot be in the past.
-         */
-
-        if (date.isBefore(LocalDate.now())) {
-
-            return false;
-        }
-
-
-        /*
-         * Appointment time cannot be in the past
-         * if the appointment is today.
-         */
-
-        if (date.equals(LocalDate.now())
-                && !time.isAfter(LocalTime.now())) {
-
-            return false;
-        }
-
-
-        /*
-         * Generate unique appointment number.
-         *
-         * Example:
-         * SDC-A82F91BC
-         */
+        validationChain.validate(
+                appointment,
+                dao
+        );
 
         appointment.setAppointmentNo(
                 "SDC-"
@@ -141,60 +119,24 @@ public class AppointmentServiceImpl
                         .toUpperCase()
         );
 
-
-        /*
-         * Save appointment into database.
-         */
-
         boolean created
                 = dao.createAppointment(
                         appointment
                 );
 
-
         if (!created) {
-
             return false;
         }
 
-
-        /*
-         * ========================================================
-         * PATIENT -> DOCTOR NOTIFICATION
-         * ========================================================
-         *
-         * When patient creates an appointment,
-         * the selected doctor receives a notification.
-         */
-
-        String message
-                = "New appointment request from "
-                + appointment.getPatientName()
-                + " on "
-                + appointment.getAppointmentDate()
-                + " at "
-                + appointment.getAppointmentTime()
-                + ".";
-
-
-        notificationDAO.create(
-                appointment.getDoctorId(),
-                "doctor",
-                "New Appointment Request",
-                message,
-                appointment.getId()
+        eventPublisher.publish(
+                new AppointmentEvent(
+                        AppointmentEvent.Type.CREATED,
+                        appointment
+                )
         );
-
 
         return true;
     }
-
-
-    /*
-     * ============================================================
-     * GET PATIENT APPOINTMENTS
-     * ============================================================
-     */
 
     @Override
     public List<Appointment> getPatientAppointments(
@@ -206,13 +148,6 @@ public class AppointmentServiceImpl
         );
     }
 
-
-    /*
-     * ============================================================
-     * GET DOCTOR APPOINTMENTS
-     * ============================================================
-     */
-
     @Override
     public List<Appointment> getDoctorAppointments(
             int doctorId)
@@ -223,16 +158,6 @@ public class AppointmentServiceImpl
         );
     }
 
-
-    /*
-     * ============================================================
-     * GET ADMIN PENDING APPOINTMENTS
-     * ============================================================
-     *
-     * This method returns appointments that are waiting
-     * specifically for administrator confirmation.
-     */
-
     @Override
     public List<Appointment> getAdminAppointments()
             throws SQLException {
@@ -240,53 +165,12 @@ public class AppointmentServiceImpl
         return dao.getAdminAppointments();
     }
 
-
-    /*
-     * ============================================================
-     * NEW METHOD
-     * GET ALL APPOINTMENTS
-     * ============================================================
-     *
-     * Used by the Admin Appointment Management page.
-     *
-     * This returns:
-     *
-     * - Pending Doctor
-     * - Pending Admin
-     * - Confirmed
-     * - Rejected
-     *
-     * appointments.
-     */
-
     @Override
     public List<Appointment> getAllAppointments()
             throws SQLException {
 
         return dao.getAllAppointments();
     }
-
-
-    /*
-     * ============================================================
-     * NEW METHOD
-     * FILTER ADMIN APPOINTMENTS
-     * ============================================================
-     *
-     * Supports:
-     *
-     * 1. Doctor filter
-     * 2. Date filter
-     * 3. Status filter
-     *
-     * Example:
-     *
-     * Doctor = Dr. Kumar
-     * Date   = 2026-08-26
-     * Status = PENDING_ADMIN
-     *
-     * Only matching records will be returned.
-     */
 
     @Override
     public List<Appointment> filterAdminAppointments(
@@ -302,13 +186,6 @@ public class AppointmentServiceImpl
         );
     }
 
-
-    /*
-     * ============================================================
-     * GET APPOINTMENT BY ID
-     * ============================================================
-     */
-
     @Override
     public Appointment getById(
             int id)
@@ -316,26 +193,6 @@ public class AppointmentServiceImpl
 
         return dao.getById(id);
     }
-
-
-    /*
-     * ============================================================
-     * DOCTOR DECISION
-     * ============================================================
-     *
-     * Doctor can:
-     *
-     * APPROVE
-     *     PENDING_DOCTOR
-     *          ↓
-     *     PENDING_ADMIN
-     *
-     * REJECT
-     *     PENDING_DOCTOR
-     *          ↓
-     *     REJECTED_BY_DOCTOR
-     *
-     */
 
     @Override
     public boolean doctorDecision(
@@ -345,33 +202,14 @@ public class AppointmentServiceImpl
             String note)
             throws SQLException {
 
-
-        /*
-         * Retrieve appointment.
-         */
-
         Appointment appointment
                 = dao.getById(
                         appointmentId
                 );
 
-
-        /*
-         * Appointment does not exist.
-         */
-
         if (appointment == null) {
-
             return false;
         }
-
-
-        /*
-         * Security validation:
-         *
-         * Make sure this appointment actually belongs
-         * to the logged-in doctor.
-         */
 
         if (appointment.getDoctorId()
                 != doctorId) {
@@ -379,22 +217,12 @@ public class AppointmentServiceImpl
             return false;
         }
 
-
-        /*
-         * Only PENDING_DOCTOR appointments
-         * can be processed by doctor.
-         */
-
         if (!"PENDING_DOCTOR".equals(
-                appointment.getStatus())) {
+                appointment.getStatus()
+        )) {
 
             return false;
         }
-
-
-        /*
-         * Update appointment status.
-         */
 
         boolean updated
                 = dao.doctorDecision(
@@ -404,33 +232,16 @@ public class AppointmentServiceImpl
                         note
                 );
 
-
         if (!updated) {
-
             return false;
         }
 
-
-        /*
-         * ========================================================
-         * DOCTOR ACCEPTED
-         * ========================================================
-         *
-         * Appointment moves to:
-         *
-         * PENDING_ADMIN
-         *
-         * Admin receives notification.
-         */
-
         if (approve) {
 
-
-            notificationDAO.create(
+            notificationService.create(
                     1,
                     "admin",
                     "Appointment Waiting for Confirmation",
-
                     "Appointment "
                     + appointment.getAppointmentNo()
                     + " for "
@@ -438,79 +249,33 @@ public class AppointmentServiceImpl
                     + " has been accepted by Dr. "
                     + appointment.getDoctorName()
                     + " and is waiting for admin confirmation.",
-
                     appointmentId
             );
 
-
-        }
-
-
-        /*
-         * ========================================================
-         * DOCTOR REJECTED
-         * ========================================================
-         *
-         * Patient receives rejection notification.
-         */
-
-        else {
-
+        } else {
 
             String reason
-                    = (note == null
-                    || note.trim().isEmpty())
-
+                    = note == null
+                    || note.trim().isEmpty()
                     ? "Doctor is not available."
-
                     : note;
 
-
-            String message
-                    = "Your appointment "
-                    + appointment.getAppointmentNo()
-                    + " on "
-                    + appointment.getAppointmentDate()
-                    + " at "
-                    + appointment.getAppointmentTime()
-                    + " was rejected by Dr. "
-                    + appointment.getDoctorName()
-                    + ". Reason: "
-                    + reason;
-
-
-            notificationDAO.create(
+            notificationService.create(
                     appointment.getPatientId(),
                     "patient",
                     "Appointment Rejected",
-                    message,
+                    "Your appointment "
+                    + appointment.getAppointmentNo()
+                    + " was rejected by Dr. "
+                    + appointment.getDoctorName()
+                    + ". Reason: "
+                    + reason,
                     appointmentId
             );
         }
 
-
         return true;
     }
-
-
-    /*
-     * ============================================================
-     * ADMIN DECISION
-     * ============================================================
-     *
-     * Admin can:
-     *
-     * CONFIRM
-     *     PENDING_ADMIN
-     *          ↓
-     *     CONFIRMED
-     *
-     * REJECT
-     *     PENDING_ADMIN
-     *          ↓
-     *     REJECTED_BY_ADMIN
-     *
-     */
 
     @Override
     public boolean adminDecision(
@@ -519,42 +284,21 @@ public class AppointmentServiceImpl
             String note)
             throws SQLException {
 
-
-        /*
-         * Retrieve appointment.
-         */
-
         Appointment appointment
                 = dao.getById(
                         appointmentId
                 );
 
-
-        /*
-         * Appointment does not exist.
-         */
-
         if (appointment == null) {
-
             return false;
         }
-
-
-        /*
-         * Only appointments waiting
-         * for admin confirmation can be processed.
-         */
 
         if (!"PENDING_ADMIN".equals(
-                appointment.getStatus())) {
+                appointment.getStatus()
+        )) {
 
             return false;
         }
-
-
-        /*
-         * Update database.
-         */
 
         boolean updated
                 = dao.adminDecision(
@@ -563,26 +307,17 @@ public class AppointmentServiceImpl
                         note
                 );
 
-
         if (!updated) {
-
             return false;
         }
 
-
-        /*
-         * ========================================================
-         * ADMIN CONFIRMED
-         * ========================================================
-         *
-         * Patient receives confirmation.
-         */
-
         if (approve) {
 
-
-            String message
-                    = "Your appointment "
+            notificationService.create(
+                    appointment.getPatientId(),
+                    "patient",
+                    "Appointment Confirmed",
+                    "Your appointment "
                     + appointment.getAppointmentNo()
                     + " is confirmed for "
                     + appointment.getAppointmentDate()
@@ -590,60 +325,296 @@ public class AppointmentServiceImpl
                     + appointment.getAppointmentTime()
                     + " with Dr. "
                     + appointment.getDoctorName()
-                    + ".";
-
-
-            notificationDAO.create(
-                    appointment.getPatientId(),
-                    "patient",
-                    "Appointment Confirmed",
-                    message,
+                    + ".",
                     appointmentId
             );
 
-
-        }
-
-
-        /*
-         * ========================================================
-         * ADMIN REJECTED
-         * ========================================================
-         *
-         * Patient receives rejection notification.
-         */
-
-        else {
-
+        } else {
 
             String reason
-                    = (note == null
-                    || note.trim().isEmpty())
-
+                    = note == null
+                    || note.trim().isEmpty()
                     ? "Appointment could not be confirmed."
-
                     : note;
 
-
-            String message
-                    = "Your appointment "
-                    + appointment.getAppointmentNo()
-                    + " was rejected by the clinic administrator."
-                    + " Reason: "
-                    + reason;
-
-
-            notificationDAO.create(
+            notificationService.create(
                     appointment.getPatientId(),
                     "patient",
                     "Appointment Rejected",
-                    message,
+                    "Your appointment "
+                    + appointment.getAppointmentNo()
+                    + " was rejected by the clinic administrator."
+                    + " Reason: "
+                    + reason,
                     appointmentId
             );
         }
-
 
         return true;
     }
 
+
+    /*
+     * =========================================================
+     * RESCHEDULE APPOINTMENT
+     * =========================================================
+     */
+    @Override
+    public boolean rescheduleAppointment(
+            int appointmentId,
+            int patientId,
+            String date,
+            String time)
+            throws SQLException {
+
+        Appointment appointment
+                = dao.getById(
+                        appointmentId
+                );
+
+
+        /*
+         * Security check.
+         */
+        if (appointment == null
+                || appointment.getPatientId()
+                != patientId) {
+
+            return false;
+        }
+
+
+        /*
+         * Only active appointments can
+         * be rescheduled.
+         */
+        String status
+                = appointment.getStatus();
+
+        if (!"PENDING_DOCTOR".equals(status)
+                && !"PENDING_ADMIN".equals(status)
+                && !"CONFIRMED".equals(status)) {
+
+            return false;
+        }
+
+
+        /*
+         * Validate date and time.
+         */
+        try {
+
+            java.time.LocalDate newDate
+                    = java.time.LocalDate.parse(
+                            date
+                    );
+
+            java.time.LocalTime newTime
+                    = java.time.LocalTime.parse(
+                            time
+                    );
+
+            if (newDate.isBefore(
+                    java.time.LocalDate.now()
+            )) {
+
+                return false;
+            }
+
+            if (newDate.equals(
+                    java.time.LocalDate.now()
+            )
+                    && !newTime.isAfter(
+                            java.time.LocalTime.now()
+                    )) {
+
+                return false;
+            }
+
+        } catch (Exception e) {
+
+            return false;
+        }
+
+
+        /*
+         * Prevent double booking.
+         */
+        if (dao.isSlotBookedForReschedule(
+                appointmentId,
+                appointment.getDoctorId(),
+                date,
+                time
+        )) {
+
+            return false;
+        }
+
+        boolean updated
+                = dao.rescheduleAppointment(
+                        appointmentId,
+                        patientId,
+                        date,
+                        time
+                );
+
+        if (!updated) {
+            return false;
+        }
+
+
+        /*
+         * Notify patient.
+         */
+        notificationService.create(
+                patientId,
+                "patient",
+                "Appointment Rescheduled",
+                "Your appointment "
+                + appointment.getAppointmentNo()
+                + " has been rescheduled to "
+                + date
+                + " at "
+                + time
+                + ". It is waiting for doctor approval.",
+                appointmentId
+        );
+
+
+        /*
+         * Notify doctor.
+         */
+        notificationService.create(
+                appointment.getDoctorId(),
+                "doctor",
+                "Appointment Rescheduled",
+                "Appointment "
+                + appointment.getAppointmentNo()
+                + " has been rescheduled by "
+                + appointment.getPatientName()
+                + " to "
+                + date
+                + " at "
+                + time
+                + ".",
+                appointmentId
+        );
+
+        return true;
+    }
+
+
+    /*
+     * =========================================================
+     * CANCEL APPOINTMENT
+     * =========================================================
+     */
+    @Override
+    public boolean cancelAppointment(
+            int appointmentId,
+            int patientId,
+            String reason)
+            throws SQLException {
+
+        Appointment appointment
+                = dao.getById(
+                        appointmentId
+                );
+
+
+        /*
+         * Security check.
+         */
+        if (appointment == null
+                || appointment.getPatientId()
+                != patientId) {
+
+            return false;
+        }
+
+
+        /*
+         * Only active appointments can
+         * be cancelled.
+         */
+        String status
+                = appointment.getStatus();
+
+        if (!"PENDING_DOCTOR".equals(status)
+                && !"PENDING_ADMIN".equals(status)
+                && !"CONFIRMED".equals(status)) {
+
+            return false;
+        }
+
+        if (reason == null
+                || reason.trim().isEmpty()) {
+
+            reason
+                    = "Cancelled by patient.";
+        }
+
+        reason
+                = reason.trim();
+
+        if (reason.length() > 500) {
+
+            reason
+                    = reason.substring(
+                            0,
+                            500
+                    );
+        }
+
+        boolean cancelled
+                = dao.cancelAppointment(
+                        appointmentId,
+                        patientId,
+                        reason
+                );
+
+        if (!cancelled) {
+            return false;
+        }
+
+
+        /*
+         * Notify doctor.
+         */
+        notificationService.create(
+                appointment.getDoctorId(),
+                "doctor",
+                "Appointment Cancelled",
+                "Appointment "
+                + appointment.getAppointmentNo()
+                + " for "
+                + appointment.getPatientName()
+                + " has been cancelled by the patient."
+                + " Reason: "
+                + reason,
+                appointmentId
+        );
+
+
+        /*
+         * Notify admin.
+         *
+         * Your current system uses admin ID 1.
+         */
+        notificationService.create(
+                1,
+                "admin",
+                "Appointment Cancelled",
+                "Appointment "
+                + appointment.getAppointmentNo()
+                + " for "
+                + appointment.getPatientName()
+                + " has been cancelled by the patient."
+                + " Reason: "
+                + reason,
+                appointmentId
+        );
+
+        return true;
+    }
 }

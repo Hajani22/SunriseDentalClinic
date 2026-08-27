@@ -10,11 +10,11 @@ public interface NotificationService {
             String role,
             String title,
             String message,
-            int appointmentId)
-            throws SQLException;
+            int appointmentId
+    ) throws SQLException;
 
     List<String[]> getForUser(
             int userId,
-            String role)
-            throws SQLException;
+            String role
+    ) throws SQLException;
 }

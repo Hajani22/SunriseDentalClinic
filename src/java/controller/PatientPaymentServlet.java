@@ -1,15 +1,20 @@
 package controller;
 
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
-
-import dao.NotificationDAO;
-import dao.impl.NotificationDAOImpl;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import model.Payment;
 
+import service.NotificationService;
 import service.PaymentService;
+
+import service.impl.NotificationServiceImpl;
 import service.impl.PaymentServiceImpl;
+
+import service.decorator.LoggingNotificationServiceDecorator;
 
 import java.io.IOException;
 
@@ -17,11 +22,25 @@ import java.io.IOException;
 public class PatientPaymentServlet
         extends HttpServlet {
 
-    private final PaymentService service
-            = new PaymentServiceImpl();
+    private final PaymentService paymentService =
+            new PaymentServiceImpl();
 
-    private final NotificationDAO notificationDAO
-            = new NotificationDAOImpl();
+    /*
+     * Notification Service
+     *
+     * Decorator Pattern:
+     *
+     * LoggingNotificationServiceDecorator
+     *              ↓
+     * NotificationServiceImpl
+     *              ↓
+     * NotificationDAO
+     */
+    private final NotificationService notificationService =
+            new LoggingNotificationServiceDecorator(
+                    new NotificationServiceImpl()
+            );
+
 
     @Override
     protected void doPost(
@@ -29,13 +48,14 @@ public class PatientPaymentServlet
             HttpServletResponse response)
             throws IOException {
 
-        HttpSession session
-                = request.getSession(false);
+        HttpSession session =
+                request.getSession(false);
 
 
         /* =====================================================
            PATIENT LOGIN CHECK
            ===================================================== */
+
         if (session == null
                 || session.getAttribute("user") == null) {
 
@@ -46,8 +66,13 @@ public class PatientPaymentServlet
             return;
         }
 
-        String role
-                = String.valueOf(
+
+        /* =====================================================
+           ROLE CHECK
+           ===================================================== */
+
+        String role =
+                String.valueOf(
                         session.getAttribute(
                                 "userRole"
                         )
@@ -62,19 +87,46 @@ public class PatientPaymentServlet
             return;
         }
 
+
         try {
 
 
             /* =================================================
                PATIENT INFORMATION
                ================================================= */
-            int patientId
-                    = (Integer) session.getAttribute(
-                            "userId"
-                    );
 
-            String patientName
-                    = String.valueOf(
+            Object userIdObject =
+                    session.getAttribute("userId");
+
+            if (userIdObject == null) {
+
+                response.sendRedirect(
+                        "Login.jsp?error=session"
+                );
+
+                return;
+            }
+
+            int patientId;
+
+            if (userIdObject instanceof Integer) {
+
+                patientId =
+                        (Integer) userIdObject;
+
+            } else {
+
+                patientId =
+                        Integer.parseInt(
+                                String.valueOf(
+                                        userIdObject
+                                )
+                        );
+            }
+
+
+            String patientName =
+                    String.valueOf(
                             session.getAttribute(
                                     "userName"
                             )
@@ -84,27 +136,103 @@ public class PatientPaymentServlet
             /* =================================================
                FORM DATA
                ================================================= */
-            int appointmentId
-                    = Integer.parseInt(
-                            request.getParameter(
-                                    "appointmentId"
-                            )
+
+            String appointmentIdParameter =
+                    request.getParameter(
+                            "appointmentId"
                     );
 
-            String appointmentNo
-                    = request.getParameter(
+            String appointmentNo =
+                    request.getParameter(
                             "appointmentNo"
                     );
 
-            String paymentType
-                    = request.getParameter(
+            String paymentType =
+                    request.getParameter(
                             "paymentType"
                     );
 
-            String paymentMethod
-                    = request.getParameter(
+            String paymentMethod =
+                    request.getParameter(
                             "paymentMethod"
                     );
+
+
+            /* =================================================
+               VALIDATE APPOINTMENT ID
+               ================================================= */
+
+            if (appointmentIdParameter == null
+                    || appointmentIdParameter.trim().isEmpty()) {
+
+                response.sendRedirect(
+                        "patient-dashboard.jsp"
+                        + "?payment=invalid"
+                );
+
+                return;
+            }
+
+
+            int appointmentId;
+
+            try {
+
+                appointmentId =
+                        Integer.parseInt(
+                                appointmentIdParameter
+                        );
+
+            } catch (NumberFormatException e) {
+
+                response.sendRedirect(
+                        "patient-dashboard.jsp"
+                        + "?payment=invalid"
+                );
+
+                return;
+            }
+
+
+            /* =================================================
+               VALIDATE APPOINTMENT NUMBER
+               ================================================= */
+
+            if (appointmentNo == null
+                    || appointmentNo.trim().isEmpty()) {
+
+                response.sendRedirect(
+                        "patient-dashboard.jsp"
+                        + "?payment=invalid"
+                );
+
+                return;
+            }
+
+
+            appointmentNo =
+                    appointmentNo.trim();
+
+
+            /* =================================================
+               VALIDATE PAYMENT TYPE
+               ================================================= */
+
+            if (paymentType == null
+                    || paymentType.trim().isEmpty()) {
+
+                response.sendRedirect(
+                        "patient-dashboard.jsp"
+                        + "?payment=invalid"
+                );
+
+                return;
+            }
+
+
+            /* =================================================
+               VALIDATE PAYMENT METHOD
+               ================================================= */
 
             if (paymentMethod == null
                     || paymentMethod.trim().isEmpty()) {
@@ -118,18 +246,59 @@ public class PatientPaymentServlet
             }
 
 
+            paymentType =
+                    paymentType.trim();
+
+            paymentMethod =
+                    paymentMethod.trim();
+
+
             /* =================================================
-               GET APPOINTMENT
+               GET APPOINTMENT / PAYMENT INFORMATION
                ================================================= */
-            Payment payment
-                    = service.getAppointment(
+
+            Payment payment =
+                    paymentService.getAppointment(
                             appointmentNo
                     );
 
-            if (payment == null
-                    || payment.getPatientId()
-                    != patientId
-                    || payment.getAppointmentId()
+
+            /* =================================================
+               SECURITY VALIDATION
+               ================================================= */
+
+            if (payment == null) {
+
+                response.sendRedirect(
+                        "patient-dashboard.jsp"
+                        + "?payment=invalid"
+                );
+
+                return;
+            }
+
+
+            /*
+             * Make sure this appointment belongs
+             * to the currently logged-in patient.
+             */
+            if (payment.getPatientId()
+                    != patientId) {
+
+                response.sendRedirect(
+                        "patient-dashboard.jsp"
+                        + "?payment=invalid"
+                );
+
+                return;
+            }
+
+
+            /*
+             * Make sure the appointment ID
+             * also matches.
+             */
+            if (payment.getAppointmentId()
                     != appointmentId) {
 
                 response.sendRedirect(
@@ -139,6 +308,11 @@ public class PatientPaymentServlet
 
                 return;
             }
+
+
+            /* =================================================
+               SET PAYMENT INFORMATION
+               ================================================= */
 
             payment.setPatientId(
                     patientId
@@ -156,14 +330,16 @@ public class PatientPaymentServlet
             /* =================================================
                PROCESS PAYMENT
                ================================================= */
+
             boolean success;
+
 
             if ("CONSULTATION".equalsIgnoreCase(
                     paymentType
             )) {
 
-                success
-                        = service.payConsultation(
+                success =
+                        paymentService.payConsultation(
                                 payment
                         );
 
@@ -171,8 +347,8 @@ public class PatientPaymentServlet
                     paymentType
             )) {
 
-                success
-                        = service.payTreatment(
+                success =
+                        paymentService.payTreatment(
                                 payment
                         );
 
@@ -190,25 +366,28 @@ public class PatientPaymentServlet
             /* =================================================
                PAYMENT SUCCESS
                ================================================= */
+
             if (success) {
 
                 String readableType;
+
 
                 if ("CONSULTATION".equalsIgnoreCase(
                         paymentType
                 )) {
 
-                    readableType
-                            = "Consultation Fee";
+                    readableType =
+                            "Consultation Fee";
 
                 } else {
 
-                    readableType
-                            = "Treatment Payment";
+                    readableType =
+                            "Treatment Payment";
                 }
 
-                String message
-                        = "Payment received from "
+
+                String message =
+                        "Payment received from "
                         + patientName
                         + ". Appointment: "
                         + appointmentNo
@@ -222,9 +401,18 @@ public class PatientPaymentServlet
 
 
                 /* =============================================
-                   SEND NOTIFICATION TO ALL CASHIERS
+                   NOTIFY CASHIERS
                    ============================================= */
-                notificationDAO.createForRole(
+
+                /*
+                 * We use the Notification Service instead
+                 * of directly accessing NotificationDAO.
+                 *
+                 * The service layer is also wrapped with
+                 * the Decorator Pattern.
+                 */
+                notificationService.create(
+                        0,
                         "cashier",
                         "New Patient Payment Received",
                         message,
@@ -235,6 +423,7 @@ public class PatientPaymentServlet
                 /* =============================================
                    PATIENT SUCCESS
                    ============================================= */
+
                 response.sendRedirect(
                         "patient-dashboard.jsp"
                         + "?payment=success"
@@ -247,6 +436,17 @@ public class PatientPaymentServlet
                         + "?payment=failed"
                 );
             }
+
+
+        } catch (NumberFormatException e) {
+
+            e.printStackTrace();
+
+            response.sendRedirect(
+                    "patient-dashboard.jsp"
+                    + "?payment=invalid"
+            );
+
 
         } catch (Exception e) {
 

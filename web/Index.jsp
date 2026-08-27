@@ -28,9 +28,9 @@
 
     </head>
     <body>
-        
-             <!--NAVBAR-->
-       
+
+        <!--NAVBAR-->
+
         <header class="navbar">
             <a href="Index.jsp"
                class="logo">
@@ -72,6 +72,12 @@
                     Contact
                 </a>
 
+                <!-- HELP -->
+                <a href="Help.jsp">
+                    <i class="fa-solid fa-circle-question"></i>
+                    Help
+                </a>
+
                 <!-- LOGIN -->
                 <a href="Login.jsp"
                    class="nav-login">
@@ -89,7 +95,7 @@
             </nav>
         </header>
 
-             <!--HERO-->
+        <!--HERO-->
         <section id="home"           
                  class="hero">
             <div class="hero-slide active">
@@ -1247,7 +1253,6 @@
                         Quick Links
                     </h3>
 
-
                     <a href="Index.jsp">
                         Home
                     </a>
@@ -1268,9 +1273,12 @@
                         Contact
                     </a>
 
+                    <a href="Help.jsp">
+                        <i class="fa-solid fa-circle-question"></i>
+                        Help
+                    </a>
+
                 </div>
-
-
 
                 <!-- PATIENT PORTAL -->
 

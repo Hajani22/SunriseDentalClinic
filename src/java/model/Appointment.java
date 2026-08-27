@@ -3,29 +3,40 @@ package model;
 public class Appointment {
 
     private int id;
+
     private String appointmentNo;
 
     private int patientId;
+
     private int doctorId;
 
     private String patientName;
+
     private String patientPhone;
+
     private String patientAddress;
 
     private String doctorName;
+
     private String specialization;
 
     private String treatmentType;
 
     private String appointmentDate;
+
     private String appointmentTime;
 
     private String status;
 
     private String doctorNote;
+
     private String adminNote;
 
+    private String cancellationReason;
+
     private String createdAt;
+
+    private String updatedAt;
 
     public Appointment() {
     }
@@ -42,7 +53,9 @@ public class Appointment {
         return appointmentNo;
     }
 
-    public void setAppointmentNo(String appointmentNo) {
+    public void setAppointmentNo(
+            String appointmentNo) {
+
         this.appointmentNo = appointmentNo;
     }
 
@@ -66,7 +79,9 @@ public class Appointment {
         return patientName;
     }
 
-    public void setPatientName(String patientName) {
+    public void setPatientName(
+            String patientName) {
+
         this.patientName = patientName;
     }
 
@@ -74,7 +89,9 @@ public class Appointment {
         return patientPhone;
     }
 
-    public void setPatientPhone(String patientPhone) {
+    public void setPatientPhone(
+            String patientPhone) {
+
         this.patientPhone = patientPhone;
     }
 
@@ -82,7 +99,9 @@ public class Appointment {
         return patientAddress;
     }
 
-    public void setPatientAddress(String patientAddress) {
+    public void setPatientAddress(
+            String patientAddress) {
+
         this.patientAddress = patientAddress;
     }
 
@@ -90,7 +109,9 @@ public class Appointment {
         return doctorName;
     }
 
-    public void setDoctorName(String doctorName) {
+    public void setDoctorName(
+            String doctorName) {
+
         this.doctorName = doctorName;
     }
 
@@ -98,7 +119,9 @@ public class Appointment {
         return specialization;
     }
 
-    public void setSpecialization(String specialization) {
+    public void setSpecialization(
+            String specialization) {
+
         this.specialization = specialization;
     }
 
@@ -106,7 +129,9 @@ public class Appointment {
         return treatmentType;
     }
 
-    public void setTreatmentType(String treatmentType) {
+    public void setTreatmentType(
+            String treatmentType) {
+
         this.treatmentType = treatmentType;
     }
 
@@ -114,7 +139,9 @@ public class Appointment {
         return appointmentDate;
     }
 
-    public void setAppointmentDate(String appointmentDate) {
+    public void setAppointmentDate(
+            String appointmentDate) {
+
         this.appointmentDate = appointmentDate;
     }
 
@@ -122,7 +149,9 @@ public class Appointment {
         return appointmentTime;
     }
 
-    public void setAppointmentTime(String appointmentTime) {
+    public void setAppointmentTime(
+            String appointmentTime) {
+
         this.appointmentTime = appointmentTime;
     }
 
@@ -138,7 +167,9 @@ public class Appointment {
         return doctorNote;
     }
 
-    public void setDoctorNote(String doctorNote) {
+    public void setDoctorNote(
+            String doctorNote) {
+
         this.doctorNote = doctorNote;
     }
 
@@ -146,15 +177,40 @@ public class Appointment {
         return adminNote;
     }
 
-    public void setAdminNote(String adminNote) {
+    public void setAdminNote(
+            String adminNote) {
+
         this.adminNote = adminNote;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(
+            String cancellationReason) {
+
+        this.cancellationReason
+                = cancellationReason;
     }
 
     public String getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(String createdAt) {
+    public void setCreatedAt(
+            String createdAt) {
+
         this.createdAt = createdAt;
+    }
+
+    public String getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(
+            String updatedAt) {
+
+        this.updatedAt = updatedAt;
     }
 }

@@ -1,18 +1,27 @@
-package service.impl;
-
-import dao.NotificationDAO;
-import dao.impl.NotificationDAOImpl;
+package service.decorator;
 
 import service.NotificationService;
 
 import java.sql.SQLException;
 import java.util.List;
 
-public class NotificationServiceImpl
+public abstract class NotificationServiceDecorator
         implements NotificationService {
 
-    private final NotificationDAO dao
-            = new NotificationDAOImpl();
+    protected final NotificationService wrappedService;
+
+    protected NotificationServiceDecorator(
+            NotificationService wrappedService) {
+
+        if (wrappedService == null) {
+
+            throw new IllegalArgumentException(
+                    "Notification service cannot be null."
+            );
+        }
+
+        this.wrappedService = wrappedService;
+    }
 
     @Override
     public boolean create(
@@ -23,7 +32,7 @@ public class NotificationServiceImpl
             int appointmentId)
             throws SQLException {
 
-        return dao.create(
+        return wrappedService.create(
                 userId,
                 role,
                 title,
@@ -38,7 +47,7 @@ public class NotificationServiceImpl
             String role)
             throws SQLException {
 
-        return dao.getForUser(
+        return wrappedService.getForUser(
                 userId,
                 role
         );

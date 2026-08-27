@@ -6,14 +6,11 @@ import dao.impl.BillingDAOImpl;
 import model.Bill;
 
 import service.BillingService;
-
 import service.billing.BillingCalculationStrategy;
 import service.billing.BillingStrategyFactory;
 
 import java.math.BigDecimal;
-
 import java.sql.SQLException;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -23,9 +20,11 @@ public class BillingServiceImpl
     private final BillingDAO dao
             = new BillingDAOImpl();
 
+    /**
+     * Factory + Strategy Patterns.
+     */
     private final BillingCalculationStrategy calculationStrategy
-            = BillingStrategyFactory
-                    .getStrategy("STANDARD");
+            = BillingStrategyFactory.getStrategy("STANDARD");
 
     @Override
     public Bill findAppointmentForBilling(
@@ -39,7 +38,7 @@ public class BillingServiceImpl
         }
 
         return dao.findConfirmedAppointment(
-                appointmentNo
+                appointmentNo.trim()
         );
     }
 
@@ -59,8 +58,7 @@ public class BillingServiceImpl
         }
 
         if (dao.billExistsForAppointment(
-                bill.getAppointmentId()
-        )) {
+                bill.getAppointmentId())) {
 
             return null;
         }
@@ -75,20 +73,27 @@ public class BillingServiceImpl
                         bill.getTreatmentType()
                 );
 
-        if (discount == null) {
+        if (treatmentAmount == null) {
+            treatmentAmount = BigDecimal.ZERO;
+        }
 
-            discount
-                    = BigDecimal.ZERO;
+        if (consultationFee == null) {
+            consultationFee = BigDecimal.ZERO;
+        }
+
+        if (discount == null) {
+            discount = BigDecimal.ZERO;
         }
 
         if (discount.compareTo(
-                BigDecimal.ZERO
-        ) < 0) {
+                BigDecimal.ZERO) < 0) {
 
-            discount
-                    = BigDecimal.ZERO;
+            discount = BigDecimal.ZERO;
         }
 
+        /*
+         * Strategy Pattern is used here.
+         */
         BigDecimal total
                 = calculationStrategy.calculateTotal(
                         treatmentAmount,
@@ -145,8 +150,7 @@ public class BillingServiceImpl
         }
 
         if (dao.billExistsForAppointment(
-                bill.getAppointmentId()
-        )) {
+                bill.getAppointmentId())) {
 
             return false;
         }
@@ -159,34 +163,26 @@ public class BillingServiceImpl
                         .toUpperCase()
         );
 
-        bill.setPaymentStatus(
-                "PAID"
-        );
+        bill.setPaymentStatus("PAID");
 
-        return dao.createBill(
-                bill
-        );
+        return dao.createBill(bill);
     }
 
     @Override
-    public Bill getBillById(
-            int id)
+    public Bill getBillById(int id)
             throws SQLException {
 
         return dao.getBillById(id);
     }
 
     @Override
-    public List<Bill> getRecentBills(
-            int limit)
+    public List<Bill> getRecentBills(int limit)
             throws SQLException {
 
         if (limit <= 0) {
             limit = 10;
         }
 
-        return dao.getRecentBills(
-                limit
-        );
+        return dao.getRecentBills(limit);
     }
 }

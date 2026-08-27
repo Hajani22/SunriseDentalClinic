@@ -26,11 +26,9 @@ public interface AppointmentService {
     List<Appointment> getAdminAppointments()
             throws SQLException;
 
-    // NEW
     List<Appointment> getAllAppointments()
             throws SQLException;
 
-    // NEW
     List<Appointment> filterAdminAppointments(
             String doctorId,
             String appointmentDate,
@@ -52,5 +50,18 @@ public interface AppointmentService {
             int appointmentId,
             boolean approve,
             String note)
+            throws SQLException;
+
+    boolean rescheduleAppointment(
+            int appointmentId,
+            int patientId,
+            String date,
+            String time)
+            throws SQLException;
+
+    boolean cancelAppointment(
+            int appointmentId,
+            int patientId,
+            String reason)
             throws SQLException;
 }

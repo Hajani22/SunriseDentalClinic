@@ -5,8 +5,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Singleton Pattern. One application-level DBConnection manager is shared by
- * the DAOs.
+ * Singleton Design Pattern.
+ *
+ * Provides one application-level DBConnection manager.
  */
 public final class DBConnection {
 
@@ -50,8 +51,7 @@ public final class DBConnection {
     }
 
     /**
-     * Backward-compatible helper so existing DAO classes continue to work
-     * without changing every SQL statement.
+     * Backward-compatible method for existing DAO classes.
      */
     public static Connection getConnection()
             throws SQLException {
