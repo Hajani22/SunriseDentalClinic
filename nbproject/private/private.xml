@@ -3,15 +3,32 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/service/impl/AppointmentServiceImpl.java</file>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/dao/AppointmentDAO.java</file>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/model/Appointment.java</file>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/RescheduleAppointmentServlet.java</file>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/dao/impl/AppointmentDAOImpl.java</file>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/service/AppointmentService.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/admin-appointments.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/cashier-dashboard.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/doctor-dashboard.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/dao/impl/PaymentDAOImpl.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/Index.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/PatientPaymentPageServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/Signup.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/patient-bills.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/cashier-receipt.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/CashierBillingServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/CashierNotificationsServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/CashierReceiptServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/cashier-billing.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/PatientPaymentServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/patient-payment.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/doctor-appointments.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/PatientBillsServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/Login.jsp</file>
             <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/patient-appointments.jsp</file>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/CancelAppointmentServlet.java</file>
-            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/reschedule-appointment.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/CashierDashboardServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/src/java/controller/CashierPaymentServlet.java</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/admin-dashboard.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/patient-dashboard.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/toast.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/cashier-payments.jsp</file>
+            <file>file:/C:/Users/HP/Documents/GitHub/SunriseDentalClinic/web/cashier-notifications.jsp</file>
         </group>
     </open-files>
 </project-private>
