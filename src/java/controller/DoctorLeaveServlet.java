@@ -17,6 +17,7 @@ import service.impl.AppointmentServiceImpl;
 import service.impl.DoctorLeaveServiceImpl;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.sql.Date;
 import java.sql.SQLException;
 
@@ -47,44 +48,129 @@ public class DoctorLeaveServlet
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        if (!isAdmin(request)) {
+        HttpSession session
+                = request.getSession(false);
+
+        if (session == null
+                || session.getAttribute("user") == null) {
 
             response.sendRedirect(
                     request.getContextPath()
-                    + "/Login.jsp?error=access"
+                    + "/Login.jsp"
             );
 
             return;
         }
 
+        String role
+                = String.valueOf(
+                        session.getAttribute("userRole")
+                );
+
         try {
 
-            List<DoctorOption> doctors
-                    = appointmentService
-                            .getDoctors();
+            /*
+             * ============================
+             * ADMIN
+             * ============================
+             */
+            if ("admin".equalsIgnoreCase(role)) {
 
-            List<DoctorLeave> leaves
-                    = leaveService
-                            .getAllLeaves();
+                List<DoctorOption> doctors
+                        = appointmentService.getDoctors();
 
-            request.setAttribute(
-                    "doctors",
-                    doctors
+                List<DoctorLeave> leaves
+                        = leaveService.getAllLeaves();
+
+                request.setAttribute(
+                        "doctors",
+                        doctors
+                );
+
+                request.setAttribute(
+                        "leaves",
+                        leaves
+                );
+
+                request.setAttribute(
+                        "pageRole",
+                        "admin"
+                );
+
+                request.getRequestDispatcher(
+                        "/doctor-leave.jsp"
+                ).forward(
+                        request,
+                        response
+                );
+
+                return;
+            }
+
+
+            /*
+             * ============================
+             * DOCTOR
+             * ============================
+             */
+            if ("doctor".equalsIgnoreCase(role)) {
+
+                Object userId
+                        = session.getAttribute("userId");
+
+                if (userId == null) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/Login.jsp?error=session"
+                    );
+
+                    return;
+                }
+
+                int doctorId
+                        = Integer.parseInt(
+                                userId.toString()
+                        );
+
+                List<DoctorLeave> leaves
+                        = leaveService.getLeavesByDoctor(
+                                doctorId
+                        );
+
+                request.setAttribute(
+                        "leaves",
+                        leaves
+                );
+
+                request.setAttribute(
+                        "pageRole",
+                        "doctor"
+                );
+
+                request.getRequestDispatcher(
+                        "/doctor-leave.jsp"
+                ).forward(
+                        request,
+                        response
+                );
+
+                return;
+            }
+
+
+            /*
+             * ============================
+             * OTHER USERS
+             * ============================
+             */
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/Login.jsp?error=access"
             );
 
-            request.setAttribute(
-                    "leaves",
-                    leaves
-            );
-
-            request.getRequestDispatcher(
-                    "/doctor-leave.jsp"
-            ).forward(
-                    request,
-                    response
-            );
-
-        } catch (SQLException e) {
+        } catch (SQLException
+                | NumberFormatException e) {
 
             getServletContext().log(
                     "Error loading doctor leave data.",
@@ -93,7 +179,7 @@ public class DoctorLeaveServlet
 
             response.sendRedirect(
                     request.getContextPath()
-                    + "/admin-dashboard.jsp?error=database"
+                    + "/Login.jsp?error=database"
             );
         }
     }
@@ -104,11 +190,15 @@ public class DoctorLeaveServlet
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        if (!isAdmin(request)) {
+        HttpSession session
+                = request.getSession(false);
+
+        if (session == null
+                || session.getAttribute("user") == null) {
 
             response.sendRedirect(
                     request.getContextPath()
-                    + "/Login.jsp?error=access"
+                    + "/Login.jsp"
             );
 
             return;
@@ -118,26 +208,67 @@ public class DoctorLeaveServlet
                 "UTF-8"
         );
 
+        String role
+                = String.valueOf(
+                        session.getAttribute("userRole")
+                );
+
         String action
                 = request.getParameter("action");
 
         try {
 
-            if ("add".equalsIgnoreCase(
-                    action)) {
+            /*
+             * =====================================
+             * DOCTOR SUBMITS LEAVE
+             * =====================================
+             */
+            if ("add".equalsIgnoreCase(action)) {
+
+                if (!"doctor".equalsIgnoreCase(role)) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/Login.jsp?error=access"
+                    );
+
+                    return;
+                }
+
+                Object userId
+                        = session.getAttribute("userId");
+
+                if (userId == null) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/Login.jsp?error=session"
+                    );
+
+                    return;
+                }
 
                 int doctorId
                         = Integer.parseInt(
-                                request.getParameter(
-                                        "doctorId"
-                                )
+                                userId.toString()
                         );
+
+                String leaveDateValue
+                        = request.getParameter(
+                                "leaveDate"
+                        );
+
+                if (leaveDateValue == null
+                        || leaveDateValue.trim().isEmpty()) {
+
+                    throw new IllegalArgumentException(
+                            "Please select a leave date."
+                    );
+                }
 
                 Date leaveDate
                         = Date.valueOf(
-                                request.getParameter(
-                                        "leaveDate"
-                                )
+                                leaveDateValue
                         );
 
                 String reason
@@ -146,9 +277,7 @@ public class DoctorLeaveServlet
                         );
 
                 if (reason != null) {
-
-                    reason
-                            = reason.trim();
+                    reason = reason.trim();
                 }
 
                 DoctorLeave leave
@@ -166,48 +295,215 @@ public class DoctorLeaveServlet
                         reason
                 );
 
+                /*
+                 * Doctor requests are ALWAYS PENDING.
+                 */
                 leaveService.addLeave(
-                        leave
+                        leave,
+                        "PENDING"
                 );
 
                 response.sendRedirect(
                         request.getContextPath()
-                        + "/DoctorLeaveServlet?success=added"
+                        + "/DoctorLeaveServlet?success=requested"
                 );
 
-            } else if ("cancel".equalsIgnoreCase(
-                    action)) {
+                return;
+            }
+
+
+            /*
+             * =====================================
+             * ADMIN APPROVES LEAVE
+             * =====================================
+             */
+            if ("approve".equalsIgnoreCase(action)) {
+
+                if (!"admin".equalsIgnoreCase(role)) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/Login.jsp?error=access"
+                    );
+
+                    return;
+                }
 
                 int id
                         = Integer.parseInt(
-                                request.getParameter(
-                                        "id"
-                                )
+                                request.getParameter("id")
                         );
 
-                leaveService.cancelLeave(
-                        id
-                );
+                boolean success
+                        = leaveService.approveLeave(id);
 
-                response.sendRedirect(
-                        request.getContextPath()
-                        + "/DoctorLeaveServlet?success=cancelled"
-                );
+                if (success) {
 
-            } else {
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/DoctorLeaveServlet?success=approved"
+                    );
 
-                response.sendRedirect(
-                        request.getContextPath()
-                        + "/DoctorLeaveServlet?error=action"
-                );
+                } else {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/DoctorLeaveServlet?error=approve"
+                    );
+                }
+
+                return;
             }
+
+
+            /*
+             * =====================================
+             * ADMIN REJECTS LEAVE
+             * =====================================
+             */
+            if ("reject".equalsIgnoreCase(action)) {
+
+                if (!"admin".equalsIgnoreCase(role)) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/Login.jsp?error=access"
+                    );
+
+                    return;
+                }
+
+                int id
+                        = Integer.parseInt(
+                                request.getParameter("id")
+                        );
+
+                boolean success
+                        = leaveService.rejectLeave(id);
+
+                if (success) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/DoctorLeaveServlet?success=rejected"
+                    );
+
+                } else {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/DoctorLeaveServlet?error=reject"
+                    );
+                }
+
+                return;
+            }
+
+
+            /*
+             * =====================================
+             * CANCEL LEAVE
+             * =====================================
+             */
+            if ("cancel".equalsIgnoreCase(action)) {
+
+                int id
+                        = Integer.parseInt(
+                                request.getParameter("id")
+                        );
+
+                DoctorLeave leave
+                        = leaveService
+                                .getAllLeaves()
+                                .stream()
+                                .filter(
+                                        l -> l.getId() == id
+                                )
+                                .findFirst()
+                                .orElse(null);
+
+                if (leave == null) {
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/DoctorLeaveServlet?error=notfound"
+                    );
+
+                    return;
+                }
+
+                /*
+                 * Doctor can cancel ONLY their own leave.
+                 */
+                if ("doctor".equalsIgnoreCase(role)) {
+
+                    Object userId
+                            = session.getAttribute("userId");
+
+                    int doctorId
+                            = Integer.parseInt(
+                                    userId.toString()
+                            );
+
+                    if (leave.getDoctorId()
+                            != doctorId) {
+
+                        response.sendRedirect(
+                                request.getContextPath()
+                                + "/DoctorLeaveServlet?error=access"
+                        );
+
+                        return;
+                    }
+
+                    /*
+                     * Doctor can cancel pending/approved leave.
+                     */
+                    leaveService.cancelLeave(id);
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/DoctorLeaveServlet?success=cancelled"
+                    );
+
+                    return;
+                }
+
+
+                /*
+                 * Admin can cancel approved/pending leave.
+                 */
+                if ("admin".equalsIgnoreCase(role)) {
+
+                    leaveService.cancelLeave(id);
+
+                    response.sendRedirect(
+                            request.getContextPath()
+                            + "/DoctorLeaveServlet?success=cancelled"
+                    );
+
+                    return;
+                }
+
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/Login.jsp?error=access"
+                );
+
+                return;
+            }
+
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/DoctorLeaveServlet?error=action"
+            );
 
         } catch (IllegalArgumentException e) {
 
             response.sendRedirect(
                     request.getContextPath()
                     + "/DoctorLeaveServlet?error="
-                    + java.net.URLEncoder.encode(
+                    + URLEncoder.encode(
                             e.getMessage(),
                             "UTF-8"
                     )
@@ -216,7 +512,7 @@ public class DoctorLeaveServlet
         } catch (SQLException e) {
 
             getServletContext().log(
-                    "Error updating doctor leave.",
+                    "Error processing doctor leave.",
                     e
             );
 
@@ -225,34 +521,5 @@ public class DoctorLeaveServlet
                     + "/DoctorLeaveServlet?error=database"
             );
         }
-    }
-
-    private boolean isAdmin(
-            HttpServletRequest request) {
-
-        HttpSession session
-                = request.getSession(false);
-
-        if (session == null) {
-
-            return false;
-        }
-
-        if (session.getAttribute("user")
-                == null) {
-
-            return false;
-        }
-
-        String role
-                = String.valueOf(
-                        session.getAttribute(
-                                "userRole"
-                        )
-                );
-
-        return "admin".equalsIgnoreCase(
-                role
-        );
     }
 }

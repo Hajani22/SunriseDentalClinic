@@ -1,39 +1,33 @@
 <%@page import="java.util.List"%>
-<%@page import="java.math.BigDecimal"%>
-
 <%@page import="model.Appointment"%>
-
 <%@page import="service.AppointmentService"%>
 <%@page import="service.impl.AppointmentServiceImpl"%>
-
-<%@page import="service.PaymentService"%>
-<%@page import="service.impl.PaymentServiceImpl"%>
-
 <%@page import="dao.NotificationDAO"%>
 <%@page import="dao.impl.NotificationDAOImpl"%>
 
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+
 <%
     /* =========================================================
-       PATIENT SESSION
+       PATIENT SESSION VALIDATION
        ========================================================= */
 
     if (session.getAttribute("user") == null) {
-
-        response.sendRedirect("Login.jsp");
+        response.sendRedirect(
+                request.getContextPath() + "/Login.jsp"
+        );
         return;
     }
 
-    String role
-            = String.valueOf(
-                    session.getAttribute("userRole")
-            );
+    String role = String.valueOf(
+            session.getAttribute("userRole")
+    );
 
     if (!"patient".equalsIgnoreCase(role)) {
-
         response.sendRedirect(
-                "Login.jsp?error=access"
+                request.getContextPath()
+                + "/Login.jsp?error=access"
         );
-
         return;
     }
 
@@ -45,27 +39,33 @@
             = session.getAttribute("userId");
 
     if (userIdObject == null) {
-
         response.sendRedirect(
-                "Login.jsp?error=session"
+                request.getContextPath()
+                + "/Login.jsp?error=session"
         );
-
         return;
     }
 
-    int patientId
-            = Integer.parseInt(
-                    userIdObject.toString()
-            );
+    int patientId;
+
+    try {
+        patientId = Integer.parseInt(
+                userIdObject.toString()
+        );
+    } catch (NumberFormatException e) {
+        response.sendRedirect(
+                request.getContextPath()
+                + "/Login.jsp?error=session"
+        );
+        return;
+    }
 
 
     /* =========================================================
        PATIENT NAME
        ========================================================= */
     String patientName
-            = (String) session.getAttribute(
-                    "userName"
-            );
+            = (String) session.getAttribute("userName");
 
     if (patientName == null
             || patientName.trim().isEmpty()) {
@@ -79,9 +79,6 @@
        ========================================================= */
     AppointmentService appointmentService
             = new AppointmentServiceImpl();
-
-    PaymentService paymentService
-            = new PaymentServiceImpl();
 
     NotificationDAO notificationDAO
             = new NotificationDAOImpl();
@@ -115,19 +112,21 @@
 
 
     /* =========================================================
-       DASHBOARD COUNTS
+       DASHBOARD STATISTICS
        ========================================================= */
-    int upcomingCount = 0;
-
-    int pendingCount = 0;
-
-    int confirmedCount = 0;
-
+    int totalAppointments = 0;
+    int pendingAppointments = 0;
+    int confirmedAppointments = 0;
+    int completedAppointments = 0;
+    int cancelledAppointments = 0;
     int unreadNotifications = 0;
 
     Appointment nextAppointment = null;
 
     if (appointments != null) {
+
+        totalAppointments
+                = appointments.size();
 
         for (Appointment appointment
                 : appointments) {
@@ -135,23 +134,32 @@
             String status
                     = appointment.getStatus();
 
-            if ("PENDING_DOCTOR".equals(status)
-                    || "PENDING_ADMIN".equals(status)) {
+            if ("PENDING_DOCTOR".equalsIgnoreCase(status)
+                    || "PENDING_ADMIN".equalsIgnoreCase(status)
+                    || "PENDING".equalsIgnoreCase(status)) {
 
-                pendingCount++;
+                pendingAppointments++;
             }
 
-            if ("CONFIRMED".equals(status)) {
+            if ("CONFIRMED".equalsIgnoreCase(status)) {
 
-                confirmedCount++;
-
-                upcomingCount++;
+                confirmedAppointments++;
 
                 if (nextAppointment == null) {
-
                     nextAppointment
                             = appointment;
                 }
+            }
+
+            if ("COMPLETED".equalsIgnoreCase(status)) {
+
+                completedAppointments++;
+            }
+
+            if ("CANCELLED".equalsIgnoreCase(status)
+                    || "CANCELED".equalsIgnoreCase(status)) {
+
+                cancelledAppointments++;
             }
         }
     }
@@ -165,117 +173,13 @@
         for (String[] notification
                 : notifications) {
 
-            if (notification.length > 3
+            if (notification != null
+                    && notification.length > 4
                     && "0".equals(
-                            notification[3]
+                            notification[4]
                     )) {
 
                 unreadNotifications++;
-            }
-        }
-    }
-
-
-    /* =========================================================
-       FALLBACK NEXT APPOINTMENT
-       ========================================================= */
-    if (nextAppointment == null
-            && appointments != null
-            && !appointments.isEmpty()) {
-
-        for (Appointment appointment
-                : appointments) {
-
-            String status
-                    = appointment.getStatus();
-
-            if ("PENDING_DOCTOR".equals(status)
-                    || "PENDING_ADMIN".equals(status)) {
-
-                nextAppointment
-                        = appointment;
-
-                break;
-            }
-        }
-    }
-
-
-    /* =========================================================
-       PAYMENT VARIABLES
-       ========================================================= */
-    BigDecimal consultationPaid
-            = BigDecimal.ZERO;
-
-    BigDecimal treatmentPaid
-            = BigDecimal.ZERO;
-
-    BigDecimal treatmentAmount
-            = BigDecimal.ZERO;
-
-    BigDecimal treatmentBalance
-            = BigDecimal.ZERO;
-
-    Appointment billingAppointment
-            = null;
-
-
-    /*
-     * Find the first confirmed appointment
-     * that can be displayed in the payment section.
-     */
-    if (appointments != null) {
-
-        for (Appointment appointment
-                : appointments) {
-
-            if ("CONFIRMED".equals(
-                    appointment.getStatus()
-            )) {
-
-                try {
-
-                    consultationPaid
-                            = paymentService
-                                    .getConsultationPaid(
-                                            appointment.getId()
-                                    );
-
-                    treatmentPaid
-                            = paymentService
-                                    .getTreatmentPaid(
-                                            appointment.getId()
-                                    );
-
-                    treatmentAmount
-                            = paymentService
-                                    .getTreatmentAmount(
-                                            appointment
-                                                    .getTreatmentType()
-                                    );
-
-                    treatmentBalance
-                            = treatmentAmount.subtract(
-                                    treatmentPaid
-                            );
-
-                    if (treatmentBalance.compareTo(
-                            BigDecimal.ZERO
-                    ) < 0) {
-
-                        treatmentBalance
-                                = BigDecimal.ZERO;
-                    }
-
-                    billingAppointment
-                            = appointment;
-
-                    break;
-
-                } catch (Exception e) {
-
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -292,22 +196,26 @@
         <meta charset="UTF-8">
 
         <meta name="viewport"
-              content="width=device-width, initial-scale=1.0">
-
+              content="width=device-width,
+              initial-scale=1.0">
 
         <title>
             Patient Dashboard | Sunrise Dental Clinic
         </title>
 
 
-        <!-- GOOGLE FONT -->
+        <!-- =====================================================
+             GOOGLE FONT
+             ===================================================== -->
 
         <link
             href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap"
             rel="stylesheet">
 
 
-        <!-- FONT AWESOME -->
+        <!-- =====================================================
+             FONT AWESOME
+             ===================================================== -->
 
         <link
             rel="stylesheet"
@@ -316,28 +224,25 @@
 
         <style>
 
-            /* =========================================================
-               GLOBAL
-               ========================================================= */
+            /* =====================================================
+               RESET
+               ===================================================== */
 
             * {
-                box-sizing: border-box;
                 margin: 0;
                 padding: 0;
+                box-sizing: border-box;
             }
 
 
             body {
-
                 font-family:
                     "Open Sans",
                     sans-serif;
 
-                background:
-                    #f5f8fc;
+                background: #f5f8fc;
 
-                color:
-                    #475569;
+                color: #475569;
             }
 
 
@@ -346,21 +251,19 @@
             }
 
 
-            /* =========================================================
-               LAYOUT
-               ========================================================= */
+            /* =====================================================
+               MAIN LAYOUT
+               ===================================================== */
 
             .dashboard {
-
                 display: flex;
-
                 min-height: 100vh;
             }
 
 
-            /* =========================================================
+            /* =====================================================
                SIDEBAR
-               ========================================================= */
+               ===================================================== */
 
             .sidebar {
 
@@ -369,8 +272,8 @@
                 position: fixed;
 
                 top: 0;
-                bottom: 0;
                 left: 0;
+                bottom: 0;
 
                 background:
                     linear-gradient(
@@ -384,6 +287,8 @@
                 padding: 25px 16px;
 
                 z-index: 1000;
+
+                overflow-y: auto;
             }
 
 
@@ -396,25 +301,24 @@
                 gap: 12px;
 
                 padding:
-                    8px 12px 30px;
+                    8px 12px 28px;
+
+                margin-bottom: 22px;
 
                 border-bottom:
                     1px solid
                     rgba(255,255,255,.08);
-
-                margin-bottom: 22px;
             }
 
 
             .brand-icon {
 
-                width: 42px;
-                height: 42px;
+                width: 44px;
+                height: 44px;
 
                 border-radius: 12px;
 
-                background:
-                    #06a3da;
+                background: #06a3da;
 
                 display: flex;
 
@@ -428,13 +332,14 @@
 
             .brand-text {
 
-                font-family:
-                    "Jost",
+                font-family: "Jost",
                     sans-serif;
 
-                font-size: 19px;
+                font-size: 20px;
 
                 font-weight: 700;
+
+                color: white;
             }
 
 
@@ -444,29 +349,46 @@
 
                 font-size: 11px;
 
-                color:
-                    #94a9bf;
+                font-weight: 500;
 
-                font-weight: 400;
+                color:
+                    rgba(255,255,255,.65);
 
                 margin-top: 2px;
             }
 
 
+            /* =====================================================
+               MENU TITLE
+               ===================================================== */
+
             .menu-title {
 
-                font-size: 10px;
+                font-size: 11px;
+
+                text-transform: uppercase;
+
+                letter-spacing: 1px;
 
                 color:
-                    #7890a9;
-
-                text-transform:
-                    uppercase;
-
-                letter-spacing: 1.3px;
+                    rgba(255,255,255,.45);
 
                 padding:
                     0 12px 10px;
+            }
+
+
+            /* =====================================================
+               NAVIGATION
+               ===================================================== */
+
+            .menu {
+
+                display: flex;
+
+                flex-direction: column;
+
+                gap: 6px;
             }
 
 
@@ -478,90 +400,62 @@
 
                 gap: 13px;
 
-                color:
-                    #bdcbd9;
-
                 padding:
-                    13px 14px;
+                    12px 14px;
 
-                margin-bottom: 5px;
+                color:
+                    rgba(255,255,255,.75);
 
                 border-radius: 9px;
 
                 font-size: 14px;
 
-                transition:
-                    .2s;
+                transition: .2s;
             }
 
 
             .nav-link i {
 
-                width: 19px;
+                width: 20px;
 
                 text-align: center;
+
+                font-size: 15px;
             }
 
 
-            .nav-link:hover,
+            .nav-link:hover {
+
+                background:
+                    rgba(255,255,255,.08);
+
+                color: white;
+            }
+
+
             .nav-link.active {
 
-                background:
-                    #06a3da;
-
-                color:
-                    white;
-            }
-
-
-            .notification-link {
-
-                position: relative;
-            }
-
-
-            .notification-count {
-
-                margin-left: auto;
-
-                min-width: 20px;
-
-                height: 20px;
-
-                padding: 0 6px;
-
-                border-radius: 20px;
-
-                background:
-                    #ef4444;
+                background: #06a3da;
 
                 color: white;
 
-                font-size: 10px;
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: center;
-
-                font-weight: 700;
+                box-shadow:
+                    0 6px 18px
+                    rgba(6,163,218,.25);
             }
 
 
-            .logout-area {
+            /* =====================================================
+               LOGOUT
+               ===================================================== */
+
+            .logout {
 
                 position: absolute;
 
                 left: 16px;
-
                 right: 16px;
-
                 bottom: 20px;
-            }
-
-
-            .logout {
 
                 border-top:
                     1px solid
@@ -571,9 +465,38 @@
             }
 
 
-            /* =========================================================
+            .logout a {
+
+                display: flex;
+
+                align-items: center;
+
+                gap: 13px;
+
+                padding:
+                    12px 14px;
+
+                border-radius: 9px;
+
+                color:
+                    rgba(255,255,255,.75);
+
+                font-size: 14px;
+            }
+
+
+            .logout a:hover {
+
+                background:
+                    rgba(255,255,255,.08);
+
+                color: white;
+            }
+
+
+            /* =====================================================
                MAIN
-               ========================================================= */
+               ===================================================== */
 
             .main {
 
@@ -586,69 +509,82 @@
             }
 
 
-            /* =========================================================
-               TOPBAR
-               ========================================================= */
+            /* =====================================================
+               TOP BAR
+               ===================================================== */
 
             .topbar {
 
-                background:
-                    white;
-
                 height: 76px;
 
+                background: white;
+
                 border-bottom:
-                    1px solid #e7edf3;
+                    1px solid #e8edf3;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: space-between;
 
                 padding:
-                    0 32px;
+                    0 35px;
 
-                display: flex;
+                position: sticky;
 
-                align-items: center;
+                top: 0;
 
-                justify-content:
-                    space-between;
+                z-index: 900;
             }
 
 
-            .welcome-small {
+            .topbar h2 {
 
-                font-size: 12px;
-
-                color:
-                    #94a3b8;
-
-                margin-bottom: 3px;
-            }
-
-
-            .welcome-title {
-
-                font-family:
-                    "Jost",
+                font-family: "Jost",
                     sans-serif;
 
-                color:
-                    #0b2447;
+                color: #172b4d;
 
-                font-size: 21px;
-
-                font-weight: 700;
+                font-size: 22px;
             }
 
 
-            .profile {
+            .user-area {
 
                 display: flex;
 
                 align-items: center;
 
-                gap: 11px;
+                gap: 12px;
             }
 
 
-            .profile-avatar {
+            .user-info {
+
+                text-align: right;
+            }
+
+
+            .user-info strong {
+
+                display: block;
+
+                color: #172b4d;
+
+                font-size: 14px;
+            }
+
+
+            .user-info small {
+
+                color: #82909e;
+
+                font-size: 12px;
+            }
+
+
+            .avatar {
 
                 width: 42px;
                 height: 42px;
@@ -656,400 +592,9 @@
                 border-radius: 50%;
 
                 background:
-                    #e6f7fc;
+                    #e8f7fc;
 
-                color:
-                    #06a3da;
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: center;
-            }
-
-
-            .profile-name {
-
-                color:
-                    #0b2447;
-
-                font-weight: 600;
-
-                font-size: 13px;
-            }
-
-
-            .profile-role {
-
-                color:
-                    #94a3b8;
-
-                font-size: 11px;
-            }
-
-
-            /* =========================================================
-               CONTENT
-               ========================================================= */
-
-            .content {
-
-                padding: 30px;
-
-                max-width: 1500px;
-
-                margin: auto;
-            }
-
-
-            /* =========================================================
-               HERO
-               ========================================================= */
-
-            .hero {
-
-                position: relative;
-
-                overflow: hidden;
-
-                border-radius: 18px;
-
-                padding:
-                    30px 32px;
-
-                background:
-                    linear-gradient(
-                    135deg,
-                    #087eac,
-                    #06a3da
-                    );
-
-                color: white;
-
-                margin-bottom: 25px;
-
-                box-shadow:
-                    0 10px 30px
-                    rgba(6,163,218,.18);
-            }
-
-
-            .hero::after {
-
-                content: "";
-
-                position: absolute;
-
-                width: 220px;
-                height: 220px;
-
-                right: -70px;
-                top: -100px;
-
-                border-radius: 50%;
-
-                background:
-                    rgba(255,255,255,.08);
-            }
-
-
-            .hero-content {
-
-                position: relative;
-
-                z-index: 2;
-
-                display: flex;
-
-                justify-content:
-                    space-between;
-
-                align-items: center;
-
-                gap: 20px;
-            }
-
-
-            .hero-label {
-
-                display: inline-flex;
-
-                align-items: center;
-
-                gap: 7px;
-
-                background:
-                    rgba(255,255,255,.16);
-
-                padding:
-                    6px 11px;
-
-                border-radius: 20px;
-
-                font-size: 11px;
-
-                margin-bottom: 10px;
-            }
-
-
-            .hero h1 {
-
-                font-family:
-                    "Jost",
-                    sans-serif;
-
-                font-size: 30px;
-
-                margin-bottom: 7px;
-            }
-
-
-            .hero p {
-
-                color:
-                    rgba(255,255,255,.86);
-
-                font-size: 14px;
-            }
-
-
-            .hero-button {
-
-                background:
-                    white;
-
-                color:
-                    #087eac;
-
-                padding:
-                    13px 19px;
-
-                border-radius: 9px;
-
-                font-size: 13px;
-
-                font-weight: 700;
-
-                white-space: nowrap;
-
-                box-shadow:
-                    0 5px 15px
-                    rgba(0,0,0,.10);
-            }
-
-
-            /* =========================================================
-               STATISTICS
-               ========================================================= */
-
-            .stats {
-
-                display: grid;
-
-                grid-template-columns:
-                    repeat(4, 1fr);
-
-                gap: 18px;
-
-                margin-bottom: 25px;
-            }
-
-
-            .stat-card {
-
-                background:
-                    white;
-
-                border:
-                    1px solid #e8eef4;
-
-                border-radius: 14px;
-
-                padding: 20px;
-
-                box-shadow:
-                    0 5px 18px
-                    rgba(15,23,42,.035);
-            }
-
-
-            .stat-top {
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content:
-                    space-between;
-
-                margin-bottom: 16px;
-            }
-
-
-            .stat-icon {
-
-                width: 43px;
-                height: 43px;
-
-                border-radius: 11px;
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: center;
-
-                background:
-                    #e9f8fc;
-
-                color:
-                    #06a3da;
-            }
-
-
-            .stat-number {
-
-                color:
-                    #0b2447;
-
-                font-family:
-                    "Jost",
-                    sans-serif;
-
-                font-size: 27px;
-
-                font-weight: 700;
-            }
-
-
-            .stat-label {
-
-                color:
-                    #64748b;
-
-                font-size: 12px;
-            }
-
-
-            /* =========================================================
-               GRID
-               ========================================================= */
-
-            .dashboard-grid {
-
-                display: grid;
-
-                grid-template-columns:
-                    minmax(0, 1.6fr)
-                    minmax(300px, 1fr);
-
-                gap: 22px;
-            }
-
-
-            .panel {
-
-                background:
-                    white;
-
-                border:
-                    1px solid #e8eef4;
-
-                border-radius: 14px;
-
-                padding: 23px;
-
-                box-shadow:
-                    0 5px 18px
-                    rgba(15,23,42,.035);
-
-                margin-bottom: 22px;
-            }
-
-
-            .panel-header {
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content:
-                    space-between;
-
-                margin-bottom: 18px;
-            }
-
-
-            .panel-title {
-
-                font-family:
-                    "Jost",
-                    sans-serif;
-
-                color:
-                    #0b2447;
-
-                font-size: 17px;
-
-                font-weight: 700;
-            }
-
-
-            .view-all {
-
-                color:
-                    #06a3da;
-
-                font-size: 12px;
-
-                font-weight: 600;
-            }
-
-
-            /* =========================================================
-               NEXT APPOINTMENT
-               ========================================================= */
-
-            .next-card {
-
-                border-radius: 13px;
-
-                background:
-                    linear-gradient(
-                    135deg,
-                    #f0fbfe,
-                    #f8fcff
-                    );
-
-                border:
-                    1px solid #d8f1f8;
-
-                padding: 20px;
-            }
-
-
-            .appointment-header {
-
-                display: flex;
-
-                align-items: center;
-
-                gap: 13px;
-            }
-
-
-            .doctor-avatar {
-
-                width: 50px;
-                height: 50px;
-
-                border-radius: 13px;
-
-                background:
-                    #06a3da;
-
-                color: white;
+                color: #06a3da;
 
                 display: flex;
 
@@ -1061,98 +606,313 @@
             }
 
 
-            .doctor-name {
+            /* =====================================================
+               CONTENT
+               ===================================================== */
 
-                font-weight: 700;
+            .content {
 
-                color:
-                    #0b2447;
+                padding: 32px;
+            }
+
+
+            .welcome {
+
+                margin-bottom: 28px;
+            }
+
+
+            .welcome h1 {
+
+                font-family: "Jost",
+                    sans-serif;
+
+                color: #172b4d;
+
+                font-size: 28px;
+
+                margin-bottom: 5px;
+            }
+
+
+            .welcome p {
+
+                color: #82909e;
 
                 font-size: 14px;
             }
 
 
-            .doctor-speciality {
+            /* =====================================================
+               STATISTICS
+               ===================================================== */
 
-                color:
-                    #64748b;
-
-                font-size: 12px;
-
-                margin-top: 3px;
-            }
-
-
-            .appointment-details {
+            .stats {
 
                 display: grid;
 
                 grid-template-columns:
-                    repeat(2, 1fr);
+                    repeat(4, 1fr);
 
-                gap: 10px;
+                gap: 18px;
 
-                margin-top: 18px;
+                margin-bottom: 28px;
             }
 
 
-            .detail {
+            .stat-card {
 
-                background:
-                    white;
-
-                border-radius: 9px;
-
-                padding: 11px;
+                background: white;
 
                 border:
-                    1px solid #e7edf3;
+                    1px solid #e8edf3;
+
+                border-radius: 12px;
+
+                padding: 22px;
+
+                display: flex;
+
+                align-items: center;
+
+                gap: 16px;
+
+                box-shadow:
+                    0 3px 12px
+                    rgba(15,23,42,.03);
             }
 
 
-            .detail-label {
+            .stat-icon {
 
-                font-size: 10px;
+                width: 48px;
+                height: 48px;
 
-                color:
-                    #94a3b8;
+                border-radius: 12px;
 
-                text-transform:
-                    uppercase;
+                display: flex;
 
-                margin-bottom: 4px;
+                align-items: center;
+
+                justify-content: center;
+
+                background: #e8f7fc;
+
+                color: #06a3da;
+
+                font-size: 19px;
             }
 
 
-            .detail-value {
+            .stat-card h3 {
 
-                color:
-                    #334155;
+                font-family: "Jost",
+                    sans-serif;
+
+                font-size: 25px;
+
+                color: #172b4d;
+            }
+
+
+            .stat-card p {
 
                 font-size: 12px;
+
+                color: #82909e;
+
+                margin-top: 2px;
+            }
+
+
+            /* =====================================================
+               GRID
+               ===================================================== */
+
+            .dashboard-grid {
+
+                display: grid;
+
+                grid-template-columns:
+                    minmax(0, 2fr)
+                    minmax(300px, 1fr);
+
+                gap: 22px;
+            }
+
+
+            /* =====================================================
+               PANEL
+               ===================================================== */
+
+            .panel {
+
+                background: white;
+
+                border:
+                    1px solid #e8edf3;
+
+                border-radius: 12px;
+
+                box-shadow:
+                    0 3px 12px
+                    rgba(15,23,42,.03);
+
+                overflow: hidden;
+
+                margin-bottom: 22px;
+            }
+
+
+            .panel-header {
+
+                padding:
+                    20px 22px;
+
+                border-bottom:
+                    1px solid #edf1f5;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: space-between;
+            }
+
+
+            .panel-title {
+
+                font-family: "Jost",
+                    sans-serif;
+
+                font-size: 18px;
+
+                color: #172b4d;
+
+                font-weight: 700;
+            }
+
+
+            .view-all {
+
+                font-size: 12px;
+
+                color: #06a3da;
 
                 font-weight: 600;
             }
 
 
-            /* =========================================================
-               STATUS
-               ========================================================= */
+            /* =====================================================
+               NEXT APPOINTMENT
+               ===================================================== */
 
-            .status {
+            .next-appointment {
 
-                display: inline-flex;
+                padding: 22px;
+            }
+
+
+            .appointment-highlight {
+
+                border:
+                    1px solid #dceff7;
+
+                background:
+                    #f6fcfe;
+
+                border-radius: 10px;
+
+                padding: 20px;
+            }
+
+
+            .appointment-highlight-top {
+
+                display: flex;
 
                 align-items: center;
 
-                gap: 5px;
+                justify-content: space-between;
+
+                gap: 15px;
+            }
+
+
+            .doctor-name {
+
+                font-family: "Jost",
+                    sans-serif;
+
+                color: #172b4d;
+
+                font-size: 19px;
+
+                font-weight: 700;
+            }
+
+
+            .treatment {
+
+                color: #82909e;
+
+                font-size: 13px;
+
+                margin-top: 4px;
+            }
+
+
+            .appointment-meta {
+
+                display: flex;
+
+                flex-wrap: wrap;
+
+                gap: 18px;
+
+                margin-top: 18px;
+
+                padding-top: 16px;
+
+                border-top:
+                    1px solid #dceff7;
+            }
+
+
+            .meta-item {
+
+                display: flex;
+
+                align-items: center;
+
+                gap: 7px;
+
+                color: #475569;
+
+                font-size: 13px;
+            }
+
+
+            .meta-item i {
+
+                color: #06a3da;
+            }
+
+
+            /* =====================================================
+               STATUS
+               ===================================================== */
+
+            .status {
+
+                display: inline-block;
 
                 padding:
-                    5px 9px;
+                    6px 11px;
 
                 border-radius: 20px;
 
-                font-size: 10px;
+                font-size: 11px;
 
                 font-weight: 700;
             }
@@ -1160,73 +920,92 @@
 
             .status-confirmed {
 
-                color:
-                    #15803d;
+                background: #e4f8ed;
 
-                background:
-                    #dcfce7;
+                color: #16834b;
             }
 
 
             .status-pending {
 
-                color:
-                    #a16207;
+                background: #fff4d6;
 
-                background:
-                    #fef9c3;
+                color: #9a6a00;
             }
 
 
             .status-rejected {
 
-                color:
-                    #b91c1c;
+                background: #ffe7e7;
 
-                background:
-                    #fee2e2;
+                color: #c62828;
             }
 
 
-            /* =========================================================
+            .status-completed {
+
+                background: #e6f0ff;
+
+                color: #1769aa;
+            }
+
+
+            .status-cancelled {
+
+                background: #f1f3f5;
+
+                color: #667085;
+            }
+
+
+            .status-default {
+
+                background: #f1f5f9;
+
+                color: #475569;
+            }
+
+
+            /* =====================================================
                APPOINTMENT LIST
-               ========================================================= */
+               ===================================================== */
+
+            .appointment-list {
+
+                padding: 0 22px;
+            }
+
 
             .appointment-item {
+
+                padding: 18px 0;
+
+                border-bottom:
+                    1px solid #edf1f5;
 
                 display: flex;
 
                 align-items: center;
 
-                justify-content:
-                    space-between;
+                justify-content: space-between;
 
                 gap: 15px;
-
-                padding:
-                    15px 0;
-
-                border-bottom:
-                    1px solid #edf1f5;
             }
 
 
             .appointment-item:last-child {
 
-                border-bottom:
-                    none;
-
-                padding-bottom: 0;
+                border-bottom: none;
             }
 
 
-            .appointment-info {
+            .appointment-left {
 
                 display: flex;
 
                 align-items: center;
 
-                gap: 12px;
+                gap: 13px;
 
                 min-width: 0;
             }
@@ -1234,18 +1013,16 @@
 
             .appointment-icon {
 
-                width: 40px;
-                height: 40px;
+                width: 42px;
+                height: 42px;
 
                 flex-shrink: 0;
 
                 border-radius: 10px;
 
-                background:
-                    #edf9fc;
+                background: #e8f7fc;
 
-                color:
-                    #06a3da;
+                color: #06a3da;
 
                 display: flex;
 
@@ -1257,21 +1034,19 @@
 
             .appointment-doctor {
 
-                color:
-                    #0b2447;
+                color: #172b4d;
 
-                font-weight: 700;
+                font-weight: 600;
 
-                font-size: 13px;
+                font-size: 14px;
             }
 
 
             .appointment-service {
 
-                color:
-                    #94a3b8;
+                color: #82909e;
 
-                font-size: 11px;
+                font-size: 12px;
 
                 margin-top: 3px;
             }
@@ -1287,24 +1062,21 @@
 
             .appointment-date {
 
-                color:
-                    #475569;
+                color: #475569;
 
-                font-size: 11px;
+                font-size: 12px;
 
-                margin-bottom: 5px;
+                margin-bottom: 6px;
             }
 
 
-            /* =========================================================
+            /* =====================================================
                QUICK ACTIONS
-               ========================================================= */
+               ===================================================== */
 
             .quick-actions {
 
-                display: grid;
-
-                gap: 10px;
+                padding: 10px 22px 18px;
             }
 
 
@@ -1314,54 +1086,39 @@
 
                 align-items: center;
 
-                gap: 12px;
+                gap: 13px;
 
-                padding: 13px;
+                padding: 13px 0;
 
-                border:
-                    1px solid #e8eef4;
-
-                border-radius: 10px;
-
-                color:
-                    #334155;
-
-                transition:
-                    .2s;
+                border-bottom:
+                    1px solid #edf1f5;
             }
 
 
-            .quick-action:hover {
+            .quick-action:last-child {
 
-                border-color:
-                    #b7e8f4;
-
-                background:
-                    #f5fcfe;
-
-                transform:
-                    translateX(2px);
+                border-bottom: none;
             }
 
 
             .quick-action-icon {
 
-                width: 36px;
-                height: 36px;
+                width: 40px;
+                height: 40px;
 
                 border-radius: 9px;
 
-                background:
-                    #eaf8fc;
+                background: #e8f7fc;
 
-                color:
-                    #06a3da;
+                color: #06a3da;
 
                 display: flex;
 
                 align-items: center;
 
                 justify-content: center;
+
+                flex-shrink: 0;
             }
 
 
@@ -1369,10 +1126,9 @@
 
                 display: block;
 
-                color:
-                    #0b2447;
+                color: #172b4d;
 
-                font-size: 12px;
+                font-size: 13px;
             }
 
 
@@ -1380,78 +1136,7 @@
 
                 display: block;
 
-                color:
-                    #94a3b8;
-
-                font-size: 10px;
-
-                margin-top: 2px;
-            }
-
-
-            /* =========================================================
-               BILLING
-               ========================================================= */
-
-            .billing-panel {
-
-                border:
-                    1px solid #d8edf5;
-
-                background:
-                    linear-gradient(
-                    135deg,
-                    #ffffff,
-                    #f7fcfe
-                    );
-            }
-
-
-            .billing-header {
-
-                display: flex;
-
-                justify-content:
-                    space-between;
-
-                align-items: center;
-
-                margin-bottom: 20px;
-            }
-
-
-            .billing-title {
-
-                display: flex;
-
-                align-items: center;
-
-                gap: 10px;
-
-                color:
-                    #0b2447;
-
-                font-family:
-                    "Jost",
-                    sans-serif;
-
-                font-size: 18px;
-
-                font-weight: 700;
-            }
-
-
-            .billing-title i {
-
-                color:
-                    #06a3da;
-            }
-
-
-            .billing-subtitle {
-
-                color:
-                    #94a3b8;
+                color: #82909e;
 
                 font-size: 11px;
 
@@ -1459,363 +1144,22 @@
             }
 
 
-            .bill-box {
+            .quick-action:hover
+            .quick-action-text strong {
 
-                border:
-                    1px solid #e4edf2;
-
-                background:
-                    white;
-
-                border-radius: 12px;
-
-                padding: 18px;
-
-                margin-bottom: 14px;
+                color: #06a3da;
             }
 
 
-            .bill-top {
-
-                display: flex;
-
-                justify-content:
-                    space-between;
-
-                gap: 15px;
-
-                margin-bottom: 16px;
-            }
-
-
-            .bill-patient {
-
-                color:
-                    #0b2447;
-
-                font-size: 14px;
-
-                font-weight: 700;
-            }
-
-
-            .bill-number {
-
-                color:
-                    #94a3b8;
-
-                font-size: 10px;
-
-                margin-top: 4px;
-            }
-
-
-            .payment-status {
-
-                display: inline-flex;
-
-                align-items: center;
-
-                gap: 5px;
-
-                padding:
-                    6px 10px;
-
-                border-radius: 20px;
-
-                font-size: 10px;
-
-                font-weight: 700;
-            }
-
-
-            .payment-paid {
-
-                background:
-                    #dcfce7;
-
-                color:
-                    #15803d;
-            }
-
-
-            .payment-due {
-
-                background:
-                    #fff7ed;
-
-                color:
-                    #c2410c;
-            }
-
-
-            .payment-treatment {
-
-                background:
-                    #f1f5f9;
-
-                color:
-                    #475569;
-            }
-
-
-            .bill-grid {
-
-                display: grid;
-
-                grid-template-columns:
-                    repeat(2, 1fr);
-
-                gap: 10px;
-
-                margin-bottom: 16px;
-            }
-
-
-            .bill-line {
-
-                background:
-                    #f8fafc;
-
-                border-radius: 8px;
-
-                padding: 11px;
-            }
-
-
-            .bill-line span {
-
-                display: block;
-
-                font-size: 10px;
-
-                color:
-                    #94a3b8;
-
-                margin-bottom: 4px;
-            }
-
-
-            .bill-line strong {
-
-                color:
-                    #334155;
-
-                font-size: 13px;
-            }
-
-
-            .bill-summary {
-
-                border-top:
-                    1px solid #edf1f5;
-
-                padding-top: 14px;
-            }
-
-
-            .amount-row {
-
-                display: flex;
-
-                justify-content:
-                    space-between;
-
-                padding: 5px 0;
-
-                color:
-                    #64748b;
-
-                font-size: 12px;
-            }
-
-
-            .amount-row strong {
-
-                color:
-                    #334155;
-            }
-
-
-            .amount-row.total {
-
-                margin-top: 6px;
-
-                padding-top: 10px;
-
-                border-top:
-                    1px dashed #dbe4ea;
-
-                color:
-                    #0b2447;
-
-                font-size: 15px;
-
-                font-weight: 700;
-            }
-
-
-            .amount-row.total strong {
-
-                color:
-                    #06a3da;
-
-                font-size: 17px;
-            }
-
-
-            .pay-box {
-
-                background:
-                    #f0fbfe;
-
-                border:
-                    1px solid #d6f0f7;
-
-                border-radius: 10px;
-
-                padding: 15px;
-
-                margin-top: 15px;
-            }
-
-
-            .pay-box-title {
-
-                color:
-                    #0b2447;
-
-                font-size: 13px;
-
-                font-weight: 700;
-
-                margin-bottom: 10px;
-            }
-
-
-            .payment-form {
-
-                display: flex;
-
-                gap: 10px;
-
-                flex-wrap: wrap;
-            }
-
-
-            .payment-select {
-
-                flex: 1;
-
-                min-width: 180px;
-
-                border:
-                    1px solid #dbe5eb;
-
-                border-radius: 8px;
-
-                padding: 11px;
-
-                background:
-                    white;
-
-                color:
-                    #334155;
-
-                font-size: 12px;
-            }
-
-
-            .pay-button {
-
-                border:
-                    none;
-
-                background:
-                    #06a3da;
-
-                color:
-                    white;
-
-                padding:
-                    11px 18px;
-
-                border-radius: 8px;
-
-                font-size: 12px;
-
-                font-weight: 700;
-
-                cursor: pointer;
-
-                transition:
-                    .2s;
-            }
-
-
-            .pay-button:hover {
-
-                background:
-                    #087eac;
-
-                transform:
-                    translateY(-1px);
-            }
-
-
-            .paid-message {
-
-                background:
-                    #ecfdf5;
-
-                border:
-                    1px solid #bbf7d0;
-
-                color:
-                    #15803d;
-
-                padding: 12px;
-
-                border-radius: 9px;
-
-                font-size: 12px;
-
-                font-weight: 600;
-            }
-
-
-            .no-bill {
-
-                text-align:
-                    center;
-
-                padding: 25px 10px;
-
-                color:
-                    #94a3b8;
-            }
-
-
-            .no-bill i {
-
-                font-size: 30px;
-
-                margin-bottom: 10px;
-
-                color:
-                    #cbd5e1;
-            }
-
-
-            .no-bill p {
-
-                font-size: 12px;
-            }
-
-
-            /* =========================================================
+            /* =====================================================
                NOTIFICATIONS
-               ========================================================= */
+               ===================================================== */
+
+            .notification-list {
+
+                padding: 8px 22px 15px;
+            }
+
 
             .notification-item {
 
@@ -1823,8 +1167,7 @@
 
                 gap: 12px;
 
-                padding:
-                    13px 0;
+                padding: 13px 0;
 
                 border-bottom:
                     1px solid #edf1f5;
@@ -1833,97 +1176,192 @@
 
             .notification-item:last-child {
 
-                border-bottom:
-                    none;
+                border-bottom: none;
             }
 
 
             .notification-icon {
 
-                width: 36px;
-                height: 36px;
+                width: 35px;
+                height: 35px;
 
                 flex-shrink: 0;
 
-                border-radius: 9px;
+                border-radius: 50%;
 
-                background:
-                    #eaf8fc;
+                background: #e8f7fc;
 
-                color:
-                    #06a3da;
+                color: #06a3da;
 
                 display: flex;
 
                 align-items: center;
 
                 justify-content: center;
+
+                font-size: 13px;
             }
 
 
             .notification-title {
 
-                color:
-                    #0b2447;
+                color: #172b4d;
 
                 font-size: 12px;
 
                 font-weight: 700;
+
+                margin-bottom: 3px;
             }
 
 
             .notification-message {
 
-                color:
-                    #64748b;
+                color: #82909e;
 
-                font-size: 10px;
+                font-size: 11px;
 
-                margin-top: 3px;
-
-                line-height: 1.4;
+                line-height: 1.5;
             }
 
 
-            /* =========================================================
+            /* =====================================================
                EMPTY
-               ========================================================= */
+               ===================================================== */
 
             .empty {
 
-                text-align:
-                    center;
+                text-align: center;
 
-                padding:
-                    28px 10px;
+                padding: 35px 20px;
 
-                color:
-                    #94a3b8;
+                color: #98a2b3;
             }
 
 
             .empty i {
 
-                font-size: 30px;
+                font-size: 32px;
 
                 margin-bottom: 10px;
-
-                color:
-                    #cbd5e1;
             }
 
 
             .empty p {
 
-                font-size: 12px;
+                font-size: 13px;
             }
 
 
-            /* =========================================================
-               RESPONSIVE
-               ========================================================= */
+            /* =====================================================
+               FEEDBACK PROMOTION
+               ===================================================== */
 
-            @media(max-width:1100px) {
+            .feedback-card {
+
+                padding: 22px;
+
+                background:
+                    linear-gradient(
+                    135deg,
+                    #eefaff,
+                    #ffffff
+                    );
+            }
+
+
+            .feedback-card-inner {
+
+                display: flex;
+
+                align-items: center;
+
+                gap: 15px;
+            }
+
+
+            .feedback-icon {
+
+                width: 48px;
+                height: 48px;
+
+                border-radius: 12px;
+
+                background: #06a3da;
+
+                color: white;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                font-size: 19px;
+
+                flex-shrink: 0;
+            }
+
+
+            .feedback-text {
+
+                flex: 1;
+            }
+
+
+            .feedback-text h3 {
+
+                font-family: "Jost",
+                    sans-serif;
+
+                color: #172b4d;
+
+                font-size: 16px;
+
+                margin-bottom: 3px;
+            }
+
+
+            .feedback-text p {
+
+                color: #82909e;
+
+                font-size: 12px;
+
+                line-height: 1.5;
+            }
+
+
+            .feedback-btn {
+
+                background: #06a3da;
+
+                color: white;
+
+                padding:
+                    10px 14px;
+
+                border-radius: 7px;
+
+                font-size: 12px;
+
+                font-weight: 700;
+
+                white-space: nowrap;
+            }
+
+
+            .feedback-btn:hover {
+
+                background: #0589b8;
+            }
+
+
+            /* =====================================================
+               RESPONSIVE
+               ===================================================== */
+
+            @media (max-width: 1100px) {
 
                 .stats {
 
@@ -1931,176 +1369,135 @@
                         repeat(2, 1fr);
                 }
 
+
                 .dashboard-grid {
 
-                    grid-template-columns:
-                        1fr;
+                    grid-template-columns: 1fr;
                 }
             }
 
 
-            @media(max-width:768px) {
+            @media (max-width: 800px) {
 
                 .sidebar {
 
-                    width: 72px;
+                    width: 70px;
 
                     padding:
-                        20px 9px;
+                        20px 10px;
                 }
 
 
                 .brand {
 
-                    justify-content:
-                        center;
+                    justify-content: center;
 
                     padding:
-                        5px 0 20px;
+                        8px 0 25px;
                 }
 
 
                 .brand-text,
                 .menu-title,
                 .nav-link span,
-                .logout-text {
+                .logout span {
 
-                    display:
-                        none;
+                    display: none;
                 }
 
 
                 .nav-link {
 
-                    justify-content:
-                        center;
+                    justify-content: center;
 
                     padding:
-                        13px;
+                        12px 5px;
                 }
 
 
-                .notification-count {
+                .logout {
 
-                    position: absolute;
+                    left: 10px;
+                    right: 10px;
+                }
 
-                    top: 3px;
-                    right: 3px;
 
-                    min-width: 16px;
-                    height: 16px;
+                .logout a {
 
-                    font-size: 8px;
+                    justify-content: center;
                 }
 
 
                 .main {
 
-                    margin-left: 72px;
+                    margin-left: 70px;
 
                     width:
-                        calc(100% - 72px);
+                        calc(100% - 70px);
                 }
 
 
                 .topbar {
 
                     padding:
-                        0 18px;
+                        0 20px;
                 }
 
 
                 .content {
 
-                    padding:
-                        18px;
-                }
-
-
-                .hero-content {
-
-                    align-items:
-                        flex-start;
-
-                    flex-direction:
-                        column;
-                }
-
-
-                .hero-button {
-
-                    width:
-                        100%;
-
-                    text-align:
-                        center;
+                    padding: 20px;
                 }
             }
 
 
-            @media(max-width:520px) {
+            @media (max-width: 550px) {
 
                 .stats {
 
-                    grid-template-columns:
-                        1fr 1fr;
-
-                    gap: 10px;
+                    grid-template-columns: 1fr;
                 }
 
 
-                .stat-card {
+                .appointment-highlight-top {
 
-                    padding: 14px;
+                    align-items: flex-start;
+
+                    flex-direction: column;
                 }
 
 
-                .stat-number {
+                .appointment-item {
 
-                    font-size: 22px;
+                    align-items: flex-start;
+
+                    flex-direction: column;
                 }
 
 
-                .hero {
+                .appointment-right {
 
-                    padding:
-                        22px;
+                    text-align: left;
                 }
 
 
-                .hero h1 {
+                .feedback-card-inner {
 
-                    font-size: 23px;
+                    align-items: flex-start;
+
+                    flex-direction: column;
                 }
 
 
-                .panel {
+                .feedback-btn {
 
-                    padding:
-                        17px;
+                    display: inline-block;
                 }
 
 
-                .appointment-details,
-                .bill-grid {
+                .user-info {
 
-                    grid-template-columns:
-                        1fr;
-                }
-
-
-                .profile-name,
-                .profile-role {
-
-                    display:
-                        none;
-                }
-
-
-                .bill-top {
-
-                    flex-direction:
-                        column;
+                    display: none;
                 }
             }
 
@@ -2121,6 +1518,8 @@
 
             <aside class="sidebar">
 
+
+                <!-- BRAND -->
 
                 <div class="brand">
 
@@ -2145,115 +1544,154 @@
 
 
                 <div class="menu-title">
-                    Main Menu
+                    Patient Menu
                 </div>
 
 
-                <a href="patient-dashboard.jsp"
-                   class="nav-link active">
+                <!-- NAVIGATION -->
 
-                    <i class="fa-solid fa-chart-pie"></i>
-
-                    <span>
-                        Dashboard
-                    </span>
-
-                </a>
+                <nav class="menu">
 
 
-                <a href="BookAppointmentServlet"
-                   class="nav-link">
+                    <!-- DASHBOARD -->
 
-                    <i class="fa-solid fa-calendar-plus"></i>
+                    <a href="<%=request.getContextPath()%>/patient-dashboard.jsp"
+                       class="nav-link active">
 
-                    <span>
-                        Book Appointment
-                    </span>
+                        <i class="fa-solid fa-gauge"></i>
 
-                </a>
+                        <span>
+                            Dashboard
+                        </span>
 
-
-                <a href="PatientAppointmentsServlet"
-                   class="nav-link">
-
-                    <i class="fa-solid fa-calendar-check"></i>
-
-                    <span>
-                        My Appointments
-                    </span>
-
-                </a>
+                    </a>
 
 
-                <a href="#billing"
-                   class="nav-link">
+                    <!-- BOOK APPOINTMENT -->
 
-                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <a href="<%=request.getContextPath()%>/BookAppointmentServlet"
+                       class="nav-link">
 
-                    <span>
-                        My Bills
-                    </span>
+                        <i class="fa-solid fa-calendar-plus"></i>
 
-                </a>
+                        <span>
+                            Book Appointment
+                        </span>
 
-
-                <a href="PatientNotificationsServlet"
-                   class="nav-link notification-link">
-
-                    <i class="fa-solid fa-bell"></i>
-
-                    <span>
-                        Notifications
-                    </span>
+                    </a>
 
 
-                    <% if (unreadNotifications > 0) {%>
+                    <!-- MY APPOINTMENTS -->
 
-                    <span class="notification-count">
-                        <%= unreadNotifications%>
-                    </span>
+                    <a href="<%=request.getContextPath()%>/PatientAppointmentsServlet"
+                       class="nav-link">
 
-                    <% }%>
+                        <i class="fa-solid fa-calendar-check"></i>
 
-                </a>
+                        <span>
+                            My Appointments
+                        </span>
 
-                <a href="<%= request.getContextPath()%>/PatientMedicalHistoryServlet">
-
-                    <i class="fa-solid fa-file-medical"></i>
-
-                    <span>
-                        Medical History
-                    </span>
-
-                </a>
-
-                <a href="Help.jsp">
-
-                    <i class="fa-solid fa-circle-question"></i>
-
-                    <span>
-                        Help & Support
-                    </span>
-
-                </a>
+                    </a>
 
 
-                <div class="logout-area">
+                    <!-- MY BILLS -->
 
-                    <div class="logout">
+                    <a href="<%=request.getContextPath()%>/PatientBillsServlet"
+                       class="nav-link">
 
-                        <a href="LogoutServlet"
-                           class="nav-link">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
 
-                            <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>
+                            My Bills
+                        </span>
 
-                            <span class="logout-text">
-                                Logout
-                            </span>
+                    </a>
 
-                        </a>
 
-                    </div>
+                    <!-- NOTIFICATIONS -->
+
+                    <a href="<%=request.getContextPath()%>/PatientNotificationsServlet"
+                       class="nav-link">
+
+                        <i class="fa-solid fa-bell"></i>
+
+                        <span>
+                            Notifications
+                            <%
+                                if (unreadNotifications > 0) {
+                            %>
+
+                            (<%=unreadNotifications%>)
+
+                            <%
+                                }
+                            %>
+                        </span>
+
+                    </a>
+
+
+                    <!-- MEDICAL HISTORY -->
+
+                    <a href="<%=request.getContextPath()%>/PatientMedicalHistoryServlet"
+                       class="nav-link">
+
+                        <i class="fa-solid fa-file-medical"></i>
+
+                        <span>
+                            Medical History
+                        </span>
+
+                    </a>
+
+
+                    <!-- =================================================
+                         PATIENT FEEDBACK
+                         ================================================= -->
+
+                    <a href="<%=request.getContextPath()%>/PatientFeedbackServlet"
+                       class="nav-link">
+
+                        <i class="fa-solid fa-comment-dots"></i>
+
+                        <span>
+                            Patient Feedback
+                        </span>
+
+                    </a>
+
+
+                    <!-- HELP -->
+
+                    <a href="<%=request.getContextPath()%>/Help.jsp"
+                       class="nav-link">
+
+                        <i class="fa-solid fa-circle-question"></i>
+
+                        <span>
+                            Help & Support
+                        </span>
+
+                    </a>
+
+
+                </nav>
+
+
+                <!-- LOGOUT -->
+
+                <div class="logout">
+
+                    <a href="<%=request.getContextPath()%>/LogoutServlet">
+
+                        <i class="fa-solid fa-right-from-bracket"></i>
+
+                        <span>
+                            Logout
+                        </span>
+
+                    </a>
 
                 </div>
 
@@ -2262,108 +1700,73 @@
 
 
             <!-- =====================================================
-                 MAIN
+                 MAIN CONTENT
                  ===================================================== -->
 
             <main class="main">
 
 
-                <!-- TOPBAR -->
+                <!-- =================================================
+                     TOP BAR
+                     ================================================= -->
 
                 <header class="topbar">
 
-                    <div>
 
-                        <div class="welcome-small">
-                            Patient Portal
-                        </div>
-
-                        <div class="welcome-title">
-
-                            Welcome back,
-                            <%= patientName%> ?
-
-                        </div>
-
-                    </div>
+                    <h2>
+                        Patient Dashboard
+                    </h2>
 
 
-                    <div class="profile">
+                    <div class="user-area">
 
-                        <div>
 
-                            <div class="profile-name">
-                                <%= patientName%>
-                            </div>
+                        <div class="user-info">
 
-                            <div class="profile-role">
+                            <strong>
+                                <%=patientName%>
+                            </strong>
+
+                            <small>
                                 Patient
-                            </div>
+                            </small>
 
                         </div>
 
 
-                        <div class="profile-avatar">
+                        <div class="avatar">
 
                             <i class="fa-solid fa-user"></i>
 
                         </div>
 
+
                     </div>
+
 
                 </header>
 
 
-                <!-- CONTENT -->
+                <!-- =================================================
+                     CONTENT
+                     ================================================= -->
 
                 <section class="content">
 
 
-                    <!-- =================================================
-                         HERO
-                         ================================================= -->
+                    <!-- WELCOME -->
 
-                    <div class="hero">
+                    <div class="welcome">
 
-                        <div class="hero-content">
+                        <h1>
+                            Welcome, <%=patientName%>!
+                        </h1>
 
-                            <div>
-
-                                <div class="hero-label">
-
-                                    <i class="fa-solid fa-heart-pulse"></i>
-
-                                    Your Dental Care
-
-                                </div>
-
-
-                                <h1>
-                                    Your smile, our priority.
-                                </h1>
-
-
-                                <p>
-                                    Manage your appointments,
-                                    payments and dental care
-                                    with Sunrise Dental Clinic.
-                                </p>
-
-                            </div>
-
-
-                            <a href="BookAppointmentServlet"
-                               class="hero-button">
-
-                                <i class="fa-solid fa-calendar-plus"></i>
-
-                                &nbsp;
-
-                                Book Appointment
-
-                            </a>
-
-                        </div>
+                        <p>
+                            Manage your appointments,
+                            notifications and dental care
+                            from your patient portal.
+                        </p>
 
                     </div>
 
@@ -2375,121 +1778,111 @@
                     <div class="stats">
 
 
+                        <!-- TOTAL -->
+
                         <div class="stat-card">
 
-                            <div class="stat-top">
+                            <div class="stat-icon">
 
-                                <div class="stat-icon">
-
-                                    <i class="fa-solid fa-calendar-day"></i>
-
-                                </div>
+                                <i class="fa-solid fa-calendar-days"></i>
 
                             </div>
 
-                            <div class="stat-number">
-                                <%= upcomingCount%>
-                            </div>
+                            <div>
 
-                            <div class="stat-label">
-                                Upcoming Appointments
+                                <h3>
+                                    <%=totalAppointments%>
+                                </h3>
+
+                                <p>
+                                    Total Appointments
+                                </p>
+
                             </div>
 
                         </div>
 
 
+                        <!-- PENDING -->
+
                         <div class="stat-card">
 
-                            <div class="stat-top">
+                            <div class="stat-icon">
 
-                                <div class="stat-icon">
-
-                                    <i class="fa-solid fa-hourglass-half"></i>
-
-                                </div>
+                                <i class="fa-solid fa-clock"></i>
 
                             </div>
 
-                            <div class="stat-number">
-                                <%= pendingCount%>
-                            </div>
+                            <div>
 
-                            <div class="stat-label">
-                                Pending Requests
+                                <h3>
+                                    <%=pendingAppointments%>
+                                </h3>
+
+                                <p>
+                                    Pending Appointments
+                                </p>
+
                             </div>
 
                         </div>
 
 
+                        <!-- CONFIRMED -->
+
                         <div class="stat-card">
 
-                            <div class="stat-top">
+                            <div class="stat-icon">
 
-                                <div class="stat-icon">
-
-                                    <i class="fa-solid fa-circle-check"></i>
-
-                                </div>
+                                <i class="fa-solid fa-circle-check"></i>
 
                             </div>
 
-                            <div class="stat-number">
-                                <%= confirmedCount%>
-                            </div>
+                            <div>
 
-                            <div class="stat-label">
-                                Confirmed Appointments
+                                <h3>
+                                    <%=confirmedAppointments%>
+                                </h3>
+
+                                <p>
+                                    Confirmed Appointments
+                                </p>
+
                             </div>
 
                         </div>
 
 
+                        <!-- NOTIFICATIONS -->
+
                         <div class="stat-card">
 
-                            <div class="stat-top">
+                            <div class="stat-icon">
 
-                                <div class="stat-icon">
-
-                                    <i class="fa-solid fa-file-invoice-dollar"></i>
-
-                                </div>
+                                <i class="fa-solid fa-bell"></i>
 
                             </div>
 
-                            <div class="stat-number">
+                            <div>
 
-                                <%
-                                    if (billingAppointment != null
-                                            && treatmentBalance.compareTo(
-                                                    BigDecimal.ZERO
-                                            ) > 0) {
-                                %>
+                                <h3>
+                                    <%=unreadNotifications%>
+                                </h3>
 
-                                Rs. <%= treatmentBalance%>
+                                <p>
+                                    Unread Notifications
+                                </p>
 
-                                <%
-                                } else {
-                                %>
-
-                                0
-
-                                <%
-                                    }
-                                %>
-
-                            </div>
-
-                            <div class="stat-label">
-                                Outstanding Treatment Balance
                             </div>
 
                         </div>
+
 
                     </div>
 
 
                     <!-- =================================================
-                         MAIN GRID
+                         DASHBOARD GRID
                          ================================================= -->
 
                     <div class="dashboard-grid">
@@ -2506,310 +1899,127 @@
 
                             <div class="panel">
 
+
                                 <div class="panel-header">
 
                                     <div class="panel-title">
-
-                                        <i class="fa-solid fa-calendar-check"
-                                           style="color:#06a3da;">
-                                        </i>
-
-                                        &nbsp;
 
                                         Next Appointment
 
                                     </div>
 
 
-                                    <a href="PatientAppointmentsServlet"
+                                    <a href="<%=request.getContextPath()%>/PatientAppointmentsServlet"
                                        class="view-all">
 
                                         View All
-
-                                        <i class="fa-solid fa-arrow-right"></i>
 
                                     </a>
 
                                 </div>
 
 
-                                <% if (nextAppointment != null) {%>
-
-                                <div class="next-card">
-
-                                    <div class="appointment-header">
-
-                                        <div class="doctor-avatar">
-
-                                            <i class="fa-solid fa-user-doctor"></i>
-
-                                        </div>
+                                <div class="next-appointment">
 
 
-                                        <div>
+                                    <%
+                                        if (nextAppointment != null) {
 
-                                            <div class="doctor-name">
+                                            String nextStatus
+                                                    = nextAppointment.getStatus();
 
-                                                Dr.
-                                                <%= nextAppointment.getDoctorName()%>
+                                            String nextStatusClass
+                                                    = "status-default";
 
-                                            </div>
+                                            if ("CONFIRMED".equalsIgnoreCase(
+                                                    nextStatus)) {
 
+                                                nextStatusClass
+                                                        = "status-confirmed";
 
-                                            <div class="doctor-speciality">
+                                            } else if ("PENDING_DOCTOR".equalsIgnoreCase(
+                                                    nextStatus)
+                                                    || "PENDING_ADMIN".equalsIgnoreCase(
+                                                            nextStatus)
+                                                    || "PENDING".equalsIgnoreCase(
+                                                            nextStatus)) {
 
-                                                <%= nextAppointment.getTreatmentType()%>
+                                                nextStatusClass
+                                                        = "status-pending";
 
-                                            </div>
+                                            } else if ("COMPLETED".equalsIgnoreCase(
+                                                    nextStatus)) {
 
-                                        </div>
+                                                nextStatusClass
+                                                        = "status-completed";
 
-                                    </div>
+                                            } else if ("CANCELLED".equalsIgnoreCase(
+                                                    nextStatus)
+                                                    || "CANCELED".equalsIgnoreCase(
+                                                            nextStatus)) {
 
+                                                nextStatusClass
+                                                        = "status-cancelled";
+                                            }
 
-                                    <div class="appointment-details">
-
-
-                                        <div class="detail">
-
-                                            <div class="detail-label">
-                                                Date
-                                            </div>
-
-                                            <div class="detail-value">
-
-                                                <i class="fa-regular fa-calendar"
-                                                   style="color:#06a3da;">
-                                                </i>
-
-                                                &nbsp;
-
-                                                <%= nextAppointment.getAppointmentDate()%>
-
-                                            </div>
-
-                                        </div>
+                                    %>
 
 
-                                        <div class="detail">
+                                    <div class="appointment-highlight">
 
-                                            <div class="detail-label">
-                                                Time
-                                            </div>
 
-                                            <div class="detail-value">
+                                        <div class="appointment-highlight-top">
 
-                                                <i class="fa-regular fa-clock"
-                                                   style="color:#06a3da;">
-                                                </i>
 
-                                                &nbsp;
+                                            <div>
 
-                                                <%= nextAppointment.getAppointmentTime()%>
+                                                <div class="doctor-name">
+
+                                                    Dr.
+                                                    <%=nextAppointment.getDoctorName()%>
+
+                                                </div>
+
+
+                                                <div class="treatment">
+
+                                                    <%=nextAppointment.getTreatmentType()%>
+
+                                                </div>
 
                                             </div>
 
-                                        </div>
 
+                                            <span class="status <%=nextStatusClass%>">
 
-                                        <div class="detail">
-
-                                            <div class="detail-label">
-                                                Appointment No
-                                            </div>
-
-                                            <div class="detail-value">
-
-                                                <%= nextAppointment.getAppointmentNo()%>
-
-                                            </div>
-
-                                        </div>
-
-
-                                        <div class="detail">
-
-                                            <div class="detail-label">
-                                                Status
-                                            </div>
-
-                                            <div class="detail-value">
-
-                                                <%
-                                                    String nextStatus
-                                                            = nextAppointment.getStatus();
-
-                                                    if ("CONFIRMED".equals(
-                                                            nextStatus
-                                                    )) {
-                                                %>
-
-                                                <span class="status status-confirmed">
-
-                                                    <i class="fa-solid fa-check"></i>
-
-                                                    Confirmed
-
-                                                </span>
-
-                                                <%
-                                                } else {
-                                                %>
-
-                                                <span class="status status-pending">
-
-                                                    <i class="fa-solid fa-clock"></i>
-
-                                                    Pending
-
-                                                </span>
-
-                                                <%
-                                                    }
-                                                %>
-
-                                            </div>
-
-                                        </div>
-
-
-                                    </div>
-
-                                </div>
-
-                                <% } else { %>
-
-                                <div class="empty">
-
-                                    <i class="fa-regular fa-calendar-xmark"></i>
-
-                                    <p>
-                                        You don't have any upcoming appointments.
-                                    </p>
-
-                                </div>
-
-                                <% } %>
-
-                            </div>
-
-
-                            <!-- =================================================
-                                 BILLING / PAYMENTS
-                                 ================================================= -->
-
-                            <div class="panel billing-panel"
-                                 id="billing">
-
-                                <div class="billing-header">
-
-                                    <div>
-
-                                        <div class="billing-title">
-
-                                            <i class="fa-solid fa-file-invoice-dollar"></i>
-
-                                            My Bills & Payments
-
-                                        </div>
-
-                                        <div class="billing-subtitle">
-
-                                            Pay your consultation fee and
-                                            treatment balance securely.
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-
-                                <% if (billingAppointment != null) {%>
-
-
-                                <div class="bill-box">
-
-
-                                    <div class="bill-top">
-
-                                        <div>
-
-                                            <div class="bill-patient">
-
-                                                Dr.
-                                                <%= billingAppointment.getDoctorName()%>
-
-                                            </div>
-
-                                            <div class="bill-number">
-
-                                                Appointment:
-                                                <%= billingAppointment.getAppointmentNo()%>
-
-                                            </div>
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <% if (consultationPaid.compareTo(
-                                                        BigDecimal.ZERO
-                                                ) > 0) { %>
-
-                                            <span class="payment-status payment-paid">
-
-                                                <i class="fa-solid fa-check"></i>
-
-                                                Consultation Paid
+                                                <%=nextStatus%>
 
                                             </span>
 
-                                            <% } else { %>
-
-                                            <span class="payment-status payment-due">
-
-                                                <i class="fa-solid fa-clock"></i>
-
-                                                Consultation Due
-
-                                            </span>
-
-                                            <% }%>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <!-- BILL INFORMATION -->
-
-                                    <div class="bill-grid">
-
-
-                                        <div class="bill-line">
-
-                                            <span>
-                                                Appointment Date
-                                            </span>
-
-                                            <strong>
-                                                <%= billingAppointment.getAppointmentDate()%>
-                                            </strong>
 
                                         </div>
 
 
-                                        <div class="bill-line">
+                                        <div class="appointment-meta">
 
-                                            <span>
-                                                Treatment
-                                            </span>
 
-                                            <strong>
-                                                <%= billingAppointment.getTreatmentType()%>
-                                            </strong>
+                                            <div class="meta-item">
+
+                                                <i class="fa-regular fa-calendar"></i>
+
+                                                <%=nextAppointment.getAppointmentDate()%>
+
+                                            </div>
+
+
+                                            <div class="meta-item">
+
+                                                <i class="fa-regular fa-clock"></i>
+
+                                                <%=nextAppointment.getAppointmentTime()%>
+
+                                            </div>
+
 
                                         </div>
 
@@ -2817,332 +2027,29 @@
                                     </div>
 
 
-                                    <!-- BILL SUMMARY -->
-
-                                    <div class="bill-summary">
-
-
-                                        <div class="amount-row">
-
-                                            <span>
-                                                Consultation Fee
-                                            </span>
-
-                                            <strong>
-                                                Rs. 2,000.00
-                                            </strong>
-
-                                        </div>
+                                    <%
+                                    } else {
+                                    %>
 
 
-                                        <div class="amount-row">
+                                    <div class="empty">
 
-                                            <span>
-                                                Consultation Paid
-                                            </span>
+                                        <i class="fa-regular fa-calendar-xmark"></i>
 
-                                            <strong>
-                                                Rs. <%= consultationPaid%>
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div class="amount-row">
-
-                                            <span>
-                                                Treatment Amount
-                                            </span>
-
-                                            <strong>
-                                                Rs. <%= treatmentAmount%>
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div class="amount-row">
-
-                                            <span>
-                                                Treatment Paid
-                                            </span>
-
-                                            <strong>
-                                                Rs. <%= treatmentPaid%>
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div class="amount-row total">
-
-                                            <span>
-                                                Treatment Balance
-                                            </span>
-
-                                            <strong>
-                                                Rs. <%= treatmentBalance%>
-                                            </strong>
-
-                                        </div>
-
-
-                                    </div>
-
-
-                                    <!-- =================================================
-                                         CONSULTATION PAYMENT
-                                         ================================================= -->
-
-                                    <% if (consultationPaid.compareTo(
-                                                BigDecimal.ZERO
-                                        ) <= 0) {%>
-
-
-                                    <div class="pay-box">
-
-                                        <div class="pay-box-title">
-
-                                            <i class="fa-solid fa-stethoscope"></i>
-
-                                            Consultation Fee Payment
-
-                                        </div>
-
-
-                                        <p style="
-                                           font-size:11px;
-                                           color:#64748b;
-                                           margin-bottom:12px;
-                                           ">
-
-                                            Please pay the consultation
-                                            fee before seeing the doctor.
-
+                                        <p>
+                                            You do not have any
+                                            upcoming appointments.
                                         </p>
 
-
-                                        <form
-                                            method="post"
-                                            action="PatientPaymentServlet"
-                                            class="payment-form">
-
-
-                                            <input
-                                                type="hidden"
-                                                name="appointmentId"
-                                                value="<%= billingAppointment.getId()%>">
-
-
-                                            <input
-                                                type="hidden"
-                                                name="appointmentNo"
-                                                value="<%= billingAppointment.getAppointmentNo()%>">
-
-
-                                            <input
-                                                type="hidden"
-                                                name="paymentType"
-                                                value="CONSULTATION">
-
-
-                                            <select
-                                                name="paymentMethod"
-                                                class="payment-select"
-                                                required>
-
-                                                <option value="">
-                                                    Select Payment Method
-                                                </option>
-
-                                                <option value="CASH">
-                                                    Cash
-                                                </option>
-
-                                                <option value="CARD">
-                                                    Card
-                                                </option>
-
-                                                <option value="BANK_TRANSFER">
-                                                    Bank Transfer
-                                                </option>
-
-                                            </select>
-
-
-                                            <button
-                                                type="submit"
-                                                class="pay-button">
-
-                                                <i class="fa-solid fa-credit-card"></i>
-
-                                                Pay Rs. 2,000
-
-                                            </button>
-
-                                        </form>
-
                                     </div>
 
 
-                                    <% } else { %>
-
-
-                                    <div class="paid-message">
-
-                                        <i class="fa-solid fa-circle-check"></i>
-
-                                        Consultation fee paid successfully.
-
-                                    </div>
-
-
-                                    <% } %>
-
-
-                                    <!-- =================================================
-                                         TREATMENT PAYMENT
-                                         ================================================= -->
-
-                                    <% if (consultationPaid.compareTo(
-                                                BigDecimal.ZERO
-                                        ) > 0
-                                                && treatmentBalance.compareTo(
-                                                        BigDecimal.ZERO
-                                                ) > 0) {%>
-
-
-                                    <div class="pay-box"
-                                         style="margin-top:12px;">
-
-                                        <div class="pay-box-title">
-
-                                            <i class="fa-solid fa-tooth"></i>
-
-                                            Treatment Balance Payment
-
-                                        </div>
-
-
-                                        <p style="
-                                           font-size:11px;
-                                           color:#64748b;
-                                           margin-bottom:12px;
-                                           ">
-
-                                            Your treatment has been billed.
-                                            Please pay the remaining balance.
-
-                                        </p>
-
-
-                                        <form
-                                            method="post"
-                                            action="PatientPaymentServlet"
-                                            class="payment-form">
-
-
-                                            <input
-                                                type="hidden"
-                                                name="appointmentId"
-                                                value="<%= billingAppointment.getId()%>">
-
-
-                                            <input
-                                                type="hidden"
-                                                name="appointmentNo"
-                                                value="<%= billingAppointment.getAppointmentNo()%>">
-
-
-                                            <input
-                                                type="hidden"
-                                                name="paymentType"
-                                                value="TREATMENT">
-
-
-                                            <select
-                                                name="paymentMethod"
-                                                class="payment-select"
-                                                required>
-
-                                                <option value="">
-                                                    Select Payment Method
-                                                </option>
-
-                                                <option value="CASH">
-                                                    Cash
-                                                </option>
-
-                                                <option value="CARD">
-                                                    Card
-                                                </option>
-
-                                                <option value="BANK_TRANSFER">
-                                                    Bank Transfer
-                                                </option>
-
-                                            </select>
-
-
-                                            <button
-                                                type="submit"
-                                                class="pay-button">
-
-                                                <i class="fa-solid fa-money-bill-wave"></i>
-
-                                                Pay Rs.
-                                                <%= treatmentBalance%>
-
-                                            </button>
-
-                                        </form>
-
-                                    </div>
-
-
-                                    <% } else if (consultationPaid.compareTo(
-                                            BigDecimal.ZERO
-                                    ) > 0
-                                            && treatmentAmount.compareTo(
-                                                    BigDecimal.ZERO
-                                            ) > 0
-                                            && treatmentBalance.compareTo(
-                                                    BigDecimal.ZERO
-                                            ) <= 0) { %>
-
-
-                                    <div class="paid-message"
-                                         style="margin-top:12px;">
-
-                                        <i class="fa-solid fa-circle-check"></i>
-
-                                        Treatment payment completed.
-
-                                    </div>
-
-
-                                    <% } %>
+                                    <%
+                                        }
+                                    %>
 
 
                                 </div>
-
-
-                                <% } else { %>
-
-
-                                <div class="no-bill">
-
-                                    <i class="fa-solid fa-file-circle-check"></i>
-
-                                    <p>
-                                        No confirmed appointment is currently
-                                        available for billing.
-                                    </p>
-
-                                </div>
-
-
-                                <% } %>
 
 
                             </div>
@@ -3159,104 +2066,143 @@
 
                                     <div class="panel-title">
 
-                                        <i class="fa-solid fa-clock-rotate-left"
-                                           style="color:#06a3da;">
-                                        </i>
-
-                                        &nbsp;
-
                                         Recent Appointments
 
                                     </div>
 
 
-                                    <a href="PatientAppointmentsServlet"
+                                    <a href="<%=request.getContextPath()%>/PatientAppointmentsServlet"
                                        class="view-all">
 
                                         View All
-
-                                        <i class="fa-solid fa-arrow-right"></i>
 
                                     </a>
 
                                 </div>
 
 
-                                <% if (appointments != null
-                                            && !appointments.isEmpty()) { %>
+                                <div class="appointment-list">
 
 
-                                <%
-                                    int displayCount = 0;
+                                    <%
+                                        if (appointments != null
+                                                && !appointments.isEmpty()) {
 
-                                    for (Appointment appointment
-                                            : appointments) {
+                                            int count = 0;
 
-                                        if (displayCount >= 5) {
-                                            break;
-                                        }
+                                            for (Appointment appointment
+                                                    : appointments) {
 
-                                        displayCount++;
+                                                if (count >= 5) {
+                                                    break;
+                                                }
 
-                                        String status
-                                                = appointment.getStatus();
+                                                count++;
 
-                                        String statusClass
-                                                = "status-pending";
+                                                String status
+                                                        = appointment.getStatus();
 
-                                        String statusText
-                                                = "Pending";
+                                                String statusClass
+                                                        = "status-default";
 
-                                        if ("CONFIRMED".equals(status)) {
+                                                if ("CONFIRMED".equalsIgnoreCase(
+                                                        status)) {
 
-                                            statusClass
-                                                    = "status-confirmed";
+                                                    statusClass
+                                                            = "status-confirmed";
 
-                                            statusText
-                                                    = "Confirmed";
+                                                } else if ("PENDING_DOCTOR".equalsIgnoreCase(
+                                                        status)
+                                                        || "PENDING_ADMIN".equalsIgnoreCase(
+                                                                status)
+                                                        || "PENDING".equalsIgnoreCase(
+                                                                status)) {
 
-                                        } else if (status != null
-                                                && status.startsWith(
-                                                        "REJECTED"
-                                                )) {
+                                                    statusClass
+                                                            = "status-pending";
 
-                                            statusClass
-                                                    = "status-rejected";
+                                                } else if ("COMPLETED".equalsIgnoreCase(
+                                                        status)) {
 
-                                            statusText
-                                                    = "Rejected";
-                                        }
-                                %>
+                                                    statusClass
+                                                            = "status-completed";
+
+                                                } else if ("CANCELLED".equalsIgnoreCase(
+                                                        status)
+                                                        || "CANCELED".equalsIgnoreCase(
+                                                                status)) {
+
+                                                    statusClass
+                                                            = "status-cancelled";
+
+                                                } else if (status != null
+                                                        && status.toUpperCase()
+                                                                .startsWith(
+                                                                        "REJECTED"
+                                                                )) {
+
+                                                    statusClass
+                                                            = "status-rejected";
+                                                }
+
+                                    %>
 
 
-                                <div class="appointment-item">
+                                    <div class="appointment-item">
 
 
-                                    <div class="appointment-info">
+                                        <div class="appointment-left">
 
 
-                                        <div class="appointment-icon">
+                                            <div class="appointment-icon">
 
-                                            <i class="fa-solid fa-tooth"></i>
+                                                <i class="fa-solid fa-tooth"></i>
+
+                                            </div>
+
+
+                                            <div>
+
+                                                <div class="appointment-doctor">
+
+                                                    Dr.
+                                                    <%=appointment.getDoctorName()%>
+
+                                                </div>
+
+
+                                                <div class="appointment-service">
+
+                                                    <%=appointment.getTreatmentType()%>
+
+                                                </div>
+
+                                            </div>
+
 
                                         </div>
 
 
-                                        <div>
-
-                                            <div class="appointment-doctor">
-
-                                                Dr.
-                                                <%= appointment.getDoctorName()%>
-
-                                            </div>
+                                        <div class="appointment-right">
 
 
-                                            <div class="appointment-service">
+                                            <div class="appointment-date">
 
-                                                <%= appointment.getTreatmentType()%>
+                                                <%=appointment.getAppointmentDate()%>
+
+                                                <br>
+
+                                                <%=appointment.getAppointmentTime()%>
 
                                             </div>
+
+
+                                            <span class="status <%=statusClass%>">
+
+                                                <%=status%>
+
+                                            </span>
+
 
                                         </div>
 
@@ -3264,53 +2210,29 @@
                                     </div>
 
 
-                                    <div class="appointment-right">
+                                    <%
+                                        }
+                                    } else {
+                                    %>
 
 
-                                        <div class="appointment-date">
+                                    <div class="empty">
 
-                                            <%= appointment.getAppointmentDate()%>
+                                        <i class="fa-regular fa-calendar"></i>
 
-                                            <br>
-
-                                            <%= appointment.getAppointmentTime()%>
-
-                                        </div>
-
-
-                                        <span class="status <%= statusClass%>">
-
-                                            <%= statusText%>
-
-                                        </span>
-
+                                        <p>
+                                            No appointments found.
+                                        </p>
 
                                     </div>
 
 
-                                </div>
+                                    <%
+                                        }
+                                    %>
 
-
-                                <%
-                                    }
-                                %>
-
-
-                                <% } else { %>
-
-
-                                <div class="empty">
-
-                                    <i class="fa-regular fa-calendar"></i>
-
-                                    <p>
-                                        No appointments found.
-                                    </p>
 
                                 </div>
-
-
-                                <% } %>
 
 
                             </div>
@@ -3345,9 +2267,10 @@
                                 <div class="quick-actions">
 
 
-                                    <a href="BookAppointmentServlet"
-                                       class="quick-action">
+                                    <!-- BOOK -->
 
+                                    <a href="<%=request.getContextPath()%>/BookAppointmentServlet"
+                                       class="quick-action">
 
                                         <div class="quick-action-icon">
 
@@ -3368,13 +2291,13 @@
 
                                         </div>
 
-
                                     </a>
 
 
-                                    <a href="PatientAppointmentsServlet"
-                                       class="quick-action">
+                                    <!-- APPOINTMENTS -->
 
+                                    <a href="<%=request.getContextPath()%>/PatientAppointmentsServlet"
+                                       class="quick-action">
 
                                         <div class="quick-action-icon">
 
@@ -3390,18 +2313,18 @@
                                             </strong>
 
                                             <span>
-                                                View your appointment status
+                                                View appointment status
                                             </span>
 
                                         </div>
 
-
                                     </a>
 
 
-                                    <a href="#billing"
-                                       class="quick-action">
+                                    <!-- BILLS -->
 
+                                    <a href="<%=request.getContextPath()%>/PatientBillsServlet"
+                                       class="quick-action">
 
                                         <div class="quick-action-icon">
 
@@ -3417,18 +2340,45 @@
                                             </strong>
 
                                             <span>
-                                                View and pay your bills
+                                                View your payments
                                             </span>
 
                                         </div>
 
+                                    </a>
+
+                                    <!-- =================================================
+  PAYMENT
+  ================================================= -->
+
+                                    <a href="<%=request.getContextPath()%>/PatientPaymentPageServlet"
+                                       class="quick-action">
+
+                                        <div class="quick-action-icon">
+
+                                            <i class="fa-solid fa-credit-card"></i>
+
+                                        </div>
+
+                                        <div class="quick-action-text">
+
+                                            <strong>
+                                                Payment
+                                            </strong>
+
+                                            <span>
+                                                Pay for your confirmed appointment
+                                            </span>
+
+                                        </div>
 
                                     </a>
 
 
-                                    <a href="PatientNotificationsServlet"
-                                       class="quick-action">
+                                    <!-- NOTIFICATIONS -->
 
+                                    <a href="<%=request.getContextPath()%>/PatientNotificationsServlet"
+                                       class="quick-action">
 
                                         <div class="quick-action-icon">
 
@@ -3444,11 +2394,66 @@
                                             </strong>
 
                                             <span>
-                                                Check your latest updates
+                                                Check latest updates
                                             </span>
 
                                         </div>
 
+                                    </a>
+
+
+                                    <!-- =================================================
+                                         PATIENT FEEDBACK
+                                         ================================================= -->
+
+                                    <a href="<%=request.getContextPath()%>/PatientFeedbackServlet"
+                                       class="quick-action">
+
+                                        <div class="quick-action-icon">
+
+                                            <i class="fa-solid fa-comment-dots"></i>
+
+                                        </div>
+
+
+                                        <div class="quick-action-text">
+
+                                            <strong>
+                                                Patient Feedback
+                                            </strong>
+
+                                            <span>
+                                                Rate your dental experience
+                                            </span>
+
+                                        </div>
+
+                                    </a>
+
+
+                                    <!-- HELP -->
+
+                                    <a href="<%=request.getContextPath()%>/Help.jsp"
+                                       class="quick-action">
+
+                                        <div class="quick-action-icon">
+
+                                            <i class="fa-solid fa-circle-question"></i>
+
+                                        </div>
+
+
+                                        <div class="quick-action-text">
+
+                                            <strong>
+                                                Help & Support
+                                            </strong>
+
+                                            <span>
+                                                Get assistance
+                                            </span>
+
+                                        </div>
 
                                     </a>
 
@@ -3460,13 +2465,66 @@
 
 
                             <!-- =================================================
-                                 LATEST NOTIFICATIONS
+                                 FEEDBACK CARD
+                                 ================================================= -->
+
+                            <div class="panel">
+
+
+                                <div class="feedback-card">
+
+
+                                    <div class="feedback-card-inner">
+
+
+                                        <div class="feedback-icon">
+
+                                            <i class="fa-solid fa-star"></i>
+
+                                        </div>
+
+
+                                        <div class="feedback-text">
+
+                                            <h3>
+                                                How was your experience?
+                                            </h3>
+
+                                            <p>
+                                                Your feedback helps
+                                                Sunrise Dental Clinic
+                                                improve our services.
+                                            </p>
+
+                                        </div>
+
+
+                                        <a href="<%=request.getContextPath()%>/PatientFeedbackServlet"
+                                           class="feedback-btn">
+
+                                            Give Feedback
+
+                                        </a>
+
+
+                                    </div>
+
+
+                                </div>
+
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 NOTIFICATIONS
                                  ================================================= -->
 
                             <div class="panel">
 
 
                                 <div class="panel-header">
+
 
                                     <div class="panel-title">
 
@@ -3475,89 +2533,100 @@
                                     </div>
 
 
-                                    <a href="PatientNotificationsServlet"
+                                    <a href="<%=request.getContextPath()%>/PatientNotificationsServlet"
                                        class="view-all">
 
                                         View All
 
                                     </a>
 
+
                                 </div>
 
 
-                                <% if (notifications != null
-                                            && !notifications.isEmpty()) { %>
+                                <div class="notification-list">
 
 
-                                <%
-                                    int notificationCount = 0;
+                                    <%
+                                        if (notifications != null
+                                                && !notifications.isEmpty()) {
 
-                                    for (String[] n
-                                            : notifications) {
+                                            int notificationCount = 0;
 
-                                        if (notificationCount >= 3) {
-                                            break;
+                                            for (String[] n
+                                                    : notifications) {
+
+                                                if (notificationCount >= 3) {
+                                                    break;
+                                                }
+
+                                                notificationCount++;
+
+                                    %>
+
+
+                                    <div class="notification-item">
+
+
+                                        <div class="notification-icon">
+
+                                            <i class="fa-solid fa-bell"></i>
+
+                                        </div>
+
+
+                                        <div>
+
+
+                                            <div class="notification-title">
+
+                                                <%=n.length > 1
+                                                        && n[1] != null
+                                                                ? n[1]
+                                                                : "Notification"%>
+
+                                            </div>
+
+
+                                            <div class="notification-message">
+
+                                                <%=n.length > 2
+                                                        && n[2] != null
+                                                                ? n[2]
+                                                                : ""%>
+
+                                            </div>
+
+
+                                        </div>
+
+
+                                    </div>
+
+
+                                    <%
                                         }
-
-                                        notificationCount++;
-                                %>
-
-
-                                <div class="notification-item">
+                                    } else {
+                                    %>
 
 
-                                    <div class="notification-icon">
+                                    <div class="empty">
 
-                                        <i class="fa-solid fa-bell"></i>
+                                        <i class="fa-regular fa-bell-slash"></i>
 
-                                    </div>
-
-
-                                    <div>
-
-                                        <div class="notification-title">
-
-                                            <%= n.length > 1
-                                                    ? n[1]
-                                                    : "Notification"%>
-
-                                        </div>
-
-
-                                        <div class="notification-message">
-
-                                            <%= n.length > 2
-                                                    ? n[2]
-                                                    : ""%>
-
-                                        </div>
+                                        <p>
+                                            No notifications yet.
+                                        </p>
 
                                     </div>
 
 
-                                </div>
+                                    <%
+                                        }
+                                    %>
 
-
-                                <%
-                                    }
-                                %>
-
-
-                                <% } else { %>
-
-
-                                <div class="empty">
-
-                                    <i class="fa-regular fa-bell-slash"></i>
-
-                                    <p>
-                                        No notifications yet.
-                                    </p>
 
                                 </div>
-
-
-                                <% }%>
 
 
                             </div>
@@ -3577,6 +2646,7 @@
 
         </div>
 
+        <jsp:include page="toast.jsp" />
 
     </body>
 

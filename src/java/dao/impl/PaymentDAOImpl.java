@@ -10,9 +10,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
 import java.util.List;
 
 public class PaymentDAOImpl implements PaymentDAO {
+
 
     /* =========================================================
        GET CONFIRMED APPOINTMENT
@@ -54,6 +56,7 @@ public class PaymentDAOImpl implements PaymentDAO {
                     = ps.executeQuery()) {
 
                 if (!rs.next()) {
+
                     return null;
                 }
 
@@ -61,27 +64,39 @@ public class PaymentDAOImpl implements PaymentDAO {
                         = new Payment();
 
                 payment.setAppointmentId(
-                        rs.getInt("appointment_id")
+                        rs.getInt(
+                                "appointment_id"
+                        )
                 );
 
                 payment.setAppointmentNo(
-                        rs.getString("appointment_no")
+                        rs.getString(
+                                "appointment_no"
+                        )
                 );
 
                 payment.setPatientId(
-                        rs.getInt("patient_id")
+                        rs.getInt(
+                                "patient_id"
+                        )
                 );
 
                 payment.setPatientName(
-                        rs.getString("patient_name")
+                        rs.getString(
+                                "patient_name"
+                        )
                 );
 
                 payment.setDoctorName(
-                        rs.getString("doctor_name")
+                        rs.getString(
+                                "doctor_name"
+                        )
                 );
 
                 payment.setTreatmentType(
-                        rs.getString("treatment_type")
+                        rs.getString(
+                                "treatment_type"
+                        )
                 );
 
                 return payment;
@@ -92,10 +107,6 @@ public class PaymentDAOImpl implements PaymentDAO {
 
     /* =========================================================
        GET TREATMENT AMOUNT
-       
-       IMPORTANT:
-       treatment_prices table is NO LONGER USED.
-       Price is now read from treatments.treatment_price.
        ========================================================= */
     @Override
     public BigDecimal getTreatmentAmount(
@@ -131,6 +142,7 @@ public class PaymentDAOImpl implements PaymentDAO {
                             );
 
                     if (amount != null) {
+
                         return amount;
                     }
                 }
@@ -143,8 +155,6 @@ public class PaymentDAOImpl implements PaymentDAO {
 
     /* =========================================================
        GET CONSULTATION FEE
-       
-       Uses treatments.consultation_fee.
        ========================================================= */
     public BigDecimal getConsultationFee(
             String treatmentName)
@@ -179,6 +189,7 @@ public class PaymentDAOImpl implements PaymentDAO {
                             );
 
                     if (fee != null) {
+
                         return fee;
                     }
                 }
@@ -260,6 +271,7 @@ public class PaymentDAOImpl implements PaymentDAO {
                             = rs.getBigDecimal(1);
 
                     if (amount != null) {
+
                         return amount;
                     }
                 }
@@ -375,7 +387,9 @@ public class PaymentDAOImpl implements PaymentDAO {
                     );
 
                     payment.setPaymentNo(
-                            rs.getString("payment_no")
+                            rs.getString(
+                                    "payment_no"
+                            )
                     );
 
                     payment.setAppointmentId(
@@ -431,6 +445,12 @@ public class PaymentDAOImpl implements PaymentDAO {
 
     /* =========================================================
        GET ALL PAYMENTS
+       
+       IMPORTANT FIX:
+       LEFT JOIN is used instead of JOIN.
+       
+       This ensures that payment records are NOT hidden
+       when appointment/doctor information is unavailable.
        ========================================================= */
     @Override
     public List<Payment> getAllPayments()
@@ -457,7 +477,7 @@ public class PaymentDAOImpl implements PaymentDAO {
                 + "d.first_name, ' ', d.last_name"
                 + ") AS doctor_name "
                 + "FROM payments p "
-                + "JOIN appointments a "
+                + "LEFT JOIN appointments a "
                 + "ON p.appointment_id = a.id "
                 + "LEFT JOIN doctors d "
                 + "ON a.doctor_id = d.id "
@@ -479,51 +499,75 @@ public class PaymentDAOImpl implements PaymentDAO {
                 );
 
                 payment.setPaymentNo(
-                        rs.getString("payment_no")
+                        rs.getString(
+                                "payment_no"
+                        )
                 );
 
                 payment.setAppointmentId(
-                        rs.getInt("appointment_id")
+                        rs.getInt(
+                                "appointment_id"
+                        )
                 );
 
                 payment.setPatientId(
-                        rs.getInt("patient_id")
+                        rs.getInt(
+                                "patient_id"
+                        )
                 );
 
                 payment.setAppointmentNo(
-                        rs.getString("appointment_no")
+                        rs.getString(
+                                "appointment_no"
+                        )
                 );
 
                 payment.setPatientName(
-                        rs.getString("patient_name")
+                        rs.getString(
+                                "patient_name"
+                        )
                 );
 
                 payment.setDoctorName(
-                        rs.getString("doctor_name")
+                        rs.getString(
+                                "doctor_name"
+                        )
                 );
 
                 payment.setTreatmentType(
-                        rs.getString("treatment_type")
+                        rs.getString(
+                                "treatment_type"
+                        )
                 );
 
                 payment.setPaymentType(
-                        rs.getString("payment_type")
+                        rs.getString(
+                                "payment_type"
+                        )
                 );
 
                 payment.setAmount(
-                        rs.getBigDecimal("amount")
+                        rs.getBigDecimal(
+                                "amount"
+                        )
                 );
 
                 payment.setPaymentMethod(
-                        rs.getString("payment_method")
+                        rs.getString(
+                                "payment_method"
+                        )
                 );
 
                 payment.setPaymentStatus(
-                        rs.getString("payment_status")
+                        rs.getString(
+                                "payment_status"
+                        )
                 );
 
                 payment.setCreatedAt(
-                        rs.getString("created_at")
+                        rs.getString(
+                                "created_at"
+                        )
                 );
 
                 list.add(payment);

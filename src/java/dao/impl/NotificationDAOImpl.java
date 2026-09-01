@@ -23,19 +23,16 @@ public class NotificationDAOImpl
             int appointmentId)
             throws SQLException {
 
-        String sql =
-                "INSERT INTO notifications "
+        String sql
+                = "INSERT INTO notifications "
                 + "(user_id, user_role, title, message, "
                 + "appointment_id, is_read) "
                 + "VALUES (?, ?, ?, ?, ?, 0)";
 
         try (
-            Connection connection =
-                    DBConnection.getConnection();
-
-            PreparedStatement statement =
-                    connection.prepareStatement(sql)
-        ) {
+                Connection connection
+                = DBConnection.getConnection(); PreparedStatement statement
+                = connection.prepareStatement(sql)) {
 
             statement.setInt(
                     1,
@@ -76,18 +73,17 @@ public class NotificationDAOImpl
         }
     }
 
-
     @Override
     public List<String[]> getForUser(
             int userId,
             String role)
             throws SQLException {
 
-        List<String[]> notifications =
-                new ArrayList<>();
+        List<String[]> notifications
+                = new ArrayList<>();
 
-        String sql =
-                "SELECT id, title, message, "
+        String sql
+                = "SELECT id, title, message, "
                 + "appointment_id, is_read, created_at "
                 + "FROM notifications "
                 + "WHERE user_id = ? "
@@ -95,12 +91,9 @@ public class NotificationDAOImpl
                 + "ORDER BY created_at DESC";
 
         try (
-            Connection connection =
-                    DBConnection.getConnection();
-
-            PreparedStatement statement =
-                    connection.prepareStatement(sql)
-        ) {
+                Connection connection
+                = DBConnection.getConnection(); PreparedStatement statement
+                = connection.prepareStatement(sql)) {
 
             statement.setInt(
                     1,
@@ -113,42 +106,61 @@ public class NotificationDAOImpl
             );
 
             try (
-                ResultSet resultSet =
-                        statement.executeQuery()
-            ) {
+                    ResultSet resultSet
+                    = statement.executeQuery()) {
 
                 while (resultSet.next()) {
 
-                    String[] notification =
-                            new String[6];
+                    String[] notification
+                            = new String[6];
 
-                    notification[0] =
-                            String.valueOf(
+                    /*
+                     * [0] Notification ID
+                     */
+                    notification[0]
+                            = String.valueOf(
                                     resultSet.getInt("id")
                             );
 
-                    notification[1] =
-                            resultSet.getString("title");
+                    /*
+                     * [1] Title
+                     */
+                    notification[1]
+                            = resultSet.getString("title");
 
-                    notification[2] =
-                            resultSet.getString("message");
+                    /*
+                     * [2] Message
+                     */
+                    notification[2]
+                            = resultSet.getString("message");
 
-                    notification[3] =
-                            String.valueOf(
+                    /*
+                     * [3] Appointment ID
+                     */
+                    notification[3]
+                            = String.valueOf(
                                     resultSet.getInt(
                                             "appointment_id"
                                     )
                             );
 
-                    notification[4] =
-                            String.valueOf(
-                                    resultSet.getBoolean(
-                                            "is_read"
-                                    )
-                            );
+                    /*
+                     * [4] Read status
+                     *
+                     * IMPORTANT:
+                     * Return 0/1 because the dashboard
+                     * checks the unread value this way.
+                     */
+                    notification[4]
+                            = resultSet.getBoolean("is_read")
+                            ? "1"
+                            : "0";
 
-                    notification[5] =
-                            String.valueOf(
+                    /*
+                     * [5] Created date
+                     */
+                    notification[5]
+                            = String.valueOf(
                                     resultSet.getTimestamp(
                                             "created_at"
                                     )
@@ -162,5 +174,86 @@ public class NotificationDAOImpl
         }
 
         return notifications;
+    }
+
+    /**
+     * Get all user IDs for a particular role.
+     *
+     * The current database contains separate tables:
+     *
+     * admins doctors cashiers patients
+     *
+     * Feedback uses this method to notify all administrators.
+     */
+    @Override
+    public List<Integer> getUserIdsByRole(
+            String role)
+            throws SQLException {
+
+        List<Integer> userIds
+                = new ArrayList<>();
+
+        if (role == null
+                || role.trim().isEmpty()) {
+
+            return userIds;
+        }
+
+        String normalizedRole
+                = role.trim().toLowerCase();
+
+        String table;
+
+        switch (normalizedRole) {
+
+            case "admin":
+
+                table = "admins";
+
+                break;
+
+            case "doctor":
+
+                table = "doctors";
+
+                break;
+
+            case "cashier":
+
+                table = "cashiers";
+
+                break;
+
+            case "patient":
+
+                table = "patients";
+
+                break;
+
+            default:
+
+                return userIds;
+        }
+
+        String sql
+                = "SELECT id FROM "
+                + table
+                + " ORDER BY id";
+
+        try (
+                Connection connection
+                = DBConnection.getConnection(); PreparedStatement statement
+                = connection.prepareStatement(sql); ResultSet resultSet
+                = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+
+                userIds.add(
+                        resultSet.getInt("id")
+                );
+            }
+        }
+
+        return userIds;
     }
 }

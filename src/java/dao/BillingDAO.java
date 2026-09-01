@@ -24,6 +24,10 @@ public interface BillingDAO {
             int appointmentId)
             throws SQLException;
 
+    Bill getBillByAppointmentId(
+            int appointmentId)
+            throws SQLException;
+
     boolean createBill(
             Bill bill)
             throws SQLException;

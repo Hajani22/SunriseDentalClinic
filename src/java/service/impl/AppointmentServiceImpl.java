@@ -131,95 +131,25 @@ public class AppointmentServiceImpl
     }
 
 
-    /*
-     * =========================================================
-     * BUILD APPOINTMENT VALIDATION CHAIN
-     * =========================================================
-     */
+   
     private AppointmentValidationHandler
             buildValidationChain() {
 
+        AppointmentValidationHandler required = new RequiredAppointmentFieldsHandler();
 
-        /*
-         * -----------------------------------------------------
-         * 1. REQUIRED FIELD VALIDATION
-         * -----------------------------------------------------
-         */
-        AppointmentValidationHandler required
-                = new RequiredAppointmentFieldsHandler();
+        AppointmentValidationHandler date = new AppointmentDateHandler();
+        
+        AppointmentValidationHandler time = new AppointmentTimeHandler();
 
-
-        /*
-         * -----------------------------------------------------
-         * 2. DATE VALIDATION
-         * -----------------------------------------------------
-         */
-        AppointmentValidationHandler date
-                = new AppointmentDateHandler();
-
-
-        /*
-         * -----------------------------------------------------
-         * 3. TIME VALIDATION
-         * -----------------------------------------------------
-         */
-        AppointmentValidationHandler time
-                = new AppointmentTimeHandler();
-
-
-        /*
-         * -----------------------------------------------------
-         * 4. DOCTOR AVAILABILITY VALIDATION
-         *
-         * NEW REQUIREMENT
-         *
-         * Checks:
-         *
-         * - Doctor has a schedule
-         * - Doctor works on selected day
-         * - Selected time is inside working hours
-         * - Selected time is not during break
-         * - Schedule is active
-         * -----------------------------------------------------
-         */
-        AppointmentValidationHandler availability
-                = new DoctorAvailabilityHandler();
-
-
-        /*
-         * -----------------------------------------------------
-         * 5. APPOINTMENT SLOT VALIDATION
-         *
-         * Existing requirement.
-         *
-         * Prevents double booking.
-         * -----------------------------------------------------
-         */
-        AppointmentValidationHandler slot
-                = new AppointmentSlotHandler();
-
-
-        /*
-         * -----------------------------------------------------
-         * CONNECT THE CHAIN
-         * -----------------------------------------------------
-         *
-         * Required
-         *    ↓
-         * Date
-         *    ↓
-         * Time
-         *    ↓
-         * Doctor Availability
-         *    ↓
-         * Slot
-         */
+        AppointmentValidationHandler availability = new DoctorAvailabilityHandler();
+     
+        AppointmentValidationHandler slot = new AppointmentSlotHandler();
+        
         required
                 .setNext(date)
                 .setNext(time)
                 .setNext(availability)
                 .setNext(slot);
-
         return required;
     }
 
@@ -403,6 +333,23 @@ public class AppointmentServiceImpl
             throws SQLException {
 
         return dao.getById(id);
+    }
+
+    /*
+ * =========================================================
+ * GET APPOINTMENT BY APPOINTMENT NUMBER
+ *
+ * Used by the REST Web Service.
+ * =========================================================
+     */
+    @Override
+    public Appointment getByAppointmentNo(
+            String appointmentNo)
+            throws SQLException {
+
+        return dao.getByAppointmentNo(
+                appointmentNo
+        );
     }
 
 

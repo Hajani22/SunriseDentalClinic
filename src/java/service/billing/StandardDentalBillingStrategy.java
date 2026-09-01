@@ -3,11 +3,6 @@ package service.billing;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-/**
- * Strategy Pattern.
- *
- * Standard dental clinic billing calculation.
- */
 public class StandardDentalBillingStrategy
         implements BillingCalculationStrategy {
 
@@ -48,3 +43,4 @@ public class StandardDentalBillingStrategy
         );
     }
 }
+

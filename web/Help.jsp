@@ -4,21 +4,14 @@
 <html lang="en">
 
     <head>
-
         <meta charset="UTF-8">
-
         <meta name="viewport"
               content="width=device-width, initial-scale=1.0">
-
         <title>
-            Help & Support Centre | Sunrise Dental Clinic
+            Help & Support Center | Sunrise Dental Clinic
         </title>
 
-
-        <!-- =====================================================
-             GOOGLE FONT
-             ===================================================== -->
-
+        <!--GOOGLE FONT-->           
         <link rel="preconnect"
               href="https://fonts.googleapis.com">
 
@@ -30,31 +23,20 @@
             href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap"
             rel="stylesheet">
 
-
-        <!-- =====================================================
-             FONT AWESOME
-             ===================================================== -->
-
+        <!--FONT AWESOME-->           
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-
         <style>
-
-            /* =====================================================
-               RESET
-               ===================================================== */
-
+            /*RESET*/
             * {
                 margin: 0;
                 padding: 0;
                 box-sizing: border-box;
             }
 
-
             body {
-
                 font-family:
                     "Open Sans",
                     sans-serif;
@@ -69,52 +51,24 @@
                     1.6;
             }
 
-
-            /* =====================================================
-               HEADER
-               ===================================================== */
-
+            /*HEADER*/
             .header {
-
-                background:
-                    #ffffff;
-
-                height:
-                    76px;
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                justify-content:
-                    space-between;
-
-                padding:
-                    0 7%;
-
-                border-bottom:
-                    1px solid #e7edf2;
-
-                box-shadow:
-                    0 2px 10px rgba(0,0,0,0.04);
-
-                position:
-                    sticky;
-
-                top:
-                    0;
-
-                z-index:
-                    1000;
+                background : #ffffff;
+                height : 76px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding:0 7%;
+                border-bottom : 1px solid #e7edf2;
+                box-shadow :0 2px 10px rgba(0,0,0,0.04);
+                position : sticky;
+                top : 0;
+                z-index :1000;
             }
 
 
             /* LOGO */
-
             .logo {
-
                 display:
                     flex;
 
@@ -133,7 +87,6 @@
 
 
             .logo-icon {
-
                 width:
                     44px;
 
@@ -162,9 +115,7 @@
                     21px;
             }
 
-
             .logo-text {
-
                 display:
                     flex;
 
@@ -172,9 +123,7 @@
                     column;
             }
 
-
             .logo-text strong {
-
                 font-family:
                     "Jost",
                     sans-serif;
@@ -189,9 +138,7 @@
                     #102a43;
             }
 
-
             .logo-text small {
-
                 font-size:
                     11px;
 
@@ -202,11 +149,8 @@
                     0.5px;
             }
 
-
             /* HOME BUTTON */
-
             .home-button {
-
                 display:
                     inline-flex;
 
@@ -240,10 +184,7 @@
                 transition:
                     0.2s;
             }
-
-
             .home-button:hover {
-
                 background:
                     #0c83bb;
 
@@ -251,13 +192,8 @@
                     translateY(-1px);
             }
 
-
-            /* =====================================================
-               CONTAINER
-               ===================================================== */
-
+            /*CONTAINER*/
             .container {
-
                 width:
                     88%;
 
@@ -268,13 +204,8 @@
                     auto;
             }
 
-
-            /* =====================================================
-               HERO
-               ===================================================== */
-
+            /*HERO*/
             .hero {
-
                 margin-top:
                     35px;
 
@@ -301,9 +232,7 @@
                     0 12px 35px rgba(11,31,68,0.15);
             }
 
-
             .hero-icon {
-
                 width:
                     65px;
 
@@ -332,9 +261,7 @@
                     28px;
             }
 
-
             .hero h1 {
-
                 font-family:
                     "Jost",
                     sans-serif;
@@ -346,9 +273,7 @@
                     10px;
             }
 
-
             .hero p {
-
                 max-width:
                     700px;
 
@@ -363,12 +288,9 @@
             }
 
 
-            /* =====================================================
-               SEARCH
-               ===================================================== */
 
+            /*SEARCH*/
             .search-box {
-
                 max-width:
                     650px;
 
@@ -379,9 +301,7 @@
                     relative;
             }
 
-
             .search-box i {
-
                 position:
                     absolute;
 
@@ -398,9 +318,7 @@
                     #7b8794;
             }
 
-
             .search-box input {
-
                 width:
                     100%;
 
@@ -426,35 +344,24 @@
                     inherit;
             }
 
-
             .search-box input:focus {
-
                 box-shadow:
                     0 0 0 3px
                     rgba(255,255,255,0.25);
             }
 
-
-            /* =====================================================
-               SECTION
-               ===================================================== */
-
+            /*SECTION*/
             .section {
-
                 margin-top:
                     38px;
             }
 
-
             .section-heading {
-
                 margin-bottom:
                     18px;
             }
 
-
             .section-heading h2 {
-
                 font-family:
                     "Jost",
                     sans-serif;
@@ -469,7 +376,6 @@
                     5px;
             }
 
-
             .section-heading p {
 
                 color:
@@ -479,13 +385,8 @@
                     13px;
             }
 
-
-            /* =====================================================
-               QUICK HELP
-               ===================================================== */
-
+            /*QUICK HELP*/
             .quick-grid {
-
                 display:
                     grid;
 
@@ -496,9 +397,7 @@
                     18px;
             }
 
-
             .quick-card {
-
                 background:
                     white;
 
@@ -524,9 +423,7 @@
                     0 4px 15px rgba(16,42,67,0.03);
             }
 
-
             .quick-card:hover {
-
                 transform:
                     translateY(-5px);
 
@@ -537,9 +434,7 @@
                     0 10px 25px rgba(16,42,67,0.08);
             }
 
-
             .quick-icon {
-
                 width:
                     52px;
 
@@ -571,9 +466,7 @@
                     20px;
             }
 
-
             .quick-card h3 {
-
                 font-family:
                     "Jost",
                     sans-serif;
@@ -588,7 +481,6 @@
                     13px 0 6px;
             }
 
-
             .quick-card p {
 
                 font-size:
@@ -598,13 +490,8 @@
                     #7b8794;
             }
 
-
-            /* =====================================================
-               FAQ
-               ===================================================== */
-
+            /*FAQ*/
             .faq-container {
-
                 background:
                     white;
 
@@ -620,24 +507,15 @@
                 box-shadow:
                     0 4px 15px rgba(16,42,67,0.03);
             }
-
-
             .faq-item {
-
                 border-bottom:
                     1px solid #edf1f4;
             }
-
-
             .faq-item:last-child {
-
                 border-bottom:
                     none;
             }
-
-
             .faq-question {
-
                 width:
                     100%;
 
@@ -678,16 +556,11 @@
                     0.2s;
             }
 
-
             .faq-question:hover {
-
                 background:
                     #f8fbfd;
             }
-
-
             .faq-question .arrow {
-
                 width:
                     28px;
 
@@ -719,9 +592,7 @@
                     0;
             }
 
-
             .faq-answer {
-
                 display:
                     none;
 
@@ -737,30 +608,20 @@
                 line-height:
                     1.8;
             }
-
-
             .faq-item.active
             .faq-answer {
 
                 display:
                     block;
             }
-
-
             .faq-item.active
             .faq-question {
-
                 color:
                     #149ddd;
             }
 
-
-            /* =====================================================
-               NO RESULTS
-               ===================================================== */
-
+            /*NO RESULTS*/
             .no-results {
-
                 display:
                     none;
 
@@ -783,11 +644,7 @@
                     1px solid #e6edf2;
             }
 
-
-            /* =====================================================
-               CONTACT AREA
-               ===================================================== */
-
+            /*CONTACT AREA*/
             .contact-grid {
 
                 display:
@@ -800,9 +657,7 @@
                     20px;
             }
 
-
             .contact-card {
-
                 background:
                     white;
 
@@ -818,7 +673,6 @@
                 box-shadow:
                     0 4px 15px rgba(16,42,67,0.03);
             }
-
 
             .contact-card h3 {
 
@@ -836,9 +690,7 @@
                     20px;
             }
 
-
             .contact-item {
-
                 display:
                     flex;
 
@@ -851,7 +703,6 @@
                 margin-bottom:
                     18px;
             }
-
 
             .contact-icon {
 
@@ -883,9 +734,7 @@
                     #149ddd;
             }
 
-
             .contact-item strong {
-
                 display:
                     block;
 
@@ -899,7 +748,6 @@
                     2px;
             }
 
-
             .contact-item span {
 
                 color:
@@ -910,19 +758,12 @@
             }
 
 
-            /* =====================================================
-               SUPPORT FORM
-               ===================================================== */
-
+            /*SUPPORT FORM*/
             .form-group {
-
                 margin-bottom:
                     15px;
             }
-
-
             .form-group label {
-
                 display:
                     block;
 
@@ -939,11 +780,9 @@
                     6px;
             }
 
-
             .form-group input,
             .form-group select,
             .form-group textarea {
-
                 width:
                     100%;
 
@@ -968,8 +807,6 @@
                 transition:
                     0.2s;
             }
-
-
             .form-group input:focus,
             .form-group select:focus,
             .form-group textarea:focus {
@@ -981,17 +818,13 @@
                     0 0 0 3px
                     rgba(20,157,221,0.08);
             }
-
-
             .form-group textarea {
-
                 height:
                     110px;
 
                 resize:
                     vertical;
             }
-
 
             .submit-button {
 
@@ -1033,13 +866,8 @@
                     #0c83bb;
             }
 
-
-            /* =====================================================
-               SUCCESS MESSAGE
-               ===================================================== */
-
+            /*SUCCESS MESSAGE*/
             .success-message {
-
                 display:
                     none;
 
@@ -1065,13 +893,8 @@
                     12px;
             }
 
-
-            /* =====================================================
-               FOOTER
-               ===================================================== */
-
+            /*FOOTER*/
             .footer {
-
                 margin-top:
                     50px;
 
@@ -1090,122 +913,71 @@
                 font-size:
                     12px;
             }
-
-
             .footer strong {
-
                 color:
                     white;
             }
 
-
-            /* =====================================================
-               RESPONSIVE
-               ===================================================== */
-
+            /*RESPONSIVE*/
             @media(max-width: 1000px) {
-
                 .quick-grid {
 
                     grid-template-columns:
                         repeat(2, 1fr);
                 }
-
             }
-
-
             @media(max-width: 750px) {
-
                 .header {
-
                     padding:
                         0 4%;
                 }
-
-
                 .container {
-
                     width:
                         94%;
                 }
-
-
                 .contact-grid {
-
                     grid-template-columns:
                         1fr;
                 }
-
-
                 .hero {
-
                     padding:
                         40px 20px;
                 }
-
-
                 .hero h1 {
-
                     font-size:
                         28px;
                 }
-
             }
 
-
             @media(max-width: 500px) {
-
                 .quick-grid {
-
                     grid-template-columns:
                         1fr;
                 }
 
-
                 .logo-text {
-
                     display:
                         none;
                 }
-
-
                 .home-button span {
-
                     display:
                         none;
                 }
-
             }
-
         </style>
-
     </head>
-
-
     <body>
 
-
-        <!-- =========================================================
-             HEADER
-             ========================================================= -->
-
+        <!--HEADER-->        
         <header class="header">
-
-
             <a
                 href="<%= request.getContextPath()%>/Index.jsp"
                 class="logo">
-
-
                 <span class="logo-icon">
-
                     <i class="fa-solid fa-tooth"></i>
-
                 </span>
 
-
                 <span class="logo-text">
-
                     <strong>
                         Sunrise
                     </strong>
@@ -1213,12 +985,8 @@
                     <small>
                         Dental Clinic
                     </small>
-
                 </span>
-
-
             </a>
-
 
             <a
                 href="<%= request.getContextPath()%>/Index.jsp"
@@ -1229,73 +997,39 @@
                 <span>
                     Back to Home
                 </span>
-
             </a>
-
-
         </header>
 
-
-
-        <!-- =========================================================
-             MAIN
-             ========================================================= -->
-
+        <!--MAIN-->
         <main class="container">
 
-
-            <!-- =====================================================
-                 HERO
-                 ===================================================== -->
-
+            <!--HERO-->
             <section class="hero">
-
-
                 <div class="hero-icon">
-
                     <i class="fa-solid fa-circle-question"></i>
-
                 </div>
-
 
                 <h1>
                     Help & Support Centre
                 </h1>
 
-
                 <p>
-
                     Find quick answers to common questions about
                     appointments, doctor schedules, payments,
                     accounts and dental services.
-
                 </p>
 
-
                 <div class="search-box">
-
                     <i class="fa-solid fa-magnifying-glass"></i>
-
-
                     <input
                         type="text"
                         id="searchInput"
                         placeholder="Search for help...">
-
                 </div>
-
-
             </section>
 
-
-
-            <!-- =====================================================
-                 QUICK HELP
-                 ===================================================== -->
-
+            <!--QUICK HELP-->
             <section class="section">
-
-
                 <div class="section-heading">
 
                     <h2>
@@ -1305,102 +1039,65 @@
                     <p>
                         Select a category to find the information you need.
                     </p>
-
                 </div>
-
-
                 <div class="quick-grid">
 
 
                     <!-- APPOINTMENTS -->
-
                     <div
                         class="quick-card"
                         onclick="filterCategory('appointment')">
-
-
                         <div class="quick-icon">
-
                             <i class="fa-solid fa-calendar-check"></i>
-
                         </div>
-
 
                         <h3>
                             Appointments
                         </h3>
 
-
                         <p>
-
                             Booking, confirmation,
                             rescheduling and cancellation.
-
                         </p>
-
-
                     </div>
 
-
-
                     <!-- DOCTOR SCHEDULE -->
-
                     <div
                         class="quick-card"
                         onclick="filterCategory('doctor')">
 
 
                         <div class="quick-icon">
-
                             <i class="fa-solid fa-user-doctor"></i>
-
                         </div>
-
 
                         <h3>
                             Doctor Schedule
                         </h3>
 
-
                         <p>
-
                             Dentist working days and
                             available appointment times.
-
                         </p>
-
-
                     </div>
 
-
-
                     <!-- PAYMENT -->
-
                     <div
                         class="quick-card"
                         onclick="filterCategory('payment')">
-
-
                         <div class="quick-icon">
-
                             <i class="fa-solid fa-credit-card"></i>
-
                         </div>
-
 
                         <h3>
                             Payments
                         </h3>
 
-
                         <p>
-
                             Billing, payments and
                             treatment charges.
 
                         </p>
-
-
                     </div>
 
 

@@ -25,6 +25,10 @@ public interface BillingService {
             int id)
             throws SQLException;
 
+    Bill getBillByAppointmentId(
+            int appointmentId)
+            throws SQLException;
+
     List<Bill> getRecentBills(
             int limit)
             throws SQLException;

@@ -1,40 +1,55 @@
 <%@page import="java.util.List"%>
 <%@page import="model.DoctorLeave"%>
-<%@page import="model.DoctorOption"%>
 
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html"
+        pageEncoding="UTF-8"%>
 
 <%
     if (session.getAttribute("user") == null) {
+
         response.sendRedirect(
-                request.getContextPath() + "/Login.jsp"
+                request.getContextPath()
+                + "/Login.jsp"
         );
+
         return;
     }
 
-    String role = String.valueOf(
-            session.getAttribute("userRole")
-    );
+    String role
+            = String.valueOf(
+                    session.getAttribute("userRole")
+            );
 
-    if (!"admin".equalsIgnoreCase(role)) {
+    boolean isAdmin
+            = "admin".equalsIgnoreCase(role);
+
+    boolean isDoctor
+            = "doctor".equalsIgnoreCase(role);
+
+    if (!isAdmin && !isDoctor) {
+
         response.sendRedirect(
-                request.getContextPath() + "/Login.jsp?error=access"
+                request.getContextPath()
+                + "/Login.jsp?error=access"
         );
+
         return;
     }
-
-    List<DoctorOption> doctors
-            = (List<DoctorOption>) request.getAttribute("doctors");
 
     List<DoctorLeave> leaves
             = (List<DoctorLeave>) request.getAttribute("leaves");
 
-    String success = request.getParameter("success");
-    String error = request.getParameter("error");
+    String success
+            = request.getParameter("success");
+
+    String error
+            = request.getParameter("error");
 %>
 
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
+
     <head>
 
         <meta charset="UTF-8">
@@ -42,7 +57,10 @@
         <meta name="viewport"
               content="width=device-width, initial-scale=1.0">
 
-        <title>Doctor Leave Management | Sunrise Dental Clinic</title>
+        <title>
+            Doctor Leave Management |
+            Sunrise Dental Clinic
+        </title>
 
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -61,7 +79,7 @@
             }
 
             .container {
-                max-width: 1200px;
+                max-width: 1250px;
                 margin: auto;
                 padding: 30px 20px;
             }
@@ -92,7 +110,7 @@
 
             .header p {
                 margin: 0;
-                opacity: 0.9;
+                opacity: .9;
             }
 
             .card {
@@ -101,7 +119,7 @@
                 border-radius: 14px;
                 margin-bottom: 25px;
                 border: 1px solid #e5eaf0;
-                box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+                box-shadow: 0 3px 12px rgba(0,0,0,.04);
             }
 
             .card h2 {
@@ -112,7 +130,7 @@
             .form-grid {
                 display: grid;
                 grid-template-columns:
-                    repeat(3, 1fr);
+                    repeat(2, 1fr);
                 gap: 18px;
             }
 
@@ -132,25 +150,22 @@
                 color: #334155;
             }
 
-            input,
-            select {
+            input {
                 width: 100%;
                 padding: 12px;
                 border: 1px solid #d7e0e8;
                 border-radius: 8px;
                 font-size: 14px;
-                background: white;
             }
 
-            input:focus,
-            select:focus {
+            input:focus {
                 outline: none;
                 border-color: #06a3da;
             }
 
             .btn {
                 border: none;
-                padding: 12px 20px;
+                padding: 10px 16px;
                 border-radius: 8px;
                 cursor: pointer;
                 font-weight: 700;
@@ -165,20 +180,31 @@
                 background: #087eac;
             }
 
+            .btn-success {
+                background: #16a34a;
+            }
+
+            .btn-success:hover {
+                background: #15803d;
+            }
+
             .btn-danger {
                 background: #dc3545;
-                padding: 8px 12px;
-                font-size: 12px;
             }
 
             .btn-danger:hover {
                 background: #b02a37;
             }
 
+            .btn-warning {
+                background: #f59e0b;
+            }
+
             .alert {
                 padding: 14px;
                 border-radius: 8px;
                 margin-bottom: 20px;
+                font-weight: 600;
             }
 
             .alert-success {
@@ -219,26 +245,51 @@
 
             .badge {
                 display: inline-block;
-                padding: 5px 10px;
+                padding: 6px 11px;
                 border-radius: 20px;
                 font-size: 11px;
                 font-weight: 700;
             }
 
-            .badge-active {
+            .badge-pending {
+                background: #fef3c7;
+                color: #92400e;
+            }
+
+            .badge-approved {
                 background: #dcfce7;
-                color: #15803d;
+                color: #166534;
+            }
+
+            .badge-rejected {
+                background: #fee2e2;
+                color: #991b1b;
             }
 
             .badge-cancelled {
-                background: #fee2e2;
-                color: #b91c1c;
+                background: #e5e7eb;
+                color: #374151;
+            }
+
+            .action-group {
+                display: flex;
+                gap: 7px;
+                flex-wrap: wrap;
             }
 
             .empty {
                 text-align: center;
-                padding: 30px;
+                padding: 35px;
                 color: #64748b;
+            }
+
+            .info-box {
+                background: #eff6ff;
+                border-left: 4px solid #06a3da;
+                padding: 14px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                color: #1e3a8a;
             }
 
             @media(max-width: 800px) {
@@ -250,6 +301,14 @@
                 .form-group.full {
                     grid-column: auto;
                 }
+
+                .action-group {
+                    flex-direction: column;
+                }
+
+                .action-group .btn {
+                    width: 100%;
+                }
             }
 
         </style>
@@ -260,14 +319,29 @@
 
         <div class="container">
 
+            <% if (isAdmin) {%>
+
             <a class="back"
                href="<%=request.getContextPath()%>/admin-dashboard.jsp">
 
                 <i class="fa-solid fa-arrow-left"></i>
 
-                Back to Dashboard
+                Back to Admin Dashboard
 
             </a>
+
+            <% } else {%>
+
+            <a class="back"
+               href="<%=request.getContextPath()%>/doctor-dashboard.jsp">
+
+                <i class="fa-solid fa-arrow-left"></i>
+
+                Back to Doctor Dashboard
+
+            </a>
+
+            <% } %>
 
 
             <div class="header">
@@ -280,23 +354,61 @@
 
                 </h1>
 
+                <% if (isAdmin) { %>
+
                 <p>
-
-                    Manage doctor leave dates and prevent
-                    appointments during approved leave.
-
+                    Review and manage doctor leave requests.
+                    Approve or reject pending requests.
                 </p>
+
+                <% } else { %>
+
+                <p>
+                    Submit your leave request and track
+                    its approval status.
+                </p>
+
+                <% } %>
 
             </div>
 
 
-            <% if ("added".equals(success)) { %>
+            <!-- SUCCESS -->
+
+            <% if ("requested".equals(success)) { %>
 
             <div class="alert alert-success">
 
                 <i class="fa-solid fa-circle-check"></i>
 
-                Doctor leave has been added successfully.
+                Your leave request has been submitted successfully
+                and is waiting for admin approval.
+
+            </div>
+
+            <% } %>
+
+
+            <% if ("approved".equals(success)) { %>
+
+            <div class="alert alert-success">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+                Leave request approved successfully.
+
+            </div>
+
+            <% } %>
+
+
+            <% if ("rejected".equals(success)) { %>
+
+            <div class="alert alert-success">
+
+                <i class="fa-solid fa-circle-check"></i>
+
+                Leave request rejected successfully.
 
             </div>
 
@@ -309,7 +421,7 @@
 
                 <i class="fa-solid fa-circle-check"></i>
 
-                Doctor leave has been cancelled successfully.
+                Leave has been cancelled successfully.
 
             </div>
 
@@ -326,21 +438,33 @@
 
             </div>
 
-            <% }%>
+            <% } %>
 
 
-            <!-- ADD LEAVE -->
+            <!-- =========================================
+                 DOCTOR REQUEST FORM
+                 ========================================= -->
+
+            <% if (isDoctor) {%>
 
             <div class="card">
 
                 <h2>
 
-                    <i class="fa-solid fa-plus-circle"></i>
+                    <i class="fa-solid fa-paper-plane"></i>
 
-                    Add Doctor Leave
+                    Request Leave
 
                 </h2>
 
+                <div class="info-box">
+
+                    <i class="fa-solid fa-info-circle"></i>
+
+                    Your request will be sent to the
+                    administrator for approval.
+
+                </div>
 
                 <form method="post"
                       action="<%=request.getContextPath()%>/DoctorLeaveServlet">
@@ -349,44 +473,7 @@
                            name="action"
                            value="add">
 
-
                     <div class="form-grid">
-
-
-                        <div class="form-group">
-
-                            <label>
-                                Doctor
-                            </label>
-
-                            <select name="doctorId"
-                                    required>
-
-                                <option value="">
-                                    Select Doctor
-                                </option>
-
-                                <%
-                                    if (doctors != null) {
-
-                                        for (DoctorOption doctor : doctors) {
-                                %>
-
-                                <option value="<%=doctor.getId()%>">
-
-                                    Dr. <%=doctor.getName()%>
-
-                                </option>
-
-                                <%
-                                        }
-                                    }
-                                %>
-
-                            </select>
-
-                        </div>
-
 
                         <div class="form-group">
 
@@ -411,7 +498,7 @@
                             <input type="text"
                                    name="reason"
                                    maxlength="500"
-                                   placeholder="Annual leave / Medical leave">
+                                   placeholder="Annual leave / Medical leave / Personal">
 
                         </div>
 
@@ -421,9 +508,9 @@
                             <button type="submit"
                                     class="btn btn-primary">
 
-                                <i class="fa-solid fa-plus"></i>
+                                <i class="fa-solid fa-paper-plane"></i>
 
-                                Add Leave
+                                Submit Leave Request
 
                             </button>
 
@@ -435,8 +522,12 @@
 
             </div>
 
+            <% }%>
 
-            <!-- LEAVE LIST -->
+
+            <!-- =========================================
+                 LEAVE LIST
+                 ========================================= -->
 
             <div class="card">
 
@@ -444,7 +535,9 @@
 
                     <i class="fa-solid fa-list"></i>
 
-                    Doctor Leave Schedule
+                    <%= isAdmin
+                            ? "Doctor Leave Requests"
+                            : "My Leave Requests"%>
 
                 </h2>
 
@@ -457,9 +550,13 @@
 
                             <tr>
 
+                                <% if (isAdmin) { %>
+
                                 <th>
                                     Doctor
                                 </th>
+
+                                <% } %>
 
                                 <th>
                                     Leave Date
@@ -481,18 +578,24 @@
 
                         </thead>
 
+
                         <tbody>
 
                             <%
-                                if (leaves == null || leaves.isEmpty()) {
+                                if (leaves == null
+                                        || leaves.isEmpty()) {
                             %>
 
                             <tr>
 
-                                <td colspan="5"
+                                <td colspan="<%=isAdmin ? 5 : 4%>"
                                     class="empty">
 
-                                    No doctor leave records found.
+                                    <i class="fa-solid fa-calendar-check"></i>
+
+                                    <br><br>
+
+                                    No leave requests found.
 
                                 </td>
 
@@ -502,17 +605,27 @@
                             } else {
 
                                 for (DoctorLeave leave : leaves) {
+
+                                    String status
+                                            = leave.getStatus();
                             %>
 
                             <tr>
 
+                                <% if (isAdmin) {%>
+
                                 <td>
 
                                     <strong>
-                                        Dr. <%=leave.getDoctorName()%>
+
+                                        Dr.
+                                        <%=leave.getDoctorName()%>
+
                                     </strong>
 
                                 </td>
+
+                                <% }%>
 
 
                                 <td>
@@ -526,7 +639,9 @@
 
                                     <%
                                         if (leave.getReason() == null
-                                                || leave.getReason().trim().isEmpty()) {
+                                                || leave.getReason()
+                                                        .trim()
+                                                        .isEmpty()) {
                                     %>
 
                                     No reason provided
@@ -544,19 +659,48 @@
                                 </td>
 
 
+                                <!-- STATUS -->
+
                                 <td>
 
-                                    <% if ("ACTIVE".equalsIgnoreCase(
-                                    leave.getStatus())) { %>
+                                    <% if ("PENDING".equalsIgnoreCase(status)) { %>
 
-                                    <span class="badge badge-active">
-                                        ACTIVE
+                                    <span class="badge badge-pending">
+
+                                        <i class="fa-solid fa-clock"></i>
+
+                                        PENDING
+
+                                    </span>
+
+                                    <% } else if ("APPROVED".equalsIgnoreCase(status)) { %>
+
+                                    <span class="badge badge-approved">
+
+                                        <i class="fa-solid fa-check"></i>
+
+                                        APPROVED
+
+                                    </span>
+
+                                    <% } else if ("REJECTED".equalsIgnoreCase(status)) { %>
+
+                                    <span class="badge badge-rejected">
+
+                                        <i class="fa-solid fa-xmark"></i>
+
+                                        REJECTED
+
                                     </span>
 
                                     <% } else { %>
 
                                     <span class="badge badge-cancelled">
+
+                                        <i class="fa-solid fa-ban"></i>
+
                                         CANCELLED
+
                                     </span>
 
                                     <% } %>
@@ -564,39 +708,110 @@
                                 </td>
 
 
+                                <!-- ACTION -->
+
                                 <td>
 
-                                    <% if ("ACTIVE".equalsIgnoreCase(
-                                    leave.getStatus())) {%>
+                                    <div class="action-group">
 
-                                    <form method="post"
-                                          action="<%=request.getContextPath()%>/DoctorLeaveServlet"
-                                          onsubmit="return confirm('Are you sure you want to cancel this leave?');">
 
-                                        <input type="hidden"
-                                               name="action"
-                                               value="cancel">
+                                        <!-- ADMIN ACTIONS -->
 
-                                        <input type="hidden"
-                                               name="id"
-                                               value="<%=leave.getId()%>">
+                                        <% if (isAdmin
+                                            && "PENDING".equalsIgnoreCase(status)) {%>
 
-                                        <button type="submit"
-                                                class="btn btn-danger">
+                                        <form method="post"
+                                              action="<%=request.getContextPath()%>/DoctorLeaveServlet">
 
-                                            <i class="fa-solid fa-xmark"></i>
+                                            <input type="hidden"
+                                                   name="action"
+                                                   value="approve">
 
-                                            Cancel
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="<%=leave.getId()%>">
 
-                                        </button>
+                                            <button type="submit"
+                                                    class="btn btn-success"
+                                                    onclick="return confirm('Approve this doctor leave request?');">
 
-                                    </form>
+                                                <i class="fa-solid fa-check"></i>
 
-                                    <% } else { %>
+                                                Approve
 
-                                    -
+                                            </button>
 
-                                    <% } %>
+                                        </form>
+
+
+                                        <form method="post"
+                                              action="<%=request.getContextPath()%>/DoctorLeaveServlet">
+
+                                            <input type="hidden"
+                                                   name="action"
+                                                   value="reject">
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="<%=leave.getId()%>">
+
+                                            <button type="submit"
+                                                    class="btn btn-danger"
+                                                    onclick="return confirm('Reject this doctor leave request?');">
+
+                                                <i class="fa-solid fa-xmark"></i>
+
+                                                Reject
+
+                                            </button>
+
+                                        </form>
+
+                                        <% } %>
+
+
+                                        <!-- CANCEL PENDING/APPROVED -->
+
+                                        <% if (("PENDING".equalsIgnoreCase(status)
+                                            || "APPROVED".equalsIgnoreCase(status))
+                                            && (isDoctor || isAdmin)) {%>
+
+                                        <form method="post"
+                                              action="<%=request.getContextPath()%>/DoctorLeaveServlet">
+
+                                            <input type="hidden"
+                                                   name="action"
+                                                   value="cancel">
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="<%=leave.getId()%>">
+
+                                            <button type="submit"
+                                                    class="btn btn-warning"
+                                                    onclick="return confirm('Are you sure you want to cancel this leave?');">
+
+                                                <i class="fa-solid fa-ban"></i>
+
+                                                Cancel
+
+                                            </button>
+
+                                        </form>
+
+                                        <% } %>
+
+
+                                        <% if ("REJECTED".equalsIgnoreCase(status)
+                                            || "CANCELLED".equalsIgnoreCase(status)) { %>
+
+                                        <span>
+                                            -
+                                        </span>
+
+                                        <% } %>
+
+                                    </div>
 
                                 </td>
 
@@ -618,4 +833,5 @@
         </div>
 
     </body>
+
 </html>

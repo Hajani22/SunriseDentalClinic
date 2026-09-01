@@ -1,6 +1,8 @@
 package controller;
 
-import jakarta.servlet.ServletException;
+import dao.PaymentDAO;
+import dao.impl.PaymentDAOImpl;
+
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import model.Bill;
+import model.Payment;
 
 import service.BillingService;
 import service.impl.BillingServiceImpl;
@@ -15,52 +18,28 @@ import service.impl.BillingServiceImpl;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 
-@WebServlet("/CashierPaymentServlet")
+@WebServlet({
+    "/CashierPaymentServlet",
+    "/CashierPaymentsServlet"
+})
 public class CashierPaymentServlet
         extends HttpServlet {
+
+    private final PaymentDAO paymentDAO
+            = new PaymentDAOImpl();
 
     private final BillingService billingService
             = new BillingServiceImpl();
 
     @Override
-    protected void doPost(
+    protected void doGet(
             HttpServletRequest request,
             HttpServletResponse response)
-            throws ServletException, IOException {
+            throws IOException {
 
-        HttpSession session
-                = request.getSession(false);
-
-
-        /* =========================================
-           LOGIN CHECK
-           ========================================= */
-        if (session == null
-                || session.getAttribute("user") == null) {
-
-            response.sendRedirect(
-                    request.getContextPath()
-                    + "/Login.jsp"
-            );
-
-            return;
-        }
-
-
-        /* =========================================
-           ROLE CHECK
-           ========================================= */
-        String role
-                = String.valueOf(
-                        session.getAttribute(
-                                "userRole"
-                        )
-                );
-
-        if (!"cashier".equalsIgnoreCase(role)) {
+        if (!isCashier(request)) {
 
             response.sendRedirect(
                     request.getContextPath()
@@ -72,199 +51,149 @@ public class CashierPaymentServlet
 
         try {
 
-            /* =====================================
-               CASHIER ID
-               ===================================== */
-            Object userIdObject
-                    = session.getAttribute(
-                            "userId"
-                    );
+            request.setAttribute(
+                    "paymentRecords",
+                    paymentDAO.getAllPayments()
+            );
 
-            int cashierId;
+            request.getRequestDispatcher(
+                    "/cashier-payments.jsp"
+            ).forward(
+                    request,
+                    response
+            );
 
-            if (userIdObject instanceof Integer) {
+        } catch (Exception e) {
 
-                cashierId
-                        = (Integer) userIdObject;
+            e.printStackTrace();
 
-            } else {
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/cashier-dashboard.jsp?error=payments"
+            );
+        }
+    }
 
-                try {
+    @Override
+    protected void doPost(
+            HttpServletRequest request,
+            HttpServletResponse response)
+            throws IOException {
 
-                    cashierId
-                            = Integer.parseInt(
-                                    String.valueOf(
-                                            userIdObject
-                                    )
-                            );
+        if (!isCashier(request)) {
 
-                } catch (Exception ex) {
+            response.sendRedirect(
+                    request.getContextPath()
+                    + "/Login.jsp?error=access"
+            );
 
-                    redirectWithError(
-                            request,
-                            response,
-                            null,
-                            "Invalid cashier session."
-                    );
+            return;
+        }
 
-                    return;
-                }
-            }
+        String appointmentNo
+                = clean(
+                        request.getParameter(
+                                "appointmentNo"
+                        )
+                );
 
-            if (cashierId <= 0) {
+        String paymentMethod
+                = clean(
+                        request.getParameter(
+                                "paymentMethod"
+                        )
+                );
 
-                redirectWithError(
+        String discountParam
+                = clean(
+                        request.getParameter(
+                                "discountPercent"
+                        )
+                );
+
+        try {
+
+            if (appointmentNo == null) {
+
+                redirectError(
                         request,
                         response,
-                        null,
-                        "Invalid cashier session."
+                        "missing"
                 );
 
                 return;
             }
 
-
-            /* =====================================
-               FORM VALUES
-               ===================================== */
-            String appointmentNo
-                    = clean(
-                            request.getParameter(
-                                    "appointmentNo"
-                            )
+            /*
+             * Find appointment.
+             */
+            Bill appointment
+                    = billingService.findAppointmentForBilling(
+                            appointmentNo
                     );
 
-            String paymentMethod
-                    = clean(
-                            request.getParameter(
-                                    "paymentMethod"
-                            )
-                    );
+            if (appointment == null) {
 
-            String discountValue
-                    = clean(
-                            request.getParameter(
-                                    "discount"
-                            )
-                    );
-
-
-            /* =====================================
-               APPOINTMENT VALIDATION
-               ===================================== */
-            if (appointmentNo == null
-                    || appointmentNo.isEmpty()) {
-
-                redirectWithError(
+                redirectError(
                         request,
                         response,
-                        null,
-                        "Appointment number is required."
+                        "bill"
                 );
 
                 return;
             }
 
-
-            /* =====================================
-               PAYMENT METHOD
-               ===================================== */
-            if (!isValidPaymentMethod(
-                    paymentMethod
-            )) {
-
-                redirectWithError(
-                        request,
-                        response,
-                        appointmentNo,
-                        "Please select a valid payment method."
-                );
-
-                return;
-            }
-
-
-            /* =====================================
-               DISCOUNT
-               ===================================== */
-            BigDecimal discount
-                    = BigDecimal.ZERO;
-
-            if (discountValue != null
-                    && !discountValue.isEmpty()) {
-
-                try {
-
-                    discount
-                            = new BigDecimal(
-                                    discountValue
-                            ).setScale(
-                                    2,
-                                    RoundingMode.HALF_UP
-                            );
-
-                } catch (NumberFormatException ex) {
-
-                    redirectWithError(
-                            request,
-                            response,
-                            appointmentNo,
-                            "Invalid discount amount."
+            /*
+             * =================================================
+             * HARD DUPLICATE BILL CHECK
+             * =================================================
+             */
+            Bill existingBill
+                    = billingService.getBillByAppointmentId(
+                            appointment.getAppointmentId()
                     );
 
-                    return;
-                }
-            }
+            if (existingBill != null) {
 
-            if (discount.compareTo(
-                    BigDecimal.ZERO
-            ) < 0) {
-
-                redirectWithError(
-                        request,
-                        response,
-                        appointmentNo,
-                        "Discount cannot be negative."
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/CashierReceiptServlet?id="
+                        + existingBill.getId()
                 );
 
                 return;
             }
 
-
-            /* =====================================
-               PREPARE BILL
-               ===================================== */
-            Bill bill
+            /*
+             * =================================================
+             * GET BILL AMOUNTS
+             * =================================================
+             */
+            Bill prepared
                     = billingService.prepareBill(
                             appointmentNo,
-                            discount
+                            BigDecimal.ZERO
                     );
 
-            if (bill == null) {
+            if (prepared == null) {
 
-                redirectWithError(
+                redirectError(
                         request,
                         response,
-                        appointmentNo,
-                        "Unable to prepare the bill. "
-                        + "The appointment may already have a bill."
+                        "bill"
                 );
 
                 return;
             }
 
-
-            /* =====================================
-               BILL VALUES
-               ===================================== */
             BigDecimal treatment
                     = safe(
-                            bill.getTreatmentAmount()
+                            prepared.getTreatmentAmount()
                     );
 
             BigDecimal consultation
                     = safe(
-                            bill.getConsultationFee()
+                            prepared.getConsultationFee()
                     );
 
             BigDecimal gross
@@ -272,71 +201,192 @@ public class CashierPaymentServlet
                             consultation
                     );
 
-            if (discount.compareTo(
-                    gross
-            ) > 0) {
-
-                redirectWithError(
-                        request,
-                        response,
-                        appointmentNo,
-                        "Discount cannot exceed "
-                        + "the bill amount."
-                );
-
-                return;
-            }
-
-            BigDecimal total
-                    = gross.subtract(
-                            discount
-                    ).setScale(
-                            2,
-                            RoundingMode.HALF_UP
+            /*
+             * =================================================
+             * GET PATIENT PRE-PAYMENT
+             * =================================================
+             */
+            BigDecimal alreadyPaid
+                    = getPaidAmount(
+                            appointment.getAppointmentId()
                     );
 
-            if (total.compareTo(
-                    BigDecimal.ZERO
-            ) <= 0) {
+            /*
+             * =================================================
+             * DISCOUNT
+             * =================================================
+             */
+            BigDecimal discountPercent
+                    = parseDiscount(
+                            discountParam
+                    );
 
-                redirectWithError(
-                        request,
-                        response,
-                        appointmentNo,
-                        "Bill total must be greater than zero."
+            BigDecimal discount
+                    = gross
+                            .multiply(
+                                    discountPercent
+                            )
+                            .divide(
+                                    new BigDecimal("100"),
+                                    2,
+                                    RoundingMode.HALF_UP
+                            );
+
+            BigDecimal finalAmount
+                    = gross.subtract(
+                            discount
+                    );
+
+            BigDecimal balance
+                    = finalAmount.subtract(
+                            alreadyPaid
+                    );
+
+            if (balance.compareTo(
+                    BigDecimal.ZERO
+            ) < 0) {
+
+                balance
+                        = BigDecimal.ZERO;
+            }
+
+            /*
+             * =================================================
+             * FULLY PAID BY PATIENT
+             * =================================================
+             */
+            if (balance.compareTo(
+                    BigDecimal.ZERO
+            ) == 0
+                    && alreadyPaid.compareTo(
+                            BigDecimal.ZERO
+                    ) > 0) {
+
+                /*
+                 * DO NOT CREATE ANOTHER PAYMENT.
+                 *
+                 * Send to prepaid receipt.
+                 */
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/CashierReceiptServlet?appointmentNo="
+                        + appointmentNo
                 );
 
                 return;
             }
 
+            /*
+             * Payment method required only if
+             * cashier still has a balance to collect.
+             */
+            if (paymentMethod == null) {
 
-            /* =====================================
-               SET FINAL PAYMENT INFORMATION
-               ===================================== */
+                redirectError(
+                        request,
+                        response,
+                        "payment"
+                );
+
+                return;
+            }
+
+            /*
+             * =================================================
+             * CASHIER ID
+             * =================================================
+             */
+            HttpSession session
+                    = request.getSession(false);
+
+            int cashierId
+                    = Integer.parseInt(
+                            String.valueOf(
+                                    session.getAttribute(
+                                            "userId"
+                                    )
+                            )
+                    );
+
+            /*
+             * =================================================
+             * CREATE BILL
+             * =================================================
+             */
+            Bill bill
+                    = new Bill();
+
+            bill.setAppointmentId(
+                    appointment.getAppointmentId()
+            );
+
+            bill.setPatientId(
+                    appointment.getPatientId()
+            );
+
             bill.setCashierId(
                     cashierId
+            );
+
+            bill.setAppointmentNo(
+                    appointment.getAppointmentNo()
+            );
+
+            bill.setPatientName(
+                    appointment.getPatientName()
+            );
+
+            bill.setPatientPhone(
+                    appointment.getPatientPhone()
+            );
+
+            bill.setDoctorName(
+                    appointment.getDoctorName()
+            );
+
+            bill.setTreatmentType(
+                    appointment.getTreatmentType()
+            );
+
+            bill.setAppointmentDate(
+                    appointment.getAppointmentDate()
+            );
+
+            bill.setAppointmentTime(
+                    appointment.getAppointmentTime()
+            );
+
+            bill.setTreatmentAmount(
+                    treatment
+            );
+
+            bill.setConsultationFee(
+                    consultation
             );
 
             bill.setDiscount(
                     discount
             );
 
+            bill.setPaidAmount(
+                    alreadyPaid
+            );
+
             bill.setTotalAmount(
-                    total
+                    balance
             );
 
             bill.setPaymentMethod(
-                    paymentMethod.toUpperCase()
+                    paymentMethod
             );
 
             bill.setPaymentStatus(
                     "PAID"
             );
 
-
-            /* =====================================
-               SAVE BILL
-               ===================================== */
+            /*
+             * createBill() generates bill number.
+             */
             boolean saved
                     = billingService.createBill(
                             bill
@@ -344,77 +394,136 @@ public class CashierPaymentServlet
 
             if (!saved) {
 
-                redirectWithError(
+                redirectError(
                         request,
                         response,
-                        appointmentNo,
-                        "Payment could not be completed. "
-                        + "A bill may already exist."
+                        "save"
                 );
 
                 return;
             }
 
-
-            /* =====================================
-               RECEIPT
-               ===================================== */
+            /*
+             * =================================================
+             * GO TO RECEIPT
+             * =================================================
+             */
             response.sendRedirect(
                     request.getContextPath()
                     + "/CashierReceiptServlet?id="
                     + bill.getId()
             );
 
-        } catch (Exception ex) {
+        } catch (Exception e) {
 
-            log(
-                    "Cashier payment processing failed.",
-                    ex
-            );
+            e.printStackTrace();
 
-            redirectWithError(
+            redirectError(
                     request,
                     response,
-                    null,
-                    "Unexpected error occurred "
-                    + "while processing the payment."
+                    "server"
             );
         }
     }
 
+    /*
+     * =========================================================
+     * GET PAID AMOUNT
+     * =========================================================
+     */
+    private BigDecimal getPaidAmount(
+            int appointmentId)
+            throws Exception {
 
-    /* =========================================================
-       PAYMENT METHODS
-       ========================================================= */
-    private boolean isValidPaymentMethod(
-            String method) {
+        BigDecimal total
+                = BigDecimal.ZERO;
 
-        if (method == null) {
-            return false;
+        List<Payment> payments
+                = paymentDAO.getAllPayments();
+
+        for (Payment payment : payments) {
+
+            if (payment.getAppointmentId()
+                    == appointmentId
+                    && "PAID".equalsIgnoreCase(
+                            payment.getPaymentStatus()
+                    )) {
+
+                if (payment.getAmount() != null) {
+
+                    total
+                            = total.add(
+                                    payment.getAmount()
+                            );
+                }
+            }
         }
 
-        return "CASH".equalsIgnoreCase(method)
-                || "CARD".equalsIgnoreCase(method)
-                || "BANK_TRANSFER"
-                        .equalsIgnoreCase(method);
+        return total;
     }
 
+    /*
+     * =========================================================
+     * DISCOUNT
+     *
+     * Allowed:
+     * 0
+     * 5
+     * 10
+     * 15
+     * =========================================================
+     */
+    private BigDecimal parseDiscount(
+            String value) {
 
-    /* =========================================================
-       SAFE DECIMAL
-       ========================================================= */
+        if (value == null) {
+
+            return BigDecimal.ZERO;
+        }
+
+        try {
+
+            BigDecimal discount
+                    = new BigDecimal(
+                            value
+                    );
+
+            if (discount.compareTo(
+                    BigDecimal.ZERO
+            ) < 0) {
+
+                return BigDecimal.ZERO;
+            }
+
+            if (discount.compareTo(
+                    new BigDecimal("15")
+            ) > 0) {
+
+                return new BigDecimal("15");
+            }
+
+            return discount.setScale(
+                    2,
+                    RoundingMode.HALF_UP
+            );
+
+        } catch (NumberFormatException e) {
+
+            return BigDecimal.ZERO;
+        }
+    }
+
     private BigDecimal safe(
             BigDecimal value) {
 
         return value == null
                 ? BigDecimal.ZERO
-                : value;
+                : value.setScale(
+                        2,
+                        RoundingMode.HALF_UP
+                );
     }
 
-
-    /* =========================================================
-       CLEAN STRING
-       ========================================================= */
     private String clean(
             String value) {
 
@@ -422,55 +531,47 @@ public class CashierPaymentServlet
             return null;
         }
 
-        return value.trim();
+        value
+                = value.trim();
+
+        return value.isEmpty()
+                ? null
+                : value;
     }
 
-
-    /* =========================================================
-       ERROR REDIRECT
-       ========================================================= */
-    private void redirectWithError(
+    private void redirectError(
             HttpServletRequest request,
             HttpServletResponse response,
-            String appointmentNo,
-            String message)
+            String error)
             throws IOException {
 
-        StringBuilder url
-                = new StringBuilder();
-
-        url.append(
+        response.sendRedirect(
                 request.getContextPath()
+                + "/CashierBillingServlet?error="
+                + error
         );
+    }
 
-        url.append(
-                "/CashierBillingServlet?error="
-        );
+    private boolean isCashier(
+            HttpServletRequest request) {
 
-        url.append(
-                URLEncoder.encode(
-                        message,
-                        StandardCharsets.UTF_8
-                )
-        );
+        HttpSession session
+                = request.getSession(false);
 
-        if (appointmentNo != null
-                && !appointmentNo.isEmpty()) {
-
-            url.append(
-                    "&appointmentNo="
-            );
-
-            url.append(
-                    URLEncoder.encode(
-                            appointmentNo,
-                            StandardCharsets.UTF_8
-                    )
-            );
+        if (session == null) {
+            return false;
         }
 
-        response.sendRedirect(
-                url.toString()
+        if (session.getAttribute("user") == null) {
+            return false;
+        }
+
+        return "cashier".equalsIgnoreCase(
+                String.valueOf(
+                        session.getAttribute(
+                                "userRole"
+                        )
+                )
         );
     }
 }

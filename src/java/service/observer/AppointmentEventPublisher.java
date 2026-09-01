@@ -30,21 +30,16 @@ public class AppointmentEventPublisher {
             AppointmentEvent event) {
 
         for (AppointmentObserver observer : observers) {
-
             try {
-
                 observer.update(event);
-
+                
             } catch (SQLException e) {
-
                 LOGGER.log(
                         Level.WARNING,
                         "Appointment observer failed.",
                         e
                 );
-
             } catch (RuntimeException e) {
-
                 LOGGER.log(
                         Level.WARNING,
                         "Appointment observer error.",

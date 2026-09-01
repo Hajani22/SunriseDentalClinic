@@ -14,14 +14,34 @@ public class AppointmentSlotHandler
             AppointmentDAO appointmentDAO)
             throws SQLException {
 
-        if (appointmentDAO.isSlotBooked(
-                appointment.getDoctorId(),
-                appointment.getAppointmentDate(),
-                appointment.getAppointmentTime())) {
+        if (appointment == null) {
 
             throw new IllegalArgumentException(
-                    "The selected dentist is already booked "
-                    + "for this time slot."
+                    "Appointment details are required."
+            );
+        }
+
+        // -----------------------------------------------------
+        // CHECK EXISTING ACTIVE APPOINTMENT
+        //
+        // Same:
+        //   Doctor
+        //   Date
+        //   Time
+        //
+        // cannot be booked again.
+        // -----------------------------------------------------
+        boolean alreadyBooked
+                = appointmentDAO.isSlotBooked(
+                        appointment.getDoctorId(),
+                        appointment.getAppointmentDate(),
+                        appointment.getAppointmentTime()
+                );
+
+        if (alreadyBooked) {
+
+            throw new IllegalArgumentException(
+                    "The selected dentist already has an appointment at the selected date and time. Please choose another time."
             );
         }
     }

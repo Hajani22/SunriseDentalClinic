@@ -20,9 +20,6 @@ public class BillingServiceImpl
     private final BillingDAO dao
             = new BillingDAOImpl();
 
-    /**
-     * Factory + Strategy Patterns.
-     */
     private final BillingCalculationStrategy calculationStrategy
             = BillingStrategyFactory.getStrategy("STANDARD");
 
@@ -57,6 +54,10 @@ public class BillingServiceImpl
             return null;
         }
 
+        /*
+         * Do not prepare another bill if one
+         * already exists for this appointment.
+         */
         if (dao.billExistsForAppointment(
                 bill.getAppointmentId())) {
 
@@ -86,14 +87,12 @@ public class BillingServiceImpl
         }
 
         if (discount.compareTo(
-                BigDecimal.ZERO) < 0) {
+                BigDecimal.ZERO
+        ) < 0) {
 
             discount = BigDecimal.ZERO;
         }
 
-        /*
-         * Strategy Pattern is used here.
-         */
         BigDecimal total
                 = calculationStrategy.calculateTotal(
                         treatmentAmount,
@@ -115,6 +114,10 @@ public class BillingServiceImpl
 
         bill.setTotalAmount(
                 total
+        );
+
+        bill.setPaidAmount(
+                BigDecimal.ZERO
         );
 
         return bill;
@@ -163,26 +166,48 @@ public class BillingServiceImpl
                         .toUpperCase()
         );
 
-        bill.setPaymentStatus("PAID");
+        bill.setPaymentStatus(
+                "PAID"
+        );
 
-        return dao.createBill(bill);
+        return dao.createBill(
+                bill
+        );
     }
 
     @Override
-    public Bill getBillById(int id)
+    public Bill getBillById(
+            int id)
             throws SQLException {
 
         return dao.getBillById(id);
     }
 
     @Override
-    public List<Bill> getRecentBills(int limit)
+    public Bill getBillByAppointmentId(
+            int appointmentId)
+            throws SQLException {
+
+        if (appointmentId <= 0) {
+            return null;
+        }
+
+        return dao.getBillByAppointmentId(
+                appointmentId
+        );
+    }
+
+    @Override
+    public List<Bill> getRecentBills(
+            int limit)
             throws SQLException {
 
         if (limit <= 0) {
             limit = 10;
         }
 
-        return dao.getRecentBills(limit);
+        return dao.getRecentBills(
+                limit
+        );
     }
 }

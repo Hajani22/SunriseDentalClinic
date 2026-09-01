@@ -46,7 +46,8 @@ public class DoctorLeaveServiceImpl
 
     @Override
     public boolean addLeave(
-            DoctorLeave leave)
+            DoctorLeave leave,
+            String status)
             throws SQLException {
 
         if (leave == null) {
@@ -59,7 +60,7 @@ public class DoctorLeaveServiceImpl
         if (leave.getDoctorId() <= 0) {
 
             throw new IllegalArgumentException(
-                    "Please select a doctor."
+                    "Invalid doctor."
             );
         }
 
@@ -86,21 +87,91 @@ public class DoctorLeaveServiceImpl
                 && leave.getReason().length() > 500) {
 
             throw new IllegalArgumentException(
-                    "Leave reason is too long."
+                    "Leave reason cannot exceed 500 characters."
             );
         }
 
+        if (status == null
+                || (!"PENDING".equals(status)
+                && !"APPROVED".equals(status))) {
+
+            throw new IllegalArgumentException(
+                    "Invalid leave status."
+            );
+        }
+
+        /*
+         * Do not allow duplicate leave requests
+         * except cancelled/rejected requests.
+         */
         if (dao.isDoctorOnLeave(
                 leave.getDoctorId(),
                 leave.getLeaveDate())) {
 
             throw new IllegalArgumentException(
-                    "Doctor already has leave on this date."
+                    "Doctor already has approved leave on this date."
             );
         }
 
         return dao.addLeave(
-                leave
+                leave,
+                status
+        );
+    }
+
+    @Override
+    public boolean approveLeave(
+            int id)
+            throws SQLException {
+
+        if (id <= 0) {
+            return false;
+        }
+
+        DoctorLeave leave
+                = dao.getById(id);
+
+        if (leave == null) {
+            return false;
+        }
+
+        if (!"PENDING".equalsIgnoreCase(
+                leave.getStatus())) {
+
+            return false;
+        }
+
+        return dao.updateStatus(
+                id,
+                "APPROVED"
+        );
+    }
+
+    @Override
+    public boolean rejectLeave(
+            int id)
+            throws SQLException {
+
+        if (id <= 0) {
+            return false;
+        }
+
+        DoctorLeave leave
+                = dao.getById(id);
+
+        if (leave == null) {
+            return false;
+        }
+
+        if (!"PENDING".equalsIgnoreCase(
+                leave.getStatus())) {
+
+            return false;
+        }
+
+        return dao.updateStatus(
+                id,
+                "REJECTED"
         );
     }
 
@@ -110,7 +181,6 @@ public class DoctorLeaveServiceImpl
             throws SQLException {
 
         if (id <= 0) {
-
             return false;
         }
 

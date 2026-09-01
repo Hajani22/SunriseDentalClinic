@@ -39,6 +39,10 @@ public interface AppointmentService {
             int id)
             throws SQLException;
 
+    Appointment getByAppointmentNo(
+            String appointmentNo)
+            throws SQLException;
+
     boolean doctorDecision(
             int appointmentId,
             int doctorId,

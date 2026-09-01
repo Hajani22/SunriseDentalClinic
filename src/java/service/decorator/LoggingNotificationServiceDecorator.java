@@ -14,7 +14,6 @@ public class LoggingNotificationServiceDecorator
             = Logger.getLogger(
                     LoggingNotificationServiceDecorator.class.getName()
             );
-
     public LoggingNotificationServiceDecorator(
             NotificationService wrappedService) {
 

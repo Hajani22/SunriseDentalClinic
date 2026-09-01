@@ -40,108 +40,89 @@
 
         <style>
 
-            /* =====================================================
-               ROOT
-            ===================================================== */
+            /* =========================================================
+               SUNRISE DENTAL CLINIC
+               PREMIUM PROFESSIONAL SIGNUP UI
+               LAYOUT PRESERVED
+               ========================================================= */
 
             :root {
+                --primary: #087fa8;
+                --primary-dark: #056582;
+                --teal: #16b8a6;
 
-                --primary: #06a3da;
+                --navy: #102f43;
+                --text: #536b79;
+                --muted: #82939e;
 
-                --primary-dark: #058fbe;
-
-                --light: #eef9ff;
-
-                --dark: #091e3e;
-
-                --text: #555;
-
-                --border: #dce4ea;
+                --light: #f4fafc;
+                --border: #dce9ee;
 
                 --white: #ffffff;
 
                 --success: #198754;
-
                 --danger: #dc3545;
 
+                --shadow:
+                    0 25px 70px rgba(16,47,67,.18);
+
+                --soft-shadow:
+                    0 10px 30px rgba(16,47,67,.08);
             }
 
 
-            /* =====================================================
+            /* =========================================================
                RESET
-            ===================================================== */
+               ========================================================= */
 
             * {
-
                 margin: 0;
-
                 padding: 0;
-
                 box-sizing: border-box;
-
             }
 
-
-            html {
-
+            html,
+            body {
                 width: 100%;
-
-                height: 100%;
-
+                min-height: 100%;
             }
-
 
             body {
-
-                width: 100%;
-
-                height: 100%;
-
-                margin: 0;
-
                 font-family: "Open Sans", sans-serif;
 
-                background: #f4f8fb;
+                background: #edf5f8;
 
                 color: var(--text);
 
                 overflow: hidden;
-
             }
-
 
             a {
-
                 text-decoration: none;
-
+                color: inherit;
             }
-
 
             button,
             input,
             select {
-
                 font-family: inherit;
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                MAIN PAGE
-            ===================================================== */
+               ========================================================= */
 
             .signup-page {
 
                 width: 100%;
-
                 height: 100vh;
 
-                padding: 16px;
+                padding: 18px;
 
                 display: flex;
 
                 align-items: center;
-
                 justify-content: center;
 
                 overflow: hidden;
@@ -149,51 +130,50 @@
                 background:
 
                     linear-gradient(
-                    rgba(9, 30, 62, 0.82),
-                    rgba(9, 30, 62, 0.82)
+                    135deg,
+                    rgba(7,49,68,.91),
+                    rgba(8,127,168,.72)
                     ),
 
-                    url("https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=1800&q=85");
+                    url("https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=1800&q=90");
 
                 background-size: cover;
 
                 background-position: center;
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                MAIN CONTAINER
-            ===================================================== */
+               ========================================================= */
 
             .signup-wrapper {
 
                 width: 100%;
 
-                max-width: 1700px;
+                max-width: 1500px;
 
-                height: calc(100vh - 32px);
+                height: calc(100vh - 36px);
 
                 display: grid;
 
-                grid-template-columns: 35% 65%;
+                grid-template-columns: 38% 62%;
 
-                background: white;
+                background: #fff;
 
-                border-radius: 18px;
+                border-radius: 24px;
 
                 overflow: hidden;
 
-                box-shadow:
-                    0 20px 55px rgba(0,0,0,0.25);
+                box-shadow: var(--shadow);
 
+                border: 1px solid rgba(255,255,255,.35);
             }
 
 
-            /* =====================================================
+            /* =========================================================
                LEFT PANEL
-               FIXED
-            ===================================================== */
+               ========================================================= */
 
             .signup-left {
 
@@ -201,18 +181,21 @@
 
                 min-width: 0;
 
-                padding: 45px;
+                padding: 42px 48px;
 
-                color: white;
+                position: relative;
+
+                color: #fff;
 
                 background:
 
                     linear-gradient(
-                    rgba(6,163,218,0.90),
-                    rgba(9,30,62,0.94)
+                    145deg,
+                    rgba(5,125,161,.91),
+                    rgba(9,40,58,.97)
                     ),
 
-                    url("https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=1000&q=85");
+                    url("https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=1200&q=90");
 
                 background-size: cover;
 
@@ -225,13 +208,58 @@
                 justify-content: space-between;
 
                 overflow: hidden;
-
             }
 
 
-            /* =====================================================
+            /* Decorative circles */
+
+            .signup-left::before {
+
+                content: "";
+
+                position: absolute;
+
+                width: 380px;
+                height: 380px;
+
+                right: -210px;
+                top: -150px;
+
+                border-radius: 50%;
+
+                border:
+                    1px solid rgba(255,255,255,.12);
+            }
+
+            .signup-left::after {
+
+                content: "";
+
+                position: absolute;
+
+                width: 260px;
+                height: 260px;
+
+                left: -150px;
+                bottom: -130px;
+
+                border-radius: 50%;
+
+                border:
+                    1px solid rgba(255,255,255,.10);
+            }
+
+            .signup-left > * {
+
+                position: relative;
+
+                z-index: 2;
+            }
+
+
+            /* =========================================================
                BRAND
-            ===================================================== */
+               ========================================================= */
 
             .brand {
 
@@ -241,33 +269,30 @@
 
                 gap: 13px;
 
-                color: white;
-
+                color: #fff;
             }
-
 
             .brand-icon {
 
-                width: 50px;
+                width: 58px;
+                height: 58px;
 
-                height: 50px;
+                border-radius: 16px;
 
-                border-radius: 12px;
-
-                background: white;
+                background: rgba(255,255,255,.96);
 
                 color: var(--primary);
 
                 display: flex;
 
                 align-items: center;
-
                 justify-content: center;
 
-                font-size: 24px;
+                font-size: 25px;
 
+                box-shadow:
+                    0 10px 25px rgba(0,0,0,.14);
             }
-
 
             .brand-text strong {
 
@@ -275,86 +300,109 @@
 
                 font-family: "Jost", sans-serif;
 
-                font-size: 23px;
+                font-size: 27px;
 
+                line-height: 1.1;
+
+                letter-spacing: -.4px;
             }
-
 
             .brand-text span {
 
-                font-size: 12px;
+                display: block;
 
-                opacity: 0.85;
+                margin-top: 5px;
 
+                font-size: 10px;
+
+                opacity: .82;
+
+                text-transform: uppercase;
+
+                letter-spacing: 1.7px;
             }
 
 
-            /* =====================================================
+            /* =========================================================
                LEFT CONTENT
-            ===================================================== */
+               ========================================================= */
 
             .left-content {
 
-                margin-top: 65px;
-
+                margin-top: 40px;
             }
-
 
             .left-tag {
 
-                display: inline-block;
+                display: inline-flex;
 
-                padding: 7px 14px;
+                align-items: center;
 
-                border-radius: 30px;
+                gap: 8px;
 
-                background: rgba(255,255,255,0.15);
+                padding: 8px 14px;
 
-                font-size: 12px;
+                border-radius: 999px;
 
-                font-weight: 700;
+                background:
+                    rgba(255,255,255,.12);
 
-                letter-spacing: 0.7px;
+                border:
+                    1px solid rgba(255,255,255,.15);
 
-                margin-bottom: 20px;
+                font-size: 10px;
 
+                font-weight: 800;
+
+                letter-spacing: 1.1px;
+
+                margin-bottom: 22px;
+
+                backdrop-filter: blur(8px);
             }
 
+            .left-tag i {
+
+                color: #8cece0;
+            }
 
             .left-content h1 {
 
                 font-family: "Jost", sans-serif;
 
-                font-size: 43px;
+                font-size:
+                    clamp(38px,3.3vw,57px);
 
-                line-height: 1.15;
+                line-height: 1.04;
 
-                margin-bottom: 18px;
+                margin-bottom: 21px;
 
+                color: #fff;
+
+                letter-spacing: -1.4px;
             }
-
 
             .left-content p {
 
-                font-size: 15px;
+                max-width: 470px;
 
-                line-height: 1.7;
+                line-height: 1.75;
 
-                opacity: 0.9;
+                font-size: 14px;
 
+                color:
+                    rgba(255,255,255,.82);
             }
 
 
-            /* =====================================================
+            /* =========================================================
                BENEFITS
-            ===================================================== */
+               ========================================================= */
 
             .benefits {
 
-                margin-top: 35px;
-
+                margin-top: 30px;
             }
-
 
             .benefit {
 
@@ -362,54 +410,55 @@
 
                 align-items: center;
 
-                gap: 13px;
+                gap: 12px;
 
-                margin-bottom: 17px;
-
+                margin-bottom: 13px;
             }
-
 
             .benefit i {
 
-                width: 35px;
+                width: 39px;
+                height: 39px;
 
-                height: 35px;
+                border-radius: 11px;
 
-                border-radius: 50%;
+                background:
+                    rgba(255,255,255,.10);
 
-                background: rgba(255,255,255,0.15);
+                border:
+                    1px solid rgba(255,255,255,.10);
 
                 display: flex;
 
                 align-items: center;
-
                 justify-content: center;
+
+                color: #9ef1e5;
 
                 flex-shrink: 0;
 
+                font-size: 14px;
             }
-
 
             .benefit span {
 
-                font-size: 14px;
+                font-size: 13px;
 
+                color:
+                    rgba(255,255,255,.88);
             }
-
 
             .left-footer {
 
-                font-size: 12px;
+                font-size: 11px;
 
-                opacity: 0.75;
-
+                opacity: .62;
             }
 
 
-            /* =====================================================
+            /* =========================================================
                RIGHT PANEL
-               ONLY THIS PANEL SCROLLS
-            ===================================================== */
+               ========================================================= */
 
             .signup-right {
 
@@ -417,9 +466,9 @@
 
                 min-width: 0;
 
-                padding: 35px 65px;
+                padding: 42px 70px;
 
-                background: white;
+                background: #fff;
 
                 overflow-x: hidden;
 
@@ -427,101 +476,92 @@
 
                 scrollbar-width: thin;
 
+                scrollbar-color:
+                    #bfd1d9 transparent;
             }
-
-
-            /* Chrome scrollbar */
 
             .signup-right::-webkit-scrollbar {
 
-                width: 7px;
-
+                width: 6px;
             }
-
 
             .signup-right::-webkit-scrollbar-track {
 
-                background: #f5f5f5;
-
+                background: transparent;
             }
-
 
             .signup-right::-webkit-scrollbar-thumb {
 
-                background: #b7c3cc;
+                background: #bfd1d9;
 
                 border-radius: 10px;
-
             }
-
 
             .signup-right::-webkit-scrollbar-thumb:hover {
 
                 background: var(--primary);
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                HEADER
-            ===================================================== */
+               ========================================================= */
 
             .signup-header {
 
-                margin-bottom: 22px;
-
+                margin-bottom: 24px;
             }
-
 
             .signup-header h2 {
 
                 font-family: "Jost", sans-serif;
 
-                color: var(--dark);
+                color: var(--navy);
 
-                font-size: 36px;
+                font-size: 38px;
 
                 line-height: 1.15;
 
-                margin-bottom: 7px;
+                margin-bottom: 8px;
 
+                letter-spacing: -.7px;
             }
-
 
             .signup-header p {
 
-                font-size: 14px;
+                font-size: 13px;
 
-                color: #777;
+                color: var(--muted);
 
+                line-height: 1.6;
             }
 
 
-            /* =====================================================
+            /* =========================================================
                SIGNUP AS
-            ===================================================== */
+               ========================================================= */
 
             .signup-as {
 
-                margin-bottom: 22px;
-
+                margin-bottom: 23px;
             }
-
 
             .signup-as label {
 
                 display: block;
 
-                color: var(--dark);
+                color: var(--navy);
 
-                font-size: 15px;
+                font-size: 12px;
 
-                font-weight: 700;
+                font-weight: 800;
 
                 margin-bottom: 8px;
 
-            }
+                text-transform: uppercase;
 
+                letter-spacing: .7px;
+            }
 
             .signup-role {
 
@@ -531,43 +571,50 @@
 
                 padding: 0 15px;
 
-                border: 1px solid #8fdcff;
+                border:
+                    1px solid var(--border);
 
-                border-radius: 5px;
+                border-radius: 11px;
 
-                background: white;
+                background: #fbfdfe;
 
-                color: #555;
+                color: var(--navy);
 
-                font-size: 17px;
+                font-size: 13px;
+
+                font-weight: 600;
 
                 outline: none;
 
                 cursor: pointer;
 
+                transition: .25s ease;
             }
 
+            .signup-role:hover {
+
+                border-color: #bdd3dc;
+            }
 
             .signup-role:focus {
 
                 border-color: var(--primary);
 
-                box-shadow:
-                    0 0 0 3px rgba(6,163,218,0.12);
+                background: #fff;
 
+                box-shadow:
+                    0 0 0 3px rgba(8,127,168,.09);
             }
 
 
-            /* =====================================================
-               FORM
-            ===================================================== */
+            /* =========================================================
+               FORM SECTION
+               ========================================================= */
 
             .form-section {
 
-                margin-bottom: 19px;
-
+                margin-bottom: 20px;
             }
-
 
             .section-title {
 
@@ -577,83 +624,86 @@
 
                 gap: 9px;
 
-                color: var(--dark);
+                color: var(--navy);
 
                 font-family: "Jost", sans-serif;
 
-                font-size: 18px;
+                font-size: 17px;
 
                 margin-bottom: 13px;
 
-                padding-bottom: 8px;
+                padding-bottom: 9px;
 
-                border-bottom: 1px solid #edf0f3;
-
+                border-bottom:
+                    1px solid #edf0f3;
             }
-
 
             .section-title i {
 
+                width: 30px;
+                height: 30px;
+
+                display: flex;
+
+                align-items: center;
+                justify-content: center;
+
+                border-radius: 8px;
+
+                background: #edf9fb;
+
                 color: var(--primary);
 
+                font-size: 13px;
             }
 
 
-            /* =====================================================
+            /* =========================================================
                FORM GRID
-            ===================================================== */
+               ========================================================= */
 
             .form-grid {
 
                 display: grid;
 
                 grid-template-columns:
-                    repeat(2, minmax(0,1fr));
+                    repeat(2,minmax(0,1fr));
 
-                gap: 13px 22px;
-
+                gap: 13px 20px;
             }
-
 
             .form-group {
 
                 min-width: 0;
-
             }
-
 
             .form-group label {
 
                 display: block;
 
-                color: var(--dark);
+                color: var(--navy);
 
-                font-size: 12px;
+                font-size: 11px;
 
-                font-weight: 700;
+                font-weight: 800;
 
-                margin-bottom: 5px;
-
+                margin-bottom: 6px;
             }
-
 
             .required {
 
                 color: var(--danger);
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                INPUT
-            ===================================================== */
+               ========================================================= */
 
             .input-wrapper {
 
                 position: relative;
-
             }
-
 
             .input-wrapper > i {
 
@@ -663,16 +713,22 @@
 
                 top: 50%;
 
-                transform: translateY(-50%);
+                transform:
+                    translateY(-50%);
 
-                color: #9aa7b3;
+                color: #9aabb4;
 
-                font-size: 14px;
+                font-size: 13px;
 
                 pointer-events: none;
 
+                transition: .2s ease;
             }
 
+            .input-wrapper:focus-within > i {
+
+                color: var(--primary);
+            }
 
             .form-control {
 
@@ -680,108 +736,131 @@
 
                 height: 48px;
 
-                border: 1px solid var(--border);
+                border:
+                    1px solid var(--border);
 
-                border-radius: 8px;
+                border-radius: 10px;
 
-                padding: 10px 13px 10px 40px;
+                padding:
+                    10px 13px 10px 40px;
 
-                background: white;
+                background: #fbfdfe;
 
-                color: #333;
+                color: var(--navy);
 
-                font-size: 13px;
+                font-size: 12px;
 
                 outline: none;
 
-                transition: 0.2s;
-
+                transition:
+                    border-color .25s ease,
+                    box-shadow .25s ease,
+                    background .25s ease;
             }
 
+            .form-control::placeholder {
+
+                color: #a8b4bb;
+            }
+
+            .form-control:hover {
+
+                border-color: #bfd3dc;
+            }
 
             .form-control:focus {
+
+                background: #fff;
 
                 border-color: var(--primary);
 
                 box-shadow:
-                    0 0 0 3px rgba(6,163,218,0.10);
-
+                    0 0 0 3px rgba(8,127,168,.08);
             }
-
 
             select.form-control {
 
                 cursor: pointer;
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                ROLE AREA
-               
                IMPORTANT:
-               Fixed minimum height prevents the page from
-               jumping when changing Patient/Doctor/Cashier/Admin.
-            ===================================================== */
+               Does NOT use scrollIntoView.
+               Prevents page jumping when role changes.
+               ========================================================= */
 
             .role-area {
 
-                min-height: 165px;
-
                 position: relative;
 
+                min-height: 165px;
             }
-
 
             .role-fields {
 
                 display: none;
-
             }
-
 
             .role-fields.active {
 
                 display: block;
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                PASSWORD
-            ===================================================== */
+               ========================================================= */
 
             .password-wrapper .form-control {
 
                 padding-right: 43px;
-
             }
-
 
             .password-toggle {
 
                 position: absolute;
 
-                right: 12px;
+                right: 11px;
 
                 top: 50%;
 
-                transform: translateY(-50%);
+                transform:
+                    translateY(-50%);
+
+                width: 34px;
+                height: 34px;
 
                 border: none;
 
+                border-radius: 8px;
+
                 background: transparent;
 
-                color: #8995a0;
+                color: #8999a3;
 
                 cursor: pointer;
 
+                display: flex;
+
+                align-items: center;
+                justify-content: center;
+
+                transition: .2s ease;
+            }
+
+            .password-toggle:hover {
+
+                color: var(--primary);
+
+                background: #edf8fb;
             }
 
 
-            /* =====================================================
+            /* =========================================================
                TERMS
-            ===================================================== */
+               ========================================================= */
 
             .terms {
 
@@ -791,132 +870,175 @@
 
                 gap: 9px;
 
-                margin: 8px 0 14px;
+                margin:
+                    9px 0 16px;
 
-                font-size: 12px;
+                font-size: 11px;
 
-                line-height: 1.5;
+                line-height: 1.6;
 
+                color: #687983;
             }
-
 
             .terms input {
 
+                width: 14px;
+                height: 14px;
+
                 margin-top: 3px;
 
-                accent-color: var(--primary);
+                flex-shrink: 0;
 
+                accent-color:
+                    var(--primary);
             }
-
 
             .terms a {
 
                 color: var(--primary);
 
-                font-weight: 600;
+                font-weight: 700;
+            }
 
+            .terms a:hover {
+
+                text-decoration: underline;
             }
 
 
-            /* =====================================================
-               BUTTON
-            ===================================================== */
+            /* =========================================================
+               CREATE ACCOUNT BUTTON
+               ========================================================= */
 
             .signup-btn {
 
                 width: 100%;
 
-                min-height: 50px;
+                min-height: 52px;
 
                 border: none;
 
-                border-radius: 8px;
+                border-radius: 11px;
 
-                background: var(--primary);
+                background:
+                    linear-gradient(
+                    135deg,
+                    var(--primary),
+                    var(--teal)
+                    );
 
-                color: white;
+                color: #fff;
+
+                padding: 13px;
 
                 font-family: "Jost", sans-serif;
 
-                font-size: 16px;
+                font-size: 15px;
 
                 font-weight: 700;
 
                 cursor: pointer;
 
-                transition: 0.2s;
+                display: flex;
 
+                align-items: center;
+
+                justify-content: center;
+
+                gap: 9px;
+
+                box-shadow:
+                    0 10px 24px
+                    rgba(8,127,168,.18);
+
+                transition:
+                    transform .25s ease,
+                    box-shadow .25s ease,
+                    filter .25s ease;
             }
-
 
             .signup-btn:hover {
 
-                background: var(--primary-dark);
+                transform:
+                    translateY(-2px);
 
                 box-shadow:
-                    0 8px 20px rgba(6,163,218,0.25);
+                    0 14px 30px
+                    rgba(8,127,168,.25);
 
+                filter: brightness(1.03);
+            }
+
+            .signup-btn:active {
+
+                transform:
+                    translateY(0);
             }
 
 
-            /* =====================================================
+            /* =========================================================
                LOGIN
-            ===================================================== */
+               ========================================================= */
 
             .login-text {
 
                 text-align: center;
 
-                margin-top: 12px;
+                margin-top: 18px;
 
-                font-size: 13px;
+                font-size: 12px;
 
-                color: #777;
-
+                color: #7b8991;
             }
-
 
             .login-text a {
 
                 color: var(--primary);
 
-                font-weight: 700;
+                font-weight: 800;
+            }
 
+            .login-text a:hover {
+
+                text-decoration: underline;
             }
 
 
-            /* =====================================================
+            /* =========================================================
                BACK HOME
-            ===================================================== */
+               ========================================================= */
 
             .back-home {
 
                 text-align: center;
 
-                margin-top: 7px;
-
+                margin-top: 9px;
             }
-
 
             .back-home a {
 
-                color: #777;
+                display: inline-flex;
 
-                font-size: 12px;
+                align-items: center;
 
+                gap: 6px;
+
+                color: #8b99a1;
+
+                font-size: 11px;
+
+                transition: .2s ease;
             }
-
 
             .back-home a:hover {
 
                 color: var(--primary);
-
             }
 
 
-            /* =====================================================
-               SUCCESS
-            ===================================================== */
+            /* =========================================================
+               SUCCESS MESSAGE
+               ========================================================= */
 
             .success-message {
 
@@ -924,131 +1046,103 @@
 
                 background: #e9f8ef;
 
-                border: 1px solid #b7e4c7;
+                border:
+                    1px solid #b7e4c7;
 
                 color: var(--success);
 
-                border-radius: 8px;
+                border-radius: 10px;
 
-                padding: 11px;
+                padding: 11px 13px;
 
-                margin-bottom: 15px;
+                margin-bottom: 17px;
 
-                font-size: 13px;
-
+                font-size: 12px;
             }
 
 
-            /* =====================================================
-               DESKTOP
-            ===================================================== */
+            /* =========================================================
+               DESKTOP SHORT HEIGHT
+               ========================================================= */
 
-            @media (min-width: 851px) {
-
-                body {
-
-                    overflow: hidden;
-
-                }
-
-
-                .signup-wrapper {
-
-                    grid-template-columns: 35% 65%;
-
-                }
-
+            @media
+            (min-width:851px)
+            and (max-height:800px) {
 
                 .signup-left {
 
-                    position: relative;
-
+                    padding-top: 30px;
+                    padding-bottom: 25px;
                 }
-
-
-                .signup-right {
-
-                    overflow-y: auto;
-
-                    overscroll-behavior: contain;
-
-                }
-
-            }
-
-
-            /* =====================================================
-               SMALL DESKTOP
-            ===================================================== */
-
-            @media (min-width: 851px)
-            and (max-height: 800px) {
 
                 .signup-right {
 
                     padding-top: 25px;
-
                     padding-bottom: 20px;
-
                 }
 
+                .left-content {
+
+                    margin-top: 25px;
+                }
+
+                .left-content h1 {
+
+                    font-size: 42px;
+                }
+
+                .benefits {
+
+                    margin-top: 20px;
+                }
+
+                .benefit {
+
+                    margin-bottom: 8px;
+                }
 
                 .signup-header {
 
                     margin-bottom: 17px;
-
                 }
-
 
                 .signup-header h2 {
 
                     font-size: 32px;
-
                 }
-
 
                 .signup-as {
 
-                    margin-bottom: 17px;
-
+                    margin-bottom: 15px;
                 }
-
 
                 .role-area {
 
-                    min-height: 155px;
-
+                    min-height: 150px;
                 }
-
 
                 .form-section {
 
-                    margin-bottom: 15px;
-
+                    margin-bottom: 13px;
                 }
-
 
                 .form-control {
 
-                    height: 45px;
-
+                    height: 44px;
                 }
-
 
                 .signup-btn {
 
-                    min-height: 47px;
-
+                    min-height: 46px;
                 }
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                TABLET
-            ===================================================== */
+               ========================================================= */
 
-            @media (max-width: 850px) {
+            @media (max-width:850px) {
 
                 body {
 
@@ -1059,9 +1153,7 @@
                     overflow-x: hidden;
 
                     overflow-y: auto;
-
                 }
-
 
                 .signup-page {
 
@@ -1072,9 +1164,7 @@
                     padding: 10px;
 
                     overflow: visible;
-
                 }
-
 
                 .signup-wrapper {
 
@@ -1084,17 +1174,17 @@
 
                     grid-template-columns: 1fr;
 
+                    max-width: 700px;
                 }
-
 
                 .signup-left {
 
-                    min-height: 420px;
+                    min-height: 410px;
 
                     height: auto;
 
+                    padding: 32px 28px;
                 }
-
 
                 .signup-right {
 
@@ -1103,98 +1193,134 @@
                     overflow: visible;
 
                     padding: 35px;
-
                 }
-
 
                 .role-area {
 
                     min-height: 165px;
-
                 }
-
             }
 
 
-            /* =====================================================
+            /* =========================================================
                MOBILE
-            ===================================================== */
+               ========================================================= */
 
-            @media (max-width: 600px) {
+            @media (max-width:600px) {
 
                 .signup-page {
 
                     padding: 0;
-
                 }
-
 
                 .signup-wrapper {
 
                     border-radius: 0;
-
                 }
-
 
                 .signup-left {
 
-                    min-height: 380px;
+                    min-height: 375px;
 
-                    padding: 30px 24px;
-
+                    padding: 30px 22px;
                 }
 
+                .brand-icon {
+
+                    width: 50px;
+                    height: 50px;
+
+                    font-size: 22px;
+                }
+
+                .brand-text strong {
+
+                    font-size: 23px;
+                }
+
+                .brand-text span {
+
+                    font-size: 9px;
+                }
 
                 .left-content {
 
-                    margin-top: 40px;
-
+                    margin-top: 30px;
                 }
-
 
                 .left-content h1 {
 
                     font-size: 34px;
-
                 }
 
+                .left-content p {
+
+                    font-size: 13px;
+                }
+
+                .benefits {
+
+                    margin-top: 22px;
+                }
+
+                .benefit {
+
+                    margin-bottom: 9px;
+                }
+
+                .benefit i {
+
+                    width: 35px;
+                    height: 35px;
+                }
+
+                .benefit span {
+
+                    font-size: 12px;
+                }
 
                 .signup-right {
 
                     padding: 30px 20px 40px;
-
                 }
-
 
                 .signup-header h2 {
 
                     font-size: 30px;
-
                 }
-
 
                 .form-grid {
 
                     grid-template-columns: 1fr;
-
                 }
-
 
                 .role-area {
 
                     min-height: 285px;
-
                 }
+            }
 
+
+            /* =========================================================
+               ACCESSIBILITY
+               ========================================================= */
+
+            @media (prefers-reduced-motion: reduce) {
+
+                *,
+                *::before,
+                *::after {
+
+                    transition-duration:
+                        .01ms !important;
+
+                    animation-duration:
+                        .01ms !important;
+                }
             }
 
         </style>
-
-    
-<style id="toastStyles">
-.toast-box{position:fixed;top:24px;right:24px;z-index:99999;min-width:300px;max-width:430px;padding:16px 20px;border-radius:12px;color:#fff;font:600 14px/1.45 "Open Sans",sans-serif;box-shadow:0 12px 35px rgba(0,0,0,.25);opacity:0;transform:translateY(-12px);transition:.3s ease}.toast-box.show{opacity:1;transform:translateY(0)}.toast-success{background:#198754}.toast-error{background:#dc3545}.toast-info{background:#06a3da}
-</style>
-</head>
+    </head>
 
 
 
@@ -2814,16 +2940,8 @@
 
         </script>
 
+        <jsp:include page="toast.jsp" />
 
-    
-<div id="appToast" class="toast-box"></div>
-<script>
-(function(){
- const p=new URLSearchParams(window.location.search), toast=document.getElementById('appToast'), e=p.get('error');
- const messages={empty:'Please complete all required fields and accept the terms.',shortpassword:'Password must contain at least 8 characters.',password:'Passwords do not match.',role:'Please select a valid account type.',experience:'Please enter valid years of experience.',invaliddata:'Please check the information you entered.',registration:'Unable to create this account. The email may already be registered.',server:'Unable to create the account right now. Please try again.'};
- if(e&&messages[e]){toast.textContent=messages[e];toast.classList.add('toast-error');requestAnimationFrame(()=>toast.classList.add('show'));setTimeout(()=>toast.classList.remove('show'),4500);history.replaceState({},document.title,location.pathname);}
-})();
-</script>
-</body>
+    </body>
 
 </html>

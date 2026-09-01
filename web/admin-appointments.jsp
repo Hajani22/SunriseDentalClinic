@@ -1353,7 +1353,7 @@
             </main>
 
         </div>
-
+        <jsp:include page="toast.jsp" />
     </body>
 
 </html>

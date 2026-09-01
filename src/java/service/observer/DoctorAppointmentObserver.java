@@ -2,7 +2,6 @@ package service.observer;
 
 import model.Appointment;
 import service.NotificationService;
-
 import java.sql.SQLException;
 
 public class DoctorAppointmentObserver
@@ -31,11 +30,9 @@ public class DoctorAppointmentObserver
 
         Appointment appointment
                 = event.getAppointment();
-
         if (appointment == null) {
             return;
         }
-
         String message
                 = "New appointment request from "
                 + appointment.getPatientName()

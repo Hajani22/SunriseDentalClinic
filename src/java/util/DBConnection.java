@@ -4,11 +4,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- * Singleton Design Pattern.
- *
- * Provides one application-level DBConnection manager.
- */
 public final class DBConnection {
 
     private static final String URL
@@ -35,11 +30,9 @@ public final class DBConnection {
             );
         }
     }
-
     public static DBConnection getInstance() {
         return INSTANCE;
     }
-
     public Connection openConnection()
             throws SQLException {
 

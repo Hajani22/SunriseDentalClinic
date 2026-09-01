@@ -1,114 +1,140 @@
-<%@ page language="java"
-         contentType="text/html; charset=UTF-8"
-         pageEncoding="UTF-8"%>
+```jsp
+<%@page import="java.util.*"%>
+<%@page import="java.math.BigDecimal"%>
+<%@page import="model.Payment"%>
+<%@page import="service.PaymentService"%>
+<%@page import="service.impl.PaymentServiceImpl"%>
 
-<%@ page import="java.util.List" %>
-<%@ page import="model.Payment" %>
-<%@ page import="service.PaymentService" %>
-<%@ page import="service.impl.PaymentServiceImpl" %>
+<%@page contentType="text/html"
+        pageEncoding="UTF-8"%>
 
 <%
     /* =========================================================
-       CASHIER ACCESS CHECK
+       CASHIER LOGIN CHECK
        ========================================================= */
 
     if (session.getAttribute("user") == null) {
-        response.sendRedirect("Login.jsp");
+
+        response.sendRedirect(
+                request.getContextPath()
+                + "/Login.jsp?error=session"
+        );
+
         return;
     }
 
-    String role
+
+    /* =========================================================
+       ROLE CHECK
+       ========================================================= */
+    String userRole
             = String.valueOf(
                     session.getAttribute("userRole")
             );
 
-    if (!"cashier".equalsIgnoreCase(role)) {
-        response.sendRedirect("Login.jsp?error=access");
+    if (!"cashier".equalsIgnoreCase(userRole)) {
+
+        response.sendRedirect(
+                request.getContextPath()
+                + "/Login.jsp?error=access"
+        );
+
         return;
-    }
-
-    String userName
-            = (String) session.getAttribute("userName");
-
-    if (userName == null
-            || userName.trim().isEmpty()) {
-
-        userName = "Cashier";
     }
 
 
     /* =========================================================
-       LOAD PAYMENTS
+       CASHIER NAME
        ========================================================= */
-    List<Payment> payments = null;
+    String cashierName
+            = String.valueOf(
+                    session.getAttribute("userName")
+            );
+
+    if (cashierName == null
+            || "null".equalsIgnoreCase(cashierName)
+            || cashierName.trim().isEmpty()) {
+
+        cashierName = "Cashier";
+    }
+
+
+    /* =========================================================
+       LOAD PAYMENT RECORDS
+       ========================================================= */
+    PaymentService paymentService
+            = new PaymentServiceImpl();
+
+    List<Payment> paymentRecords
+            = new ArrayList<>();
+
+    String paymentError = null;
 
     try {
 
-        PaymentService paymentService
-                = new PaymentServiceImpl();
-
-        payments
+        paymentRecords
                 = paymentService.getAllPayments();
 
     } catch (Exception e) {
 
         e.printStackTrace();
 
+        paymentError
+                = "Unable to load payment records.";
+
+        paymentRecords
+                = new ArrayList<>();
     }
 
 
     /* =========================================================
-       PAYMENT STATISTICS
+       DASHBOARD STATISTICS
        ========================================================= */
-    int totalPayments = 0;
+    int totalPayments
+            = paymentRecords.size();
 
-    java.math.BigDecimal totalAmount
-            = java.math.BigDecimal.ZERO;
+    int paidPayments = 0;
 
-    java.math.BigDecimal consultationAmount
-            = java.math.BigDecimal.ZERO;
+    int pendingPayments = 0;
 
-    java.math.BigDecimal treatmentAmount
-            = java.math.BigDecimal.ZERO;
+    int failedPayments = 0;
 
-    if (payments != null) {
+    BigDecimal totalRevenue
+            = BigDecimal.ZERO;
 
-        totalPayments = payments.size();
+    for (Payment payment : paymentRecords) {
 
-        for (Payment p : payments) {
+        if (payment == null) {
+            continue;
+        }
 
-            if (p.getAmount() != null) {
+        String status
+                = payment.getPaymentStatus();
 
-                totalAmount
-                        = totalAmount.add(
-                                p.getAmount()
-                        );
+        BigDecimal amount
+                = payment.getAmount();
+
+        if ("PAID".equalsIgnoreCase(status)
+                || "COMPLETED".equalsIgnoreCase(status)) {
+
+            paidPayments++;
+
+            if (amount != null) {
+
+                totalRevenue
+                        = totalRevenue.add(amount);
             }
 
-            if ("CONSULTATION".equalsIgnoreCase(
-                    p.getPaymentType())) {
+        } else if ("PENDING".equalsIgnoreCase(status)) {
 
-                if (p.getAmount() != null) {
+            pendingPayments++;
 
-                    consultationAmount
-                            = consultationAmount.add(
-                                    p.getAmount()
-                            );
-                }
+        } else if ("FAILED".equalsIgnoreCase(status)) {
 
-            } else if ("TREATMENT".equalsIgnoreCase(
-                    p.getPaymentType())) {
-
-                if (p.getAmount() != null) {
-
-                    treatmentAmount
-                            = treatmentAmount.add(
-                                    p.getAmount()
-                            );
-                }
-            }
+            failedPayments++;
         }
     }
+
 %>
 
 
@@ -121,49 +147,58 @@
         <meta charset="UTF-8">
 
         <meta name="viewport"
-              content="width=device-width, initial-scale=1.0">
+              content="width=device-width,
+              initial-scale=1.0">
 
         <title>
             Cashier Dashboard | Sunrise Dental Clinic
         </title>
 
 
-        <!-- GOOGLE FONT -->
-
-        <link
-            href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap"
-            rel="stylesheet">
-
-
         <!-- FONT AWESOME -->
 
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+
+        <!-- GOOGLE FONT -->
+
+        <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap"
+              rel="stylesheet">
 
 
         <style>
 
             * {
                 box-sizing: border-box;
-                margin: 0;
-                padding: 0;
+            }
+
+
+            html {
+                scroll-behavior: smooth;
             }
 
 
             body {
 
-                font-family:
-                    "Open Sans",
-                    sans-serif;
+                margin: 0;
 
                 background: #f4f8fb;
 
-                color: #555;
+                color: #526572;
+
+                font-family:
+                    "Open Sans",
+                    Arial,
+                    sans-serif;
             }
 
 
-            .layout {
+            /* =====================================================
+               MAIN LAYOUT
+               ===================================================== */
+
+            .dashboard {
 
                 min-height: 100vh;
 
@@ -177,17 +212,21 @@
 
             .sidebar {
 
-                width: 250px;
+                width: 245px;
 
                 position: fixed;
 
-                inset: 0 auto 0 0;
+                left: 0;
 
-                background: #091e3e;
+                top: 0;
+
+                bottom: 0;
+
+                background: #102f43;
 
                 color: white;
 
-                padding: 25px 18px;
+                padding: 22px 15px;
 
                 z-index: 1000;
             }
@@ -195,63 +234,122 @@
 
             .brand {
 
-                font:
-                    700 21px Jost,
-                    sans-serif;
-
-                margin:
-                    10px 8px 35px;
-
                 display: flex;
-
-                gap: 10px;
 
                 align-items: center;
+
+                gap: 11px;
+
+                padding: 8px 10px 25px;
+
+                margin-bottom: 18px;
+
+                border-bottom:
+                    1px solid
+                    rgba(255,255,255,.10);
             }
 
 
-            .brand i {
+            .brand-icon {
 
-                background: #06a3da;
+                width: 40px;
 
-                padding: 12px;
+                height: 40px;
+
+                flex-shrink: 0;
 
                 border-radius: 10px;
+
+                background: #087fa8;
+
+                color: white;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                font-size: 18px;
             }
 
 
-            .menu a {
+            .brand-text {
+
+                font-family: "Jost", sans-serif;
+
+                font-size: 15px;
+
+                font-weight: 700;
+            }
+
+
+            .menu-title {
+
+                padding: 10px 12px;
+
+                color:
+                    rgba(255,255,255,.42);
+
+                font-size: 10px;
+
+                font-weight: 700;
+
+                text-transform: uppercase;
+
+                letter-spacing: 1px;
+            }
+
+
+            .nav-link {
 
                 display: flex;
+
+                align-items: center;
 
                 gap: 12px;
 
-                padding: 13px 14px;
+                padding: 12px;
 
-                color: #c7d2e0;
+                margin-bottom: 5px;
+
+                border-radius: 9px;
+
+                color:
+                    rgba(255,255,255,.72);
 
                 text-decoration: none;
 
-                border-radius: 8px;
+                font-size: 13px;
 
-                margin-bottom: 6px;
-
-                transition: 0.2s;
+                transition:
+                    background .2s,
+                    color .2s;
             }
 
 
-            .menu a:hover,
-            .menu a.active {
+            .nav-link i {
 
-                background: #06a3da;
+                width: 20px;
+
+                text-align: center;
+            }
+
+
+            .nav-link:hover {
+
+                background:
+                    rgba(255,255,255,.09);
 
                 color: white;
             }
 
 
-            .menu i {
+            .nav-link.active {
 
-                width: 18px;
+                background: #087fa8;
+
+                color: white;
             }
 
 
@@ -259,31 +357,11 @@
 
                 position: absolute;
 
-                bottom: 25px;
+                left: 15px;
 
-                left: 18px;
+                right: 15px;
 
-                right: 18px;
-            }
-
-
-            .logout a {
-
-                color: #ffb4b4;
-
-                text-decoration: none;
-
-                display: block;
-
-                padding: 12px;
-
-                border-radius: 8px;
-            }
-
-
-            .logout a:hover {
-
-                background: #172b4d;
+                bottom: 20px;
             }
 
 
@@ -293,45 +371,55 @@
 
             .main {
 
-                margin-left: 250px;
-
                 width:
-                    calc(100% - 250px);
+                    calc(100% - 245px);
 
-                min-height: 100vh;
+                margin-left: 245px;
             }
 
 
+            /* =====================================================
+               TOPBAR
+               ===================================================== */
+
             .topbar {
 
-                height: 72px;
+                height: 70px;
 
                 background: white;
 
                 border-bottom:
-                    1px solid #e5ebf0;
+                    1px solid #e4edf1;
 
-                padding: 0 32px;
+                padding: 0 30px;
 
                 display: flex;
 
                 align-items: center;
 
                 justify-content: space-between;
+
+                position: sticky;
+
+                top: 0;
+
+                z-index: 900;
             }
 
 
-            .topbar h2 {
+            .topbar-title {
 
-                font:
-                    700 25px Jost,
-                    sans-serif;
+                color: #102f43;
 
-                color: #091e3e;
+                font-family: "Jost", sans-serif;
+
+                font-size: 20px;
+
+                font-weight: 700;
             }
 
 
-            .user {
+            .cashier-user {
 
                 display: flex;
 
@@ -341,103 +429,92 @@
             }
 
 
-            .user strong {
+            .user-avatar {
 
-                color: #091e3e;
+                width: 38px;
 
-                font-size: 14px;
-            }
-
-
-            .user small {
-
-                display: block;
-
-                color: #7b8794;
-
-                margin-top: 2px;
-            }
-
-
-            .avatar {
-
-                width: 42px;
-
-                height: 42px;
+                height: 38px;
 
                 border-radius: 50%;
 
-                background: #e7f7fc;
+                background: #eaf6fa;
 
-                color: #06a3da;
+                color: #087fa8;
 
-                display: grid;
+                display: flex;
 
-                place-items: center;
+                align-items: center;
+
+                justify-content: center;
             }
 
 
-            .content {
+            .user-name {
 
-                padding: 32px;
+                color: #102f43;
+
+                font-size: 12px;
+
+                font-weight: 700;
+            }
+
+
+            .user-role {
+
+                color: #8a9aa4;
+
+                font-size: 10px;
             }
 
 
             /* =====================================================
-               WELCOME
+               CONTENT
                ===================================================== */
+
+            .content {
+
+                padding: 30px;
+            }
+
 
             .welcome {
 
-                background:
-                    linear-gradient(
-                    120deg,
-                    #06a3da,
-                    #0589b8
-                    );
-
-                color: white;
-
-                border-radius: 14px;
-
-                padding: 30px;
-
                 margin-bottom: 25px;
-
-                position: relative;
-
-                overflow: hidden;
             }
 
 
             .welcome h1 {
 
-                font:
-                    700 29px Jost,
-                    sans-serif;
+                margin: 0;
 
-                margin-bottom: 7px;
+                color: #102f43;
+
+                font-family: "Jost", sans-serif;
+
+                font-size: 29px;
             }
 
 
             .welcome p {
 
-                font-size: 14px;
+                margin: 6px 0 0;
 
-                opacity: .95;
+                color: #82939e;
+
+                font-size: 13px;
             }
 
 
             /* =====================================================
-               STAT CARDS
+               STATISTICS
                ===================================================== */
 
-            .cards {
+            .stats {
 
                 display: grid;
 
                 grid-template-columns:
-                    repeat(4, 1fr);
+                    repeat(3, 1fr);
 
                 gap: 18px;
 
@@ -445,62 +522,72 @@
             }
 
 
-            .card {
+            .stat-card {
+
+                padding: 20px;
 
                 background: white;
 
                 border:
-                    1px solid #e5ebf0;
+                    1px solid #e4edf1;
 
                 border-radius: 14px;
 
-                padding: 23px;
+                display: flex;
+
+                align-items: center;
+
+                gap: 15px;
 
                 box-shadow:
                     0 5px 18px
-                    rgba(9,30,62,.04);
+                    rgba(15,23,42,.04);
             }
 
 
-            .card-icon {
+            .stat-icon {
 
-                width: 50px;
+                width: 48px;
 
-                height: 50px;
+                height: 48px;
+
+                flex-shrink: 0;
 
                 border-radius: 12px;
 
-                background: #e7f7fc;
+                background: #eef7fa;
 
-                color: #06a3da;
+                color: #087fa8;
 
-                display: grid;
+                display: flex;
 
-                place-items: center;
+                align-items: center;
 
-                margin-bottom: 15px;
+                justify-content: center;
+
+                font-size: 19px;
             }
 
 
-            .card h3 {
+            .stat-label {
 
-                font:
-                    700 21px Jost,
-                    sans-serif;
+                margin-bottom: 4px;
 
-                color: #091e3e;
+                color: #82939e;
 
-                margin-bottom: 5px;
+                font-size: 11px;
             }
 
 
-            .card p {
+            .stat-value {
 
-                font-size: 13px;
+                color: #102f43;
 
-                color: #7b8794;
+                font-family: "Jost", sans-serif;
 
-                line-height: 1.5;
+                font-size: 23px;
+
+                font-weight: 700;
             }
 
 
@@ -513,54 +600,224 @@
                 background: white;
 
                 border:
-                    1px solid #e5ebf0;
+                    1px solid #e4edf1;
 
-                border-radius: 14px;
+                border-radius: 15px;
 
-                padding: 25px;
-
-                margin-bottom: 25px;
+                overflow: hidden;
 
                 box-shadow:
                     0 5px 18px
-                    rgba(9,30,62,.04);
+                    rgba(15,23,42,.04);
             }
 
 
             .panel-header {
 
-                display: flex;
+                padding: 20px 22px;
 
-                justify-content: space-between;
+                border-bottom:
+                    1px solid #edf2f5;
+
+                display: flex;
 
                 align-items: center;
 
-                margin-bottom: 20px;
+                justify-content: space-between;
+
+                gap: 15px;
             }
 
 
             .panel-title {
 
-                font:
-                    700 20px Jost,
-                    sans-serif;
+                color: #102f43;
 
-                color: #091e3e;
+                font-family: "Jost", sans-serif;
+
+                font-size: 18px;
+
+                font-weight: 700;
             }
 
 
             .panel-subtitle {
 
-                color: #7b8794;
+                margin-top: 4px;
 
-                font-size: 13px;
+                color: #82939e;
 
-                margin-top: 3px;
+                font-size: 11px;
+            }
+
+
+            .panel-actions {
+
+                display: flex;
+
+                gap: 8px;
+
+                flex-wrap: wrap;
+            }
+
+
+            .action-btn {
+
+                display: inline-flex;
+
+                align-items: center;
+
+                gap: 7px;
+
+                padding: 9px 13px;
+
+                border:
+                    1px solid #dce7eb;
+
+                border-radius: 8px;
+
+                background: white;
+
+                color: #526572;
+
+                text-decoration: none;
+
+                font-size: 11px;
+
+                font-weight: 700;
+
+                cursor: pointer;
+            }
+
+
+            .action-btn:hover {
+
+                background: #f5fafc;
+            }
+
+
+            .action-btn.primary {
+
+                background: #087fa8;
+
+                border-color: #087fa8;
+
+                color: white;
             }
 
 
             /* =====================================================
-               PAYMENT TABLE
+               SEARCH
+               ===================================================== */
+
+            .search-area {
+
+                padding: 17px 22px;
+
+                background: #fbfdfe;
+
+                border-bottom:
+                    1px solid #edf2f5;
+
+                display: flex;
+
+                gap: 10px;
+            }
+
+
+            .search-box {
+
+                flex: 1;
+
+                position: relative;
+            }
+
+
+            .search-box i {
+
+                position: absolute;
+
+                left: 13px;
+
+                top: 50%;
+
+                transform:
+                    translateY(-50%);
+
+                color: #9aabb4;
+
+                font-size: 12px;
+            }
+
+
+            .search-box input {
+
+                width: 100%;
+
+                padding:
+                    11px 13px 11px 36px;
+
+                border:
+                    1px solid #dce7eb;
+
+                border-radius: 9px;
+
+                outline: none;
+
+                font-size: 12px;
+            }
+
+
+            .search-box input:focus {
+
+                border-color: #087fa8;
+            }
+
+
+            .filter-select {
+
+                padding: 10px 12px;
+
+                border:
+                    1px solid #dce7eb;
+
+                border-radius: 9px;
+
+                background: white;
+
+                color: #526572;
+
+                outline: none;
+
+                font-size: 11px;
+            }
+
+
+            /* =====================================================
+               ERROR
+               ===================================================== */
+
+            .database-error {
+
+                margin: 18px 22px;
+
+                padding: 12px 15px;
+
+                border-radius: 8px;
+
+                background: #fff0f0;
+
+                border:
+                    1px solid #ffd1d1;
+
+                color: #c62828;
+
+                font-size: 12px;
+            }
+
+
+            /* =====================================================
+               TABLE
                ===================================================== */
 
             .table-wrapper {
@@ -577,67 +834,103 @@
 
                 border-collapse: collapse;
 
-                min-width: 900px;
+                min-width: 850px;
             }
 
 
             th {
 
-                background: #f7fafc;
+                padding: 14px 17px;
 
-                color: #64748b;
+                background: #f8fafb;
 
-                font-size: 11px;
+                border-bottom:
+                    1px solid #e4edf1;
+
+                color: #758791;
 
                 text-align: left;
 
-                padding: 13px;
+                white-space: nowrap;
 
-                border-bottom:
-                    1px solid #e5ebf0;
+                font-size: 10px;
+
+                font-weight: 700;
+
+                text-transform: uppercase;
             }
 
 
             td {
 
-                padding: 14px 13px;
+                padding: 15px 17px;
 
                 border-bottom:
-                    1px solid #edf1f5;
+                    1px solid #edf2f5;
+
+                color: #526572;
+
+                white-space: nowrap;
 
                 font-size: 12px;
-
-                color: #475569;
             }
 
 
-            tbody tr:hover {
+            tr:last-child td {
 
-                background: #f9fcfe;
+                border-bottom: none;
             }
 
 
-            .patient-name {
+            tr:hover td {
 
-                font-weight: 700;
-
-                color: #091e3e;
+                background: #fbfdfe;
             }
 
 
             .payment-no {
 
-                font-weight: 600;
+                color: #102f43;
 
-                color: #06a3da;
+                font-weight: 700;
+            }
+
+
+            .patient-name {
+
+                color: #102f43;
+
+                font-weight: 600;
+            }
+
+
+            .appointment-no {
+
+                color: #087fa8;
+
+                font-weight: 600;
             }
 
 
             .amount {
 
-                font-weight: 700;
+                color: #102f43;
 
-                color: #091e3e;
+                font-weight: 700;
+            }
+
+
+            .method {
+
+                display: inline-flex;
+
+                align-items: center;
+
+                gap: 6px;
+
+                color: #087fa8;
+
+                font-weight: 600;
             }
 
 
@@ -649,35 +942,35 @@
 
                 border-radius: 20px;
 
-                font-size: 10px;
+                font-size: 9px;
 
                 font-weight: 700;
+
+                text-transform: uppercase;
             }
 
 
             .status-paid {
 
-                background: #dcfce7;
+                background: #e4f7ed;
 
-                color: #15803d;
+                color: #16834b;
             }
 
 
-            .payment-type {
+            .status-pending {
 
-                display: inline-block;
+                background: #fff4d6;
 
-                padding: 5px 9px;
+                color: #9a6a00;
+            }
 
-                border-radius: 6px;
 
-                background: #eef8fc;
+            .status-failed {
 
-                color: #067da8;
+                background: #ffe6e6;
 
-                font-size: 10px;
-
-                font-weight: 600;
+                color: #c62828;
             }
 
 
@@ -687,211 +980,54 @@
 
             .empty {
 
+                padding: 60px 20px;
+
                 text-align: center;
-
-                padding: 45px 20px;
-
-                color: #94a3b8;
             }
 
 
             .empty i {
 
+                margin-bottom: 13px;
+
+                color: #b8cbd3;
+
                 font-size: 38px;
-
-                margin-bottom: 12px;
-
-                color: #cbd5e1;
             }
 
 
-            /* =====================================================
-               ACTION GRID
-               ===================================================== */
+            .empty h3 {
 
-            .action-grid {
+                margin: 5px 0;
 
-                display: grid;
+                color: #102f43;
 
-                grid-template-columns:
-                    repeat(3, 1fr);
-
-                gap: 15px;
+                font-family: "Jost", sans-serif;
             }
 
 
-            .action {
+            .empty p {
 
-                text-decoration: none;
+                margin: 0;
 
-                padding: 18px;
-
-                border-radius: 11px;
-
-                border:
-                    1px solid #e5ebf0;
-
-                background: #f9fcfe;
-
-                color: #091e3e;
-
-                display: flex;
-
-                align-items: center;
-
-                gap: 13px;
-
-                transition: .2s;
-            }
-
-
-            .action:hover {
-
-                background: #06a3da;
-
-                color: white;
-
-                border-color: #06a3da;
-
-                transform:
-                    translateY(-2px);
-            }
-
-
-            .action-icon {
-
-                width: 42px;
-
-                height: 42px;
-
-                border-radius: 9px;
-
-                background: #e7f7fc;
-
-                color: #06a3da;
-
-                display: grid;
-
-                place-items: center;
-
-                flex-shrink: 0;
-            }
-
-
-            .action-content strong {
-
-                display: block;
-
-                font-size: 14px;
-
-                margin-bottom: 3px;
-            }
-
-
-            .action-content span {
-
-                display: block;
-
-                font-size: 11px;
-
-                color: #7b8794;
-            }
-
-
-            .action:hover
-            .action-content span {
-
-                color: white;
-
-                opacity: .9;
-            }
-
-
-            /* =====================================================
-               WORKFLOW
-               ===================================================== */
-
-            .workflow {
-
-                display: grid;
-
-                grid-template-columns:
-                    repeat(4, 1fr);
-
-                gap: 12px;
-            }
-
-
-            .workflow-step {
-
-                background: #f8fbfd;
-
-                border-radius: 10px;
-
-                padding: 18px;
-
-                text-align: center;
-            }
-
-
-            .workflow-number {
-
-                width: 34px;
-
-                height: 34px;
-
-                background: #06a3da;
-
-                color: white;
-
-                border-radius: 50%;
-
-                display: grid;
-
-                place-items: center;
-
-                margin:
-                    0 auto 10px;
-
-                font-weight: 700;
-            }
-
-
-            .workflow-step strong {
-
-                display: block;
-
-                color: #091e3e;
-
-                font-size: 13px;
-
-                margin-bottom: 5px;
-            }
-
-
-            .workflow-step span {
-
-                font-size: 11px;
-
-                color: #7b8794;
-
-                line-height: 1.4;
-            }
-
-
-            /* =====================================================
-               FOOTER
-               ===================================================== */
-
-            .footer {
-
-                text-align: center;
-
-                padding: 15px;
-
-                color: #94a3b8;
+                color: #82939e;
 
                 font-size: 12px;
+            }
+
+
+            .table-footer {
+
+                padding: 14px 20px;
+
+                background: #fbfdfe;
+
+                border-top:
+                    1px solid #edf2f5;
+
+                color: #82939e;
+
+                font-size: 11px;
             }
 
 
@@ -901,22 +1037,10 @@
 
             @media(max-width:1050px) {
 
-                .cards {
+                .stats {
 
                     grid-template-columns:
-                        repeat(2,1fr);
-                }
-
-                .action-grid {
-
-                    grid-template-columns:
-                        repeat(2,1fr);
-                }
-
-                .workflow {
-
-                    grid-template-columns:
-                        repeat(2,1fr);
+                        repeat(2, 1fr);
                 }
             }
 
@@ -926,15 +1050,12 @@
                 .sidebar {
 
                     width: 70px;
-
-                    padding:
-                        20px 10px;
                 }
 
 
-                .brand span,
-                .menu span,
-                .logout span {
+                .brand-text,
+                .menu-title,
+                .nav-link span {
 
                     display: none;
                 }
@@ -943,12 +1064,10 @@
                 .brand {
 
                     justify-content: center;
-
-                    margin-bottom: 35px;
                 }
 
 
-                .menu a {
+                .nav-link {
 
                     justify-content: center;
                 }
@@ -963,69 +1082,57 @@
                 }
 
 
-                .topbar {
-
-                    padding: 0 20px;
-                }
-
-
                 .content {
 
                     padding: 20px;
                 }
 
 
-                .cards {
-
-                    grid-template-columns: 1fr;
-                }
-
-
-                .action-grid {
-
-                    grid-template-columns: 1fr;
-                }
-
-
-                .workflow {
+                .stats {
 
                     grid-template-columns: 1fr;
                 }
             }
 
 
-            @media(max-width:500px) {
+            @media(max-width:600px) {
 
                 .topbar {
 
-                    height: auto;
-
-                    padding: 15px;
+                    padding: 0 15px;
                 }
 
 
-                .topbar h2 {
+                .topbar-title {
 
-                    font-size: 18px;
+                    font-size: 17px;
                 }
 
 
-                .user strong,
-                .user small {
+                .user-name,
+                .user-role {
 
                     display: none;
                 }
 
 
-                .content {
+                .panel-header {
 
-                    padding: 15px;
+                    align-items: flex-start;
+
+                    flex-direction: column;
                 }
 
 
-                .panel {
+                .search-area {
 
-                    padding: 18px;
+                    flex-direction: column;
+                }
+
+
+                .filter-select {
+
+                    width: 100%;
                 }
             }
 
@@ -1036,7 +1143,8 @@
 
     <body>
 
-        <div class="layout">
+
+        <div class="dashboard">
 
 
             <!-- =====================================================
@@ -1046,71 +1154,112 @@
             <aside class="sidebar">
 
 
+                <!-- BRAND -->
+
                 <div class="brand">
 
-                    <i class="fa-solid fa-tooth"></i>
+                    <div class="brand-icon">
 
-                    <span>
-                        Sunrise Dental
-                    </span>
+                        <i class="fa-solid fa-tooth"></i>
+
+                    </div>
+
+
+                    <div class="brand-text">
+
+                        Sunrise Dental Clinic
+
+                    </div>
 
                 </div>
 
 
-                <nav class="menu">
+                <!-- MAIN MENU -->
+
+                <div class="menu-title">
+
+                    Main Menu
+
+                </div>
 
 
-                    <a class="active"
-                       href="cashier-dashboard.jsp">
+                <!-- DASHBOARD -->
 
-                        <i class="fa-solid fa-gauge"></i>
+                <a href="<%=request.getContextPath()%>/cashier-dashboard.jsp"
+                   class="nav-link active">
 
-                        <span>
-                            Dashboard
-                        </span>
+                    <i class="fa-solid fa-chart-line"></i>
 
-                    </a>
+                    <span>
+                        Dashboard
+                    </span>
 
-
-                    <a href="CashierBillingServlet">
-
-                        <i class="fa-solid fa-file-invoice-dollar"></i>
-
-                        <span>
-                            Billing
-                        </span>
-
-                    </a>
+                </a>
 
 
-                    <a href="CashierBillingServlet">
+                <!-- BILLS -->
 
-                        <i class="fa-solid fa-receipt"></i>
+                <a href="<%=request.getContextPath()%>/CashierBillingServlet"
+                   class="nav-link">
 
-                        <span>
-                            Payments
-                        </span>
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
 
-                    </a>
+                    <span>
+                        Bills
+                    </span>
 
-
-                    <a href="cashier-profile.jsp">
-
-                        <i class="fa-solid fa-user"></i>
-
-                        <span>
-                            Profile
-                        </span>
-
-                    </a>
+                </a>
 
 
-                </nav>
+                <!-- =================================================
+                     PAYMENT RECORDS
+                     FIXED
+                     ================================================= -->
 
+                <a href="<%=request.getContextPath()%>/CashierPaymentsServlet"
+                   class="nav-link">
+
+                    <i class="fa-solid fa-credit-card"></i>
+
+                    <span>
+                        Payment Records
+                    </span>
+
+                </a>
+
+
+                <!-- MANAGEMENT -->
+
+                <div class="menu-title">
+
+                    Management
+
+                </div>
+
+
+                <!-- =================================================
+                     NOTIFICATIONS
+                     FIXED
+                     ================================================= -->
+
+                <a href="<%=request.getContextPath()%>/CashierNotificationsServlet"
+                   class="nav-link">
+
+                    <i class="fa-solid fa-bell"></i>
+
+                    <span>
+                        Notifications
+                    </span>
+
+                </a>
+
+
+                <!-- LOGOUT -->
 
                 <div class="logout">
 
-                    <a href="LogoutServlet">
+                    <a href="<%=request.getContextPath()%>/LogoutServlet"
+                       class="nav-link">
 
                         <i class="fa-solid fa-right-from-bracket"></i>
 
@@ -1122,8 +1271,8 @@
 
                 </div>
 
-            </aside>
 
+            </aside>
 
 
             <!-- =====================================================
@@ -1133,194 +1282,358 @@
             <main class="main">
 
 
-                <!-- TOP BAR -->
+                <!-- =================================================
+                     TOPBAR
+                     ================================================= -->
 
                 <header class="topbar">
 
-                    <h2>
+
+                    <div class="topbar-title">
+
                         Cashier Dashboard
-                    </h2>
+
+                    </div>
 
 
-                    <div class="user">
+                    <div class="cashier-user">
+
+
+                        <div class="user-avatar">
+
+                            <i class="fa-solid fa-user"></i>
+
+                        </div>
+
 
                         <div>
 
-                            <strong>
-                                <%= userName%>
-                            </strong>
+                            <div class="user-name">
 
-                            <small>
+                                <%=cashierName%>
+
+                            </div>
+
+
+                            <div class="user-role">
+
                                 Cashier
-                            </small>
+
+                            </div>
 
                         </div>
 
-
-                        <div class="avatar">
-
-                            <i class="fa-solid fa-cash-register"></i>
-
-                        </div>
 
                     </div>
+
 
                 </header>
 
 
-
-                <!-- CONTENT -->
+                <!-- =================================================
+                     CONTENT
+                     ================================================= -->
 
                 <section class="content">
 
 
-                    <!-- =================================================
-                         WELCOME
-                         ================================================= -->
+                    <!-- WELCOME -->
 
                     <div class="welcome">
 
                         <h1>
-                            Welcome, <%= userName%>!
+
+                            Good day, <%=cashierName%>
+
                         </h1>
 
+
                         <p>
-                            Manage patient payments,
-                            billing and payment records
-                            from one place.
+
+                            Manage patient payments and
+                            clinic billing records.
+
                         </p>
 
                     </div>
-
 
 
                     <!-- =================================================
                          STATISTICS
                          ================================================= -->
 
-                    <div class="cards">
+                    <div class="stats">
 
 
-                        <div class="card">
+                        <!-- TOTAL PAYMENTS -->
 
-                            <div class="card-icon">
+                        <div class="stat-card">
 
-                                <i class="fa-solid fa-receipt"></i>
+                            <div class="stat-icon">
+
+                                <i class="fa-solid fa-credit-card"></i>
 
                             </div>
 
-                            <h3>
-                                <%= totalPayments%>
-                            </h3>
 
-                            <p>
-                                Total Payments
-                            </p>
+                            <div>
+
+                                <div class="stat-label">
+
+                                    Total Payments
+
+                                </div>
+
+
+                                <div class="stat-value">
+
+                                    <%=totalPayments%>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
 
-                        <div class="card">
+                        <!-- PAID PAYMENTS -->
 
-                            <div class="card-icon">
+                        <div class="stat-card">
+
+                            <div class="stat-icon">
+
+                                <i class="fa-solid fa-circle-check"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <div class="stat-label">
+
+                                    Paid Payments
+
+                                </div>
+
+
+                                <div class="stat-value">
+
+                                    <%=paidPayments%>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- REVENUE -->
+
+                        <div class="stat-card">
+
+                            <div class="stat-icon">
 
                                 <i class="fa-solid fa-money-bill-wave"></i>
 
                             </div>
 
-                            <h3>
-                                Rs.
-                                <%= totalAmount%>
-                            </h3>
 
-                            <p>
-                                Total Amount Received
-                            </p>
+                            <div>
 
-                        </div>
+                                <div class="stat-label">
+
+                                    Total Revenue
+
+                                </div>
 
 
-                        <div class="card">
+                                <div class="stat-value">
 
-                            <div class="card-icon">
+                                    Rs.
+                                    <%=totalRevenue.setScale(
+                                            2,
+                                            java.math.RoundingMode.HALF_UP
+                            )%>
 
-                                <i class="fa-solid fa-user-doctor"></i>
-
-                            </div>
-
-                            <h3>
-                                Rs.
-                                <%= consultationAmount%>
-                            </h3>
-
-                            <p>
-                                Consultation Payments
-                            </p>
-
-                        </div>
-
-
-                        <div class="card">
-
-                            <div class="card-icon">
-
-                                <i class="fa-solid fa-tooth"></i>
+                                </div>
 
                             </div>
 
-                            <h3>
-                                Rs.
-                                <%= treatmentAmount%>
-                            </h3>
-
-                            <p>
-                                Treatment Payments
-                            </p>
-
                         </div>
+
 
                     </div>
 
 
-
                     <!-- =================================================
-                         PATIENT PAYMENT NOTIFICATION / ALERT
+                         PAYMENT RECORDS PANEL
                          ================================================= -->
 
-                    <div class="panel">
+                    <div class="panel"
+                         id="paymentRecords">
+
+
+                        <!-- PANEL HEADER -->
 
                         <div class="panel-header">
+
 
                             <div>
 
                                 <div class="panel-title">
 
-                                    <i class="fa-solid fa-bell"
-                                       style="color:#06a3da;">
-                                    </i>
-
-                                    Recent Patient Payments
+                                    Payment Records
 
                                 </div>
+
 
                                 <div class="panel-subtitle">
 
-                                    Payments submitted by patients
+                                    All patient payment transactions
 
                                 </div>
+
+                            </div>
+
+
+                            <div class="panel-actions">
+
+
+                                <!-- REFRESH -->
+
+                                <a href="<%=request.getContextPath()%>/cashier-dashboard.jsp"
+                                   class="action-btn">
+
+                                    <i class="fa-solid fa-rotate"></i>
+
+                                    Refresh
+
+                                </a>
+
+
+                                <!-- OPEN FULL PAYMENT PAGE -->
+
+                                <a href="<%=request.getContextPath()%>/CashierPaymentsServlet"
+                                   class="action-btn primary">
+
+                                    <i class="fa-solid fa-credit-card"></i>
+
+                                    View All Payments
+
+                                </a>
+
+
+                                <!-- EXPORT -->
+
+                                <button type="button"
+                                        class="action-btn"
+                                        onclick="exportPayments()">
+
+                                    <i class="fa-solid fa-file-export"></i>
+
+                                    Export CSV
+
+                                </button>
+
 
                             </div>
 
                         </div>
 
 
-                        <% if (payments != null
-                            && !payments.isEmpty()) { %>
+                        <!-- =================================================
+                             SEARCH + FILTER
+                             ================================================= -->
 
+                        <div class="search-area">
+
+
+                            <div class="search-box">
+
+                                <i class="fa-solid fa-magnifying-glass"></i>
+
+
+                                <input type="text"
+                                       id="paymentSearch"
+                                       placeholder="Search patient, payment number, appointment..."
+                                       onkeyup="filterPayments()">
+
+                            </div>
+
+
+                            <select id="statusFilter"
+                                    class="filter-select"
+                                    onchange="filterPayments()">
+
+
+                                <option value="ALL">
+
+                                    All Status
+
+                                </option>
+
+
+                                <option value="PAID">
+
+                                    Paid
+
+                                </option>
+
+
+                                <option value="PENDING">
+
+                                    Pending
+
+                                </option>
+
+
+                                <option value="FAILED">
+
+                                    Failed
+
+                                </option>
+
+
+                            </select>
+
+
+                        </div>
+
+
+                        <!-- DATABASE ERROR -->
+
+                        <%
+
+                            if (paymentError != null) {
+
+                        %>
+
+
+                        <div class="database-error">
+
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+
+                            <%=paymentError%>
+
+                        </div>
+
+
+                        <%
+
+                            }
+
+                        %>
+
+
+                        <!-- =================================================
+                             PAYMENT TABLE
+                             ================================================= -->
 
                         <div class="table-wrapper">
 
-                            <table>
+
+                            <table id="paymentTable">
+
 
                                 <thead>
 
@@ -1366,110 +1679,188 @@
                                 <tbody>
 
 
-                                    <%
-                                        int count = 0;
+                                    <%                            if (paymentRecords != null
+                                                && !paymentRecords.isEmpty()) {
 
-                                        for (Payment p
-                                                : payments) {
+                                            for (Payment payment
+                                                    : paymentRecords) {
 
-                                            if (count >= 10) {
-                                                break;
-                                            }
+                                                if (payment == null) {
 
-                                            count++;
+                                                    continue;
+                                                }
+
+                                                String status
+                                                        = payment.getPaymentStatus();
+
+                                                String statusClass
+                                                        = "status-pending";
+
+                                                if ("PAID".equalsIgnoreCase(status)
+                                                        || "COMPLETED".equalsIgnoreCase(status)) {
+
+                                                    statusClass
+                                                            = "status-paid";
+
+                                                } else if ("FAILED".equalsIgnoreCase(status)) {
+
+                                                    statusClass
+                                                            = "status-failed";
+                                                }
+
+                                                String method
+                                                        = payment.getPaymentMethod();
+
+                                                String methodIcon
+                                                        = "fa-credit-card";
+
+                                                if ("CASH".equalsIgnoreCase(method)) {
+
+                                                    methodIcon
+                                                            = "fa-money-bill-wave";
+
+                                                } else if ("BANK_TRANSFER".equalsIgnoreCase(method)) {
+
+                                                    methodIcon
+                                                            = "fa-building-columns";
+                                                }
+
+                                                String paymentType
+                                                        = payment.getPaymentType();
+
+                                                String displayType
+                                                        = paymentType;
+
+                                                if ("CONSULTATION".equalsIgnoreCase(paymentType)) {
+
+                                                    displayType
+                                                            = "Consultation Fee";
+
+                                                } else if ("TREATMENT".equalsIgnoreCase(paymentType)) {
+
+                                                    displayType
+                                                            = "Treatment Payment";
+                                                }
+
                                     %>
 
 
                                     <tr>
 
 
+                                        <!-- PAYMENT NUMBER -->
+
                                         <td>
 
                                             <span class="payment-no">
 
-                                                <%= p.getPaymentNo()%>
+                                                <%=payment.getPaymentNo() != null
+                                                        ? payment.getPaymentNo()
+                                                        : "-"%>
 
                                             </span>
 
                                         </td>
 
+
+                                        <!-- PATIENT -->
 
                                         <td>
 
                                             <span class="patient-name">
 
-                                                <%= p.getPatientName() == null
-                                                        ? "Patient"
-                                                        : p.getPatientName()%>
+                                                <%=payment.getPatientName() != null
+                                                        ? payment.getPatientName()
+                                                        : "Unknown Patient"%>
 
                                             </span>
 
                                         </td>
 
 
-                                        <td>
-
-                                            <%= p.getAppointmentNo() == null
-                                                    ? "-"
-                                                    : p.getAppointmentNo()%>
-
-                                        </td>
-
+                                        <!-- APPOINTMENT -->
 
                                         <td>
 
-                                            <span class="payment-type">
+                                            <span class="appointment-no">
 
-                                                <%= p.getPaymentType() == null
-                                                        ? "-"
-                                                        : p.getPaymentType()%>
+                                                <%=payment.getAppointmentNo() != null
+                                                        ? payment.getAppointmentNo()
+                                                        : "-"%>
 
                                             </span>
 
                                         </td>
 
+
+                                        <!-- PAYMENT TYPE -->
+
+                                        <td>
+
+                                            <%=displayType != null
+                                                    ? displayType
+                                                    : "-"%>
+
+                                        </td>
+
+
+                                        <!-- AMOUNT -->
 
                                         <td>
 
                                             <span class="amount">
 
                                                 Rs.
-                                                <%= p.getAmount() == null
-                                                        ? "0.00"
-                                                        : p.getAmount()%>
+
+                                                <%=payment.getAmount() != null
+                                                        ? payment.getAmount()
+                                                        : "0.00"%>
 
                                             </span>
 
                                         </td>
 
 
-                                        <td>
-
-                                            <%= p.getPaymentMethod() == null
-                                                    ? "-"
-                                                    : p.getPaymentMethod()%>
-
-                                        </td>
-
+                                        <!-- METHOD -->
 
                                         <td>
 
-                                            <span class="status status-paid">
+                                            <span class="method">
 
-                                                <%= p.getPaymentStatus() == null
-                                                        ? "PAID"
-                                                        : p.getPaymentStatus()%>
+                                                <i class="fa-solid <%=methodIcon%>"></i>
+
+
+                                                <%=method != null
+                                                        ? method.replace("_", " ")
+                                                        : "-"%>
 
                                             </span>
 
                                         </td>
 
 
+                                        <!-- STATUS -->
+
                                         <td>
 
-                                            <%= p.getCreatedAt() == null
-                                                    ? "-"
-                                                    : p.getCreatedAt()%>
+                                            <span class="status <%=statusClass%>">
+
+                                                <%=status != null
+                                                        ? status
+                                                        : "UNKNOWN"%>
+
+                                            </span>
+
+                                        </td>
+
+
+                                        <!-- DATE -->
+
+                                        <td>
+
+                                            <%=payment.getCreatedAt() != null
+                                                    ? payment.getCreatedAt()
+                                                    : "-"%>
 
                                         </td>
 
@@ -1478,319 +1869,363 @@
 
 
                                     <%
+
                                         }
+
+                                    } else {
+
+                                    %>
+
+
+                                    <tr>
+
+                                        <td colspan="8">
+
+                                            <div class="empty">
+
+                                                <i class="fa-solid fa-receipt"></i>
+
+                                                <h3>
+
+                                                    No Payment Records
+
+                                                </h3>
+
+                                                <p>
+
+                                                    There are currently
+                                                    no patient payment records.
+
+                                                </p>
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+
+                                    <%                            }
+
                                     %>
 
 
                                 </tbody>
 
+
                             </table>
 
-                        </div>
-
-
-                        <% } else { %>
-
-
-                        <div class="empty">
-
-                            <i class="fa-regular fa-credit-card"></i>
-
-                            <p>
-                                No patient payments have been
-                                recorded yet.
-                            </p>
 
                         </div>
 
 
-                        <% }%>
+                        <!-- FOOTER -->
 
-                    </div>
+                        <div class="table-footer">
 
+                            Showing
 
+                            <strong>
 
-                    <!-- =================================================
-                         QUICK ACTIONS
-                         ================================================= -->
+                                <%=paymentRecords.size()%>
 
-                    <div class="panel">
+                            </strong>
 
-                        <div class="panel-header">
-
-                            <div>
-
-                                <div class="panel-title">
-
-                                    Quick Actions
-
-                                </div>
-
-                                <div class="panel-subtitle">
-
-                                    Choose an action to continue
-
-                                </div>
-
-                            </div>
+                            payment record(s).
 
                         </div>
 
-
-                        <div class="action-grid">
-
-
-                            <a class="action"
-                               href="CashierBillingServlet">
-
-                                <div class="action-icon">
-
-                                    <i class="fa-solid fa-file-invoice-dollar"></i>
-
-                                </div>
-
-                                <div class="action-content">
-
-                                    <strong>
-                                        Billing
-                                    </strong>
-
-                                    <span>
-                                        Search confirmed appointment
-                                    </span>
-
-                                </div>
-
-                            </a>
-
-
-                            <a class="action"
-                               href="CashierBillingServlet">
-
-                                <div class="action-icon">
-
-                                    <i class="fa-solid fa-credit-card"></i>
-
-                                </div>
-
-                                <div class="action-content">
-
-                                    <strong>
-                                        Payment Records
-                                    </strong>
-
-                                    <span>
-                                        View patient payments
-                                    </span>
-
-                                </div>
-
-                            </a>
-
-
-                            <a class="action"
-                               href="cashier-profile.jsp">
-
-                                <div class="action-icon">
-
-                                    <i class="fa-solid fa-user"></i>
-
-                                </div>
-
-                                <div class="action-content">
-
-                                    <strong>
-                                        My Profile
-                                    </strong>
-
-                                    <span>
-                                        View cashier profile
-                                    </span>
-
-                                </div>
-
-                            </a>
-
-
-                            <a class="action"
-                               href="Index.jsp">
-
-                                <div class="action-icon">
-
-                                    <i class="fa-solid fa-house"></i>
-
-                                </div>
-
-                                <div class="action-content">
-
-                                    <strong>
-                                        Home
-                                    </strong>
-
-                                    <span>
-                                        Return to home page
-                                    </span>
-
-                                </div>
-
-                            </a>
-
-
-                            <a class="action"
-                               href="LogoutServlet">
-
-                                <div class="action-icon">
-
-                                    <i class="fa-solid fa-right-from-bracket"></i>
-
-                                </div>
-
-                                <div class="action-content">
-
-                                    <strong>
-                                        Logout
-                                    </strong>
-
-                                    <span>
-                                        Securely sign out
-                                    </span>
-
-                                </div>
-
-                            </a>
-
-
-                        </div>
-
-                    </div>
-
-
-
-                    <!-- =================================================
-                         CASHIER WORKFLOW
-                         ================================================= -->
-
-                    <div class="panel">
-
-                        <div class="panel-header">
-
-                            <div>
-
-                                <div class="panel-title">
-
-                                    Cashier Payment Workflow
-
-                                </div>
-
-                                <div class="panel-subtitle">
-
-                                    Patient payment management process
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="workflow">
-
-
-                            <div class="workflow-step">
-
-                                <div class="workflow-number">
-                                    1
-                                </div>
-
-                                <strong>
-                                    Patient Pays
-                                </strong>
-
-                                <span>
-                                    Patient pays the consultation
-                                    or treatment amount.
-                                </span>
-
-                            </div>
-
-
-                            <div class="workflow-step">
-
-                                <div class="workflow-number">
-                                    2
-                                </div>
-
-                                <strong>
-                                    Payment Recorded
-                                </strong>
-
-                                <span>
-                                    The payment is stored in
-                                    the payment records.
-                                </span>
-
-                            </div>
-
-
-                            <div class="workflow-step">
-
-                                <div class="workflow-number">
-                                    3
-                                </div>
-
-                                <strong>
-                                    Cashier Verifies
-                                </strong>
-
-                                <span>
-                                    Cashier can view the
-                                    payment details.
-                                </span>
-
-                            </div>
-
-
-                            <div class="workflow-step">
-
-                                <div class="workflow-number">
-                                    4
-                                </div>
-
-                                <strong>
-                                    Receipt
-                                </strong>
-
-                                <span>
-                                    Payment receipt can be
-                                    generated through billing.
-                                </span>
-
-                            </div>
-
-
-                        </div>
-
-                    </div>
-
-
-
-                    <!-- FOOTER -->
-
-                    <div class="footer">
-
-                        Sunrise Dental Clinic
-                        &nbsp; | &nbsp;
-                        Cashier Management System
 
                     </div>
 
 
                 </section>
 
+
             </main>
 
+
         </div>
+
+
+        <!-- TOAST -->
+
+        <jsp:include page="toast.jsp" />
+
+
+        <script>
+
+
+            /* =========================================================
+             SEARCH + STATUS FILTER
+             ========================================================= */
+
+            function filterPayments() {
+
+
+                const searchInput =
+                        document.getElementById(
+                                "paymentSearch"
+                                );
+
+
+                const statusFilter =
+                        document.getElementById(
+                                "statusFilter"
+                                );
+
+
+                const search =
+                        searchInput.value
+                        .toLowerCase()
+                        .trim();
+
+
+                const selectedStatus =
+                        statusFilter.value
+                        .toUpperCase();
+
+
+                const rows =
+                        document.querySelectorAll(
+                                "#paymentTable tbody tr"
+                                );
+
+
+                rows.forEach(
+                        function (row) {
+
+
+                            const statusElement =
+                                    row.querySelector(
+                                            ".status"
+                                            );
+
+
+                            /*
+                             * Ignore empty record row.
+                             */
+
+                            if (!statusElement) {
+
+                                return;
+                            }
+
+
+                            const rowText =
+                                    row.textContent
+                                    .toLowerCase();
+
+
+                            const rowStatus =
+                                    statusElement.textContent
+                                    .trim()
+                                    .toUpperCase();
+
+
+                            const matchesSearch =
+                                    rowText.includes(
+                                            search
+                                            );
+
+
+                            const matchesStatus =
+                                    selectedStatus === "ALL"
+                                    ||
+                                    rowStatus === selectedStatus;
+
+
+                            if (matchesSearch
+                                    && matchesStatus) {
+
+                                row.style.display = "";
+
+                            } else {
+
+                                row.style.display = "none";
+                            }
+
+                        }
+                );
+
+            }
+
+
+            /* =========================================================
+             EXPORT PAYMENT RECORDS
+             ========================================================= */
+
+            function exportPayments() {
+
+
+                const table =
+                        document.getElementById(
+                                "paymentTable"
+                                );
+
+
+                const rows =
+                        table.querySelectorAll(
+                                "tr"
+                                );
+
+
+                let csv = [];
+
+
+                rows.forEach(
+                        function (row) {
+
+
+                            /*
+                             * Don't export hidden rows.
+                             */
+
+                            if (
+                                    row.style.display
+                                    === "none"
+                                    ) {
+
+                                return;
+                            }
+
+
+                            const columns =
+                                    row.querySelectorAll(
+                                            "th, td"
+                                            );
+
+
+                            let rowData = [];
+
+
+                            columns.forEach(
+                                    function (column) {
+
+
+                                        let value =
+                                                column.innerText
+                                                .replace(
+                                                        /"/g,
+                                                        '""'
+                                                        )
+                                                .replace(
+                                                        /\n/g,
+                                                        " "
+                                                        )
+                                                .trim();
+
+
+                                        rowData.push(
+                                                '"' +
+                                                value +
+                                                '"'
+                                                );
+
+                                    }
+                            );
+
+
+                            csv.push(
+                                    rowData.join(",")
+                                    );
+
+                        }
+                );
+
+
+                if (csv.length <= 1) {
+
+
+                    if (
+                            typeof showSunriseToast
+                            === "function"
+                            ) {
+
+                        showSunriseToast(
+                                "No payment records available to export.",
+                                "warning"
+                                );
+
+                    } else {
+
+                        alert(
+                                "No payment records available to export."
+                                );
+                    }
+
+
+                    return;
+                }
+
+
+                const blob =
+                        new Blob(
+                                [
+                                    csv.join("\n")
+                                ],
+                                {
+                                    type:
+                                            "text/csv;charset=utf-8;"
+                                }
+                        );
+
+
+                const url =
+                        URL.createObjectURL(
+                                blob
+                                );
+
+
+                const link =
+                        document.createElement(
+                                "a"
+                                );
+
+
+                link.href = url;
+
+
+                link.download =
+                        "Sunrise_Dental_Payment_Records.csv";
+
+
+                document.body.appendChild(
+                        link
+                        );
+
+
+                link.click();
+
+
+                document.body.removeChild(
+                        link
+                        );
+
+
+                URL.revokeObjectURL(
+                        url
+                        );
+
+
+                if (
+                        typeof showSunriseToast
+                        === "function"
+                        ) {
+
+                    showSunriseToast(
+                            "Payment records exported successfully.",
+                            "success"
+                            );
+
+                }
+
+            }
+
+        </script>
+
 
     </body>
 
 </html>
+

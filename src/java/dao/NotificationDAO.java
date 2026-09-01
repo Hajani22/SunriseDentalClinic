@@ -17,4 +17,12 @@ public interface NotificationDAO {
             int userId,
             String role
     ) throws SQLException;
+
+    /**
+     * Returns IDs of users belonging to the supplied role. Used by the feedback
+     * workflow to notify administrators.
+     */
+    List<Integer> getUserIdsByRole(
+            String role
+    ) throws SQLException;
 }

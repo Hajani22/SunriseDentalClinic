@@ -34,6 +34,14 @@ public class Bill {
 
     private BigDecimal discount;
 
+    /*
+     * Amount already paid before cashier billing.
+     * This is NOT a database column.
+     * It is used only for displaying/calculating
+     * the bill and receipt.
+     */
+    private BigDecimal paidAmount;
+
     private BigDecimal totalAmount;
 
     private String paymentMethod;
@@ -145,9 +153,7 @@ public class Bill {
         return treatmentAmount;
     }
 
-    public void setTreatmentAmount(
-            BigDecimal treatmentAmount) {
-
+    public void setTreatmentAmount(BigDecimal treatmentAmount) {
         this.treatmentAmount = treatmentAmount;
     }
 
@@ -155,9 +161,7 @@ public class Bill {
         return consultationFee;
     }
 
-    public void setConsultationFee(
-            BigDecimal consultationFee) {
-
+    public void setConsultationFee(BigDecimal consultationFee) {
         this.consultationFee = consultationFee;
     }
 
@@ -165,19 +169,23 @@ public class Bill {
         return discount;
     }
 
-    public void setDiscount(
-            BigDecimal discount) {
-
+    public void setDiscount(BigDecimal discount) {
         this.discount = discount;
+    }
+
+    public BigDecimal getPaidAmount() {
+        return paidAmount;
+    }
+
+    public void setPaidAmount(BigDecimal paidAmount) {
+        this.paidAmount = paidAmount;
     }
 
     public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(
-            BigDecimal totalAmount) {
-
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
 
@@ -185,9 +193,7 @@ public class Bill {
         return paymentMethod;
     }
 
-    public void setPaymentMethod(
-            String paymentMethod) {
-
+    public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
 
@@ -195,9 +201,7 @@ public class Bill {
         return paymentStatus;
     }
 
-    public void setPaymentStatus(
-            String paymentStatus) {
-
+    public void setPaymentStatus(String paymentStatus) {
         this.paymentStatus = paymentStatus;
     }
 
@@ -205,9 +209,7 @@ public class Bill {
         return createdAt;
     }
 
-    public void setCreatedAt(
-            String createdAt) {
-
+    public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
 }

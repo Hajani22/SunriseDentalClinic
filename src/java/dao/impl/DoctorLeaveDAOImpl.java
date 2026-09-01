@@ -25,25 +25,17 @@ public class DoctorLeaveDAOImpl
 
         String sql
                 = "SELECT dl.*, "
-                + "CONCAT(d.first_name, ' ', d.last_name) "
-                + "AS doctor_name "
+                + "CONCAT(d.first_name, ' ', d.last_name) AS doctor_name "
                 + "FROM doctor_leaves dl "
-                + "INNER JOIN doctors d "
-                + "ON dl.doctor_id = d.id "
-                + "ORDER BY dl.leave_date DESC, "
-                + "doctor_name ASC";
+                + "INNER JOIN doctors d ON dl.doctor_id = d.id "
+                + "ORDER BY dl.leave_date DESC, doctor_name ASC";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql); ResultSet rs
-                = ps.executeQuery()) {
+                Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
 
-                leaves.add(
-                        mapRow(rs)
-                );
+                leaves.add(mapRow(rs));
             }
         }
 
@@ -60,32 +52,22 @@ public class DoctorLeaveDAOImpl
 
         String sql
                 = "SELECT dl.*, "
-                + "CONCAT(d.first_name, ' ', d.last_name) "
-                + "AS doctor_name "
+                + "CONCAT(d.first_name, ' ', d.last_name) AS doctor_name "
                 + "FROM doctor_leaves dl "
-                + "INNER JOIN doctors d "
-                + "ON dl.doctor_id = d.id "
-                + "WHERE dl.doctor_id=? "
+                + "INNER JOIN doctors d ON dl.doctor_id = d.id "
+                + "WHERE dl.doctor_id = ? "
                 + "ORDER BY dl.leave_date DESC";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(
-                    1,
-                    doctorId
-            );
+            ps.setInt(1, doctorId);
 
-            try (ResultSet rs
-                    = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
 
                 while (rs.next()) {
 
-                    leaves.add(
-                            mapRow(rs)
-                    );
+                    leaves.add(mapRow(rs));
                 }
             }
         }
@@ -100,22 +82,17 @@ public class DoctorLeaveDAOImpl
 
         String sql
                 = "SELECT dl.*, "
-                + "CONCAT(d.first_name, ' ', d.last_name) "
-                + "AS doctor_name "
+                + "CONCAT(d.first_name, ' ', d.last_name) AS doctor_name "
                 + "FROM doctor_leaves dl "
-                + "INNER JOIN doctors d "
-                + "ON dl.doctor_id=d.id "
-                + "WHERE dl.id=?";
+                + "INNER JOIN doctors d ON dl.doctor_id = d.id "
+                + "WHERE dl.id = ?";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, id);
 
-            try (ResultSet rs
-                    = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
 
                 if (rs.next()) {
 
@@ -129,18 +106,17 @@ public class DoctorLeaveDAOImpl
 
     @Override
     public boolean addLeave(
-            DoctorLeave leave)
+            DoctorLeave leave,
+            String status)
             throws SQLException {
 
         String sql
                 = "INSERT INTO doctor_leaves "
                 + "(doctor_id, leave_date, reason, status) "
-                + "VALUES (?, ?, ?, 'ACTIVE')";
+                + "VALUES (?, ?, ?, ?)";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(
                     1,
@@ -157,6 +133,32 @@ public class DoctorLeaveDAOImpl
                     leave.getReason()
             );
 
+            ps.setString(
+                    4,
+                    status
+            );
+
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    @Override
+    public boolean updateStatus(
+            int id,
+            String status)
+            throws SQLException {
+
+        String sql
+                = "UPDATE doctor_leaves "
+                + "SET status = ? "
+                + "WHERE id = ?";
+
+        try (
+                Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, status);
+            ps.setInt(2, id);
+
             return ps.executeUpdate() > 0;
         }
     }
@@ -168,13 +170,12 @@ public class DoctorLeaveDAOImpl
 
         String sql
                 = "UPDATE doctor_leaves "
-                + "SET status='CANCELLED' "
-                + "WHERE id=?";
+                + "SET status = 'CANCELLED' "
+                + "WHERE id = ? "
+                + "AND status IN ('PENDING', 'APPROVED')";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, id);
 
@@ -191,27 +192,17 @@ public class DoctorLeaveDAOImpl
         String sql
                 = "SELECT COUNT(*) "
                 + "FROM doctor_leaves "
-                + "WHERE doctor_id=? "
-                + "AND leave_date=? "
-                + "AND status='ACTIVE'";
+                + "WHERE doctor_id = ? "
+                + "AND leave_date = ? "
+                + "AND status = 'APPROVED'";
 
         try (
-                Connection con
-                = DBConnection.getConnection(); PreparedStatement ps
-                = con.prepareStatement(sql)) {
+                Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(
-                    1,
-                    doctorId
-            );
+            ps.setInt(1, doctorId);
+            ps.setDate(2, leaveDate);
 
-            ps.setDate(
-                    2,
-                    leaveDate
-            );
-
-            try (ResultSet rs
-                    = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
 
                 rs.next();
 

@@ -213,6 +213,53 @@ public class BillingDAOImpl
     }
 
     @Override
+    public Bill getBillByAppointmentId(
+            int appointmentId)
+            throws SQLException {
+
+        String sql
+                = "SELECT "
+                + "b.*, "
+                + "a.appointment_no, "
+                + "a.patient_name, "
+                + "a.patient_phone, "
+                + "a.appointment_date, "
+                + "a.appointment_time, "
+                + "CONCAT("
+                + "d.first_name,' ',d.last_name"
+                + ") AS doctor_name "
+                + "FROM bills b "
+                + "JOIN appointments a "
+                + "ON b.appointment_id=a.id "
+                + "LEFT JOIN doctors d "
+                + "ON a.doctor_id=d.id "
+                + "WHERE b.appointment_id=? "
+                + "LIMIT 1";
+
+        try (
+                Connection con
+                = DBConnection.getConnection(); PreparedStatement ps
+                = con.prepareStatement(sql)) {
+
+            ps.setInt(
+                    1,
+                    appointmentId
+            );
+
+            try (
+                    ResultSet rs
+                    = ps.executeQuery()) {
+
+                if (!rs.next()) {
+                    return null;
+                }
+
+                return mapBill(rs);
+            }
+        }
+    }
+
+    @Override
     public boolean createBill(
             Bill bill)
             throws SQLException {

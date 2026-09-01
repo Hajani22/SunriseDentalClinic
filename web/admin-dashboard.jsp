@@ -104,7 +104,7 @@
 
         appointments
                 = appointmentService
-                        .getAdminAppointments();
+                        .getAllAppointments();
 
         notifications
                 = notificationDAO
@@ -1818,6 +1818,20 @@
 
                 </a>
 
+                <!-- PATIENT FEEDBACK -->
+
+                <a
+                    href="<%=request.getContextPath()%>/AdminFeedbackServlet"
+                    class="nav-link">
+
+                    <i class="fa-solid fa-comment-dots"></i>
+
+                    <span>
+                        Patient Feedback
+                    </span>
+
+                </a>
+
 
                 <!-- NOTIFICATIONS -->
 
@@ -3098,7 +3112,7 @@
 
 
                                 <% if (notifications != null
-                                    && !notifications.isEmpty()) { %>
+                                            && !notifications.isEmpty()) { %>
 
 
                                 <%
@@ -3200,7 +3214,7 @@
 
 
         </div>
-
+        <jsp:include page="toast.jsp" />
 
     </body>
 

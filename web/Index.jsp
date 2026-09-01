@@ -25,12 +25,10 @@
         <!-- CSS -->
         <link rel="stylesheet"
               href="CSS/Style.css">
-
     </head>
     <body>
 
         <!--NAVBAR-->
-
         <header class="navbar">
             <a href="Index.jsp"
                class="logo">
@@ -52,6 +50,7 @@
 
             <!-- Navigation -->
             <nav id="mainNav">
+
                 <a href="Index.jsp">
                     Home
                 </a>
@@ -102,15 +101,18 @@
                     <span class="hero-label">
                         WELCOME TO SUNRISE DENTAL CLINIC
                     </span>
+
                     <h1>
                         Your Smile,
                         <br>
                         Our Priority
                     </h1>
+
                     <p>
                         Professional and compassionate dental
                         care for you and your entire family.
                     </p>
+
                     <div class="hero-buttons">
 
                         <!-- LOGIN -->
@@ -140,25 +142,14 @@
             </div>
         </section>
 
-
-
-        <!-- =========================================================
-             FEATURES
-        ========================================================= -->
-
+        <!--FEATURES-->
         <section class="features">
-
-
             <div class="feature">
-
                 <div class="feature-icon">
-
                     <i class="fa-solid fa-user-doctor"></i>
-
                 </div>
 
                 <div>
-
                     <h3>
                         Expert Dentists
                     </h3>
@@ -166,23 +157,15 @@
                     <p>
                         Qualified dental professionals
                     </p>
-
                 </div>
-
             </div>
 
-
-
             <div class="feature">
-
                 <div class="feature-icon">
-
                     <i class="fa-solid fa-clock"></i>
-
                 </div>
 
                 <div>
-
                     <h3>
                         Flexible Hours
                     </h3>
@@ -192,21 +175,14 @@
                     </p>
 
                 </div>
-
             </div>
 
-
-
             <div class="feature">
-
                 <div class="feature-icon">
-
                     <i class="fa-solid fa-shield-heart"></i>
-
                 </div>
 
                 <div>
-
                     <h3>
                         Safe Treatment
                     </h3>
@@ -214,23 +190,15 @@
                     <p>
                         Modern dental technology
                     </p>
-
                 </div>
-
             </div>
 
-
-
             <div class="feature">
-
                 <div class="feature-icon">
-
                     <i class="fa-solid fa-phone"></i>
-
                 </div>
 
                 <div>
-
                     <h3>
                         24/7 Support
                     </h3>
@@ -240,213 +208,127 @@
                     </p>
 
                 </div>
-
             </div>
-
         </section>
 
 
-
-        <!-- =========================================================
-             ABOUT
-        ========================================================= -->
-
+        <!--ABOUT-->
         <section id="about"
                  class="section">
-
-
             <div class="section-image">
-
                 <img
                     src="https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&w=1000&q=85"
                     alt="Dental treatment">
-
             </div>
 
-
-
             <div class="section-content">
-
                 <span class="eyebrow">
                     ABOUT OUR CLINIC
                 </span>
 
-
                 <h2>
-
                     Modern Dentistry
                     With a Personal Touch
-
                 </h2>
 
-
                 <p>
-
                     Sunrise Dental Clinic provides
                     high-quality dental care in a
                     comfortable and friendly environment.
-
                 </p>
 
-
                 <p>
-
                     Our team uses modern technology
                     and patient-focused treatment
                     methods to help you maintain a
                     healthy, confident smile.
-
                 </p>
 
-
                 <div class="check-list">
-
-
                     <p>
-
                         <i class="fa-solid fa-circle-check"></i>
-
                         Experienced dental professionals
-
                     </p>
 
-
                     <p>
-
                         <i class="fa-solid fa-circle-check"></i>
-
                         Modern treatment technology
-
                     </p>
-
-
                     <p>
-
                         <i class="fa-solid fa-circle-check"></i>
-
                         Comfortable patient environment
-
                     </p>
-
-
                     <p>
-
                         <i class="fa-solid fa-circle-check"></i>
-
                         Personalized treatment plans
-
                     </p>
-
-
                 </div>
-
-
                 <a href="Signup.jsp"
                    class="btn primary">
-
                     <i class="fa-solid fa-calendar-check"></i>
-
                     Book Appointment
-
                 </a>
-
             </div>
-
         </section>
 
-
-
-        <!-- =========================================================
-             SERVICES
-        ========================================================= -->
-
+        <!--SERVICES-->
         <section id="services"
                  class="section light">
 
-
             <div class="section-heading">
-
                 <span class="eyebrow">
                     OUR SERVICES
                 </span>
-
 
                 <h2>
                     Complete Dental Care
                 </h2>
 
-
                 <p>
-
                     Professional treatments designed
                     to protect, restore and improve
                     your smile.
-
                 </p>
-
             </div>
-
-
 
             <div class="services-grid">
 
-
                 <!-- SERVICE 1 -->
-
                 <div class="service-card">
-
                     <img
                         src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=900&q=85"
                         alt="General Dentistry">
-
-
                     <div class="service-content">
-
                         <i class="fa-solid fa-tooth"></i>
-
                         <h3>
                             General Dentistry
                         </h3>
 
                         <p>
-
                             Regular checkups, cleaning
                             and preventive dental treatment.
-
                         </p>
 
                         <a href="Login.jsp">
                             Book Now ?
                         </a>
-
                     </div>
-
                 </div>
 
-
-
                 <!-- SERVICE 2 -->
-
                 <div class="service-card">
-
                     <img
                         src="https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&w=900&q=85"
                         alt="Cosmetic Dentistry">
-
-
                     <div class="service-content">
-
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
-
                         <h3>
                             Cosmetic Dentistry
                         </h3>
 
                         <p>
-
                             Improve the appearance and
                             confidence of your smile.
-
                         </p>
 
                         <a href="Login.jsp">
@@ -454,124 +336,81 @@
                         </a>
 
                     </div>
-
                 </div>
 
-
-
                 <!-- SERVICE 3 -->
-
                 <div class="service-card">
-
                     <img
                         src="https://images.unsplash.com/photo-1588776814546-daab30f310ce?auto=format&fit=crop&w=900&q=85"
                         alt="Teeth Whitening">
-
-
                     <div class="service-content">
-
                         <i class="fa-solid fa-sparkles"></i>
-
                         <h3>
                             Teeth Whitening
                         </h3>
 
                         <p>
-
                             Professional whitening treatments
                             for a brighter smile.
-
                         </p>
 
                         <a href="Login.jsp">
                             Book Now ?
                         </a>
-
                     </div>
-
                 </div>
 
-
-
                 <!-- SERVICE 4 -->
-
                 <div class="service-card">
-
                     <img
                         src="https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=900&q=85"
                         alt="Dental Implants">
-
-
                     <div class="service-content">
-
                         <i class="fa-solid fa-teeth"></i>
-
                         <h3>
                             Dental Implants
                         </h3>
 
                         <p>
-
                             Reliable solutions for missing
                             or damaged teeth.
-
                         </p>
 
                         <a href="Login.jsp">
                             Book Now ?
                         </a>
-
                     </div>
-
                 </div>
 
-
-
                 <!-- SERVICE 5 -->
-
                 <div class="service-card">
-
                     <img
                         src="https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&w=900&q=85"
                         alt="Orthodontics">
-
-
                     <div class="service-content">
-
                         <i class="fa-solid fa-teeth-open"></i>
 
                         <h3>
                             Orthodontics
                         </h3>
-
                         <p>
 
                             Braces and alignment treatments
                             for healthier smiles.
-
                         </p>
 
                         <a href="Login.jsp">
                             Book Now ?
                         </a>
-
                     </div>
-
                 </div>
 
-
-
                 <!-- SERVICE 6 -->
-
                 <div class="service-card">
-
                     <img
                         src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=900&q=85"
                         alt="Emergency Dentistry">
-
-
                     <div class="service-content">
-
                         <i class="fa-solid fa-kit-medical"></i>
 
                         <h3>
@@ -579,59 +418,39 @@
                         </h3>
 
                         <p>
-
                             Fast dental assistance for
                             urgent dental problems.
-
                         </p>
 
                         <a href="Login.jsp">
                             Book Now ?
                         </a>
-
                     </div>
-
                 </div>
-
-
             </div>
-
         </section>
 
 
 
-        <!-- =========================================================
-             WHY CHOOSE US
-        ========================================================= -->
 
+        <!--WHY CHOOSE US-->
         <section class="why-us">
-
             <div class="why-container">
-
                 <span class="eyebrow">
                     WHY CHOOSE US
                 </span>
-
 
                 <h2>
                     Care You Can Trust
                 </h2>
 
-
                 <p class="why-description">
-
                     We combine experienced dentists,
                     modern technology and
                     patient-focused care.
-
                 </p>
-
-
                 <div class="why-grid">
-
-
                     <div class="why-card">
-
                         <i class="fa-solid fa-user-doctor"></i>
 
                         <h3>
@@ -641,12 +460,9 @@
                         <p>
                             Experienced professionals.
                         </p>
-
                     </div>
 
-
                     <div class="why-card">
-
                         <i class="fa-solid fa-microscope"></i>
 
                         <h3>
@@ -655,13 +471,10 @@
 
                         <p>
                             Advanced dental equipment.
-                        </p>
-
+                        </p> 
                     </div>
 
-
                     <div class="why-card">
-
                         <i class="fa-solid fa-heart"></i>
 
                         <h3>
@@ -671,12 +484,9 @@
                         <p>
                             Your comfort matters.
                         </p>
-
                     </div>
 
-
                     <div class="why-card">
-
                         <i class="fa-solid fa-calendar-check"></i>
 
                         <h3>
@@ -688,50 +498,30 @@
                         </p>
 
                     </div>
-
-
                 </div>
-
             </div>
-
         </section>
 
-
-
-        <!-- =========================================================
-             DENTISTS
-        ========================================================= -->
-
+        <!--  DENTISTS -->
         <section id="dentists"
                  class="dentists-section">
-
-
             <div class="dentists-heading">
-
                 <span class="eyebrow">
                     OUR DENTISTS
                 </span>
-
 
                 <h2>
                     Meet Our Dental Team
                 </h2>
 
-
                 <p>
-
                     Our experienced dental professionals
                     are committed to providing safe,
                     comfortable and personalized care.
-
                 </p>
-
             </div>
 
-
-
             <div class="doctor-grid">
-
 
                 <!-- DOCTOR 1 -->
 
@@ -1336,7 +1126,7 @@
 
             <div class="copyright">
 
-                © 2026 Sunrise Dental Clinic.
+                ? 2026 Sunrise Dental Clinic.
                 All Rights Reserved.
 
             </div>
@@ -1350,6 +1140,7 @@
 
         <script src="js/script.js"></script>
 
+        <jsp:include page="toast.jsp" />
 
     </body>
 

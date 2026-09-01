@@ -20,7 +20,13 @@ public interface DoctorLeaveDAO {
             throws SQLException;
 
     boolean addLeave(
-            DoctorLeave leave)
+            DoctorLeave leave,
+            String status)
+            throws SQLException;
+
+    boolean updateStatus(
+            int id,
+            String status)
             throws SQLException;
 
     boolean cancelLeave(

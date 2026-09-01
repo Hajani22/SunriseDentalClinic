@@ -840,53 +840,116 @@
              * BOOKING INFO
              * =====================================================
              */
+            /* =====================================================
+               PROFESSIONAL APPOINTMENT INFORMATION
+               ===================================================== */
 
             .booking-info {
 
-                display:
-                    flex;
+                display: flex;
 
-                align-items:
-                    center;
+                align-items: center;
 
-                gap:
-                    10px;
+                gap: 14px;
+
+                margin-top: 24px;
+
+                padding: 15px 18px;
 
                 background:
-                    #fffaf0;
+                    linear-gradient(
+                    135deg,
+                    #f5fbfd,
+                    #eef8fb
+                    );
 
-                border:
-                    1px solid #f5dfad;
+                border: 1px solid #d8ebf1;
 
-                color:
-                    #805b13;
+                border-radius: 12px;
 
-                padding:
-                    13px 15px;
+                color: #536b79;
 
-                border-radius:
-                    8px;
+                transition:
+                    transform .2s ease,
+                    box-shadow .2s ease,
+                    border-color .2s ease;
+            }
 
-                margin-top:
-                    20px;
+            .booking-info:hover {
 
-                font-size:
-                    13px;
+                transform: translateY(-1px);
 
-                line-height:
-                    1.5;
+                border-color: #c4e2eb;
+
+                box-shadow:
+                    0 6px 18px
+                    rgba(8,127,168,.08);
             }
 
 
-            .booking-info i {
+            /* Icon */
 
-                color:
-                    #d99b00;
+            .booking-info-icon {
 
-                font-size:
-                    16px;
+                width: 42px;
+
+                height: 42px;
+
+                flex-shrink: 0;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                border-radius: 10px;
+
+                background: #ffffff;
+
+                color: #06a3da;
+
+                border: 1px solid #d9edf3;
+
+                box-shadow:
+                    0 3px 10px
+                    rgba(9,30,62,.05);
             }
 
+            .booking-info-icon i {
+
+                font-size: 16px;
+            }
+
+
+            /* Text */
+
+            .booking-info-content {
+
+                display: flex;
+
+                flex-direction: column;
+
+                gap: 3px;
+            }
+
+            .booking-info-content strong {
+
+                color: #091e3e;
+
+                font:
+                    700 14px Jost,
+                    sans-serif;
+            }
+
+            .booking-info-content span {
+
+                color: #71818c;
+
+                font-size: 12px;
+
+                line-height: 1.5;
+            }
 
             /*
              * =====================================================
@@ -1286,15 +1349,15 @@
                         </h1>
 
 
-                        <p class="form-subtitle">
-
-                            Choose your preferred dentist,
-                            treatment, date and available time.
-
-                            The system will automatically check
-                            the dentist's working schedule.
-
-                        </p>
+                        <!--                        <p class="form-subtitle">
+                        
+                                                    Choose your preferred dentist,
+                                                    treatment, date and available time.
+                        
+                                                    The system will automatically check
+                                                    the dentist's working schedule.
+                        
+                                                </p>-->
 
 
                         <!-- =========================================
@@ -1372,8 +1435,9 @@
                         <% } %>
 
 
-                        <% if ("empty".equals(error)) { %>
-
+                        <% if ("validation".equals(error)
+                                    && errorMessage != null
+                                    && !errorMessage.trim().isEmpty()) { %>
                         <div class="alert">
 
                             <i class="fa-solid fa-circle-exclamation"></i>
@@ -1420,7 +1484,7 @@
 
 
                         <% if (errorMessage != null
-                            && !errorMessage.trim().isEmpty()) {%>
+                                    && !errorMessage.trim().isEmpty()) {%>
 
                         <div class="alert">
 
@@ -1729,87 +1793,101 @@
 
                                 <div class="field">
 
-
                                     <label for="phone">
 
                                         Phone Number
 
-                                    </label>
+                                        <span class="required">
+                                            *
+                                        </span>
 
+                                    </label>
 
                                     <input
                                         type="text"
                                         id="phone"
                                         name="phone"
-                                        placeholder="Enter phone number">
+                                        placeholder="Enter phone number"
+                                        maxlength="12"
+                                        required>
 
+                                    <div class="field-help">
+                                        Enter a valid 9–12 digit phone number.
+                                    </div>
 
                                 </div>
-
-
                                 <!-- =================================
                                      ADDRESS
                                      ================================= -->
 
                                 <div class="field">
 
-
                                     <label for="address">
 
                                         Address
 
-                                    </label>
+                                        <span class="required">
+                                            *
+                                        </span>
 
+                                    </label>
 
                                     <input
                                         type="text"
                                         id="address"
                                         name="address"
-                                        placeholder="Enter address">
+                                        placeholder="Enter your address"
+                                        maxlength="255"
+                                        required>
 
+                                    <div class="field-help">
+                                        Address must contain at least 5 characters.
+                                    </div>
 
                                 </div>
 
 
-                            </div>
+                                <!-- =====================================================
+         APPOINTMENT INFORMATION
+         ===================================================== -->
+
+                                <div class="booking-info">
+
+                                    <div class="booking-info-icon">
+                                        <i class="fa-solid fa-calendar-check"></i>
+                                    </div>
+
+                                    <div class="booking-info-content">
+
+                                        <strong>Appointment Request</strong>
+
+                                        <span>
+                                            Please review your appointment details before submitting
+                                            your request.
+                                        </span>
+
+                                    </div>
+
+                                </div>
 
 
-                            <!-- =====================================
-                                 INFORMATION
-                                 ===================================== -->
+                                <!-- =====================================
+                                     SUBMIT
+                                     ===================================== -->
 
-                            <div class="booking-info">
-
-                                <i class="fa-solid fa-circle-info"></i>
-
-                                <span>
-
-                                    Your appointment will first be
-                                    reviewed by the dentist and then
-                                    confirmed by the clinic administrator.
-
-                                </span>
-
-                            </div>
+                                <button
+                                    type="submit"
+                                    class="submit-btn"
+                                    id="submitButton">
 
 
-                            <!-- =====================================
-                                 SUBMIT
-                                 ===================================== -->
-
-                            <button
-                                type="submit"
-                                class="submit-btn"
-                                id="submitButton">
+                                    <i class="fa-solid fa-calendar-check"></i>
 
 
-                                <i class="fa-solid fa-calendar-check"></i>
+                                    Send Appointment Request
 
 
-                                Send Appointment Request
-
-
-                            </button>
+                                </button>
 
 
                         </form>
@@ -1844,9 +1922,9 @@
             const schedules = [
 
             <%
-                    if (schedules != null) {
+                if (schedules != null) {
 
-                        for (DoctorSchedule schedule : schedules) {
+                    for (DoctorSchedule schedule : schedules) {
             %>
 
                 {
@@ -1864,21 +1942,21 @@
 
                     breakStart:
                             "<%=schedule.getBreakStart() == null
-                                ? ""
-                                : schedule.getBreakStart()%>",
+                                    ? ""
+                                    : schedule.getBreakStart()%>",
 
                     breakEnd:
                             "<%=schedule.getBreakEnd() == null
-                                ? ""
-                                : schedule.getBreakEnd()%>",
+                                    ? ""
+                                    : schedule.getBreakEnd()%>",
 
                     available:
             <%=schedule.isAvailable()%>
                 },
 
             <%
-                        }
                     }
+                }
             %>
 
             ];
@@ -2435,324 +2513,338 @@
 
             function validateForm() {
 
+                const doctorSelect = document.getElementById("doctorId");
+                const treatmentSelect = document.getElementById("treatmentType");
+                const dateInput = document.getElementById("appointmentDate");
+                const timeInput = document.getElementById("appointmentTime");
+                const phoneInput = document.getElementById("phone");
+                const addressInput = document.getElementById("address");
 
-                /*
-                 * Doctor.
-                 */
+                /* ==============================
+                 DOCTOR VALIDATION
+                 ============================== */
 
-                const doctorId =
-                        parseInt(
-                                doctorSelect.value
-                                );
-
-
-                if (!doctorId) {
-
-                    alert(
-                            "Please select a dentist."
-                            );
-
+                if (!doctorSelect.value || doctorSelect.value.trim() === "") {
+                    alert("Please select a dentist.");
                     doctorSelect.focus();
-
                     return false;
+                }
 
+                const doctorId = Number(doctorSelect.value);
+
+                if (!Number.isInteger(doctorId) || doctorId <= 0) {
+                    alert("Please select a valid dentist.");
+                    doctorSelect.focus();
+                    return false;
                 }
 
 
-                /*
-                 * Treatment.
-                 */
+                /* ==============================
+                 TREATMENT VALIDATION
+                 ============================== */
 
-                const treatment =
-                        document.getElementById(
-                                "treatmentType"
-                                ).value;
+                if (!treatmentSelect.value ||
+                        treatmentSelect.value.trim() === "") {
 
-
-                if (!treatment) {
-
-                    alert(
-                            "Please select a treatment."
-                            );
-
-                    document.getElementById(
-                            "treatmentType"
-                            ).focus();
-
+                    alert("Please select a treatment.");
+                    treatmentSelect.focus();
                     return false;
-
                 }
 
 
-                /*
-                 * Date.
-                 */
+                /* ==============================
+                 DATE VALIDATION
+                 ============================== */
 
-                const selectedDate =
-                        dateInput.value;
-
+                const selectedDate = dateInput.value;
 
                 if (!selectedDate) {
-
-                    alert(
-                            "Please select an appointment date."
-                            );
-
+                    alert("Please select an appointment date.");
                     dateInput.focus();
-
                     return false;
-
                 }
+
+                /*
+                 * Convert date safely.
+                 */
+                const appointmentDate = new Date(
+                        selectedDate + "T00:00:00"
+                        );
+
+                if (isNaN(appointmentDate.getTime())) {
+                    alert("Please select a valid appointment date.");
+                    dateInput.focus();
+                    return false;
+                }
+
+                /*
+                 * Get today's date.
+                 */
+                const now = new Date();
+
+                const todayString =
+                        now.getFullYear() + "-" +
+                        String(now.getMonth() + 1).padStart(2, "0") + "-" +
+                        String(now.getDate()).padStart(2, "0");
 
 
                 /*
-                 * Prevent past date.
+                 * Prevent past dates.
                  */
-
-                if (
-                        selectedDate
-                        < today
-                        ) {
+                if (selectedDate < todayString) {
 
                     alert(
-                            "Please select a future date."
+                            "Past dates are not allowed.\n\n" +
+                            "Please select today or a future date."
                             );
 
                     dateInput.focus();
-
                     return false;
-
                 }
 
 
-                /*
-                 * Time.
-                 */
+                /* ==============================
+                 TIME VALIDATION
+                 ============================== */
 
-                const selectedTime =
-                        timeInput.value;
-
+                const selectedTime = timeInput.value;
 
                 if (!selectedTime) {
 
-                    alert(
-                            "Please select an appointment time."
-                            );
-
+                    alert("Please select an appointment time.");
                     timeInput.focus();
-
                     return false;
+                }
 
+                /*
+                 * Validate HH:mm format.
+                 */
+                if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(selectedTime)) {
+
+                    alert("Please select a valid appointment time.");
+                    timeInput.focus();
+                    return false;
                 }
 
 
                 /*
-                 * Check today's appointment time.
+                 * Appointment must be in the future
+                 * when booking for today.
                  */
-
-                if (
-                        selectedDate
-                        === today
-                        ) {
-
-
-                    const currentTime =
-                            new Date();
-
+                if (selectedDate === todayString) {
 
                     const currentHours =
-                            String(
-                                    currentTime.getHours()
-                                    ).padStart(
-                            2,
-                            "0"
-                            );
-
+                            String(now.getHours()).padStart(2, "0");
 
                     const currentMinutes =
-                            String(
-                                    currentTime.getMinutes()
-                                    ).padStart(
-                            2,
-                            "0"
-                            );
+                            String(now.getMinutes()).padStart(2, "0");
 
+                    const currentTime =
+                            currentHours + ":" + currentMinutes;
 
-                    const currentTimeString =
-                            currentHours
-                            + ":"
-                            + currentMinutes;
-
-
-                    if (
-                            selectedTime
-                            <= currentTimeString
-                            ) {
+                    if (selectedTime <= currentTime) {
 
                         alert(
-                                "Please select a future appointment time."
+                                "The selected appointment time has already passed.\n\n" +
+                                "Please select a future time."
                                 );
 
                         timeInput.focus();
-
                         return false;
-
                     }
-
                 }
 
 
-                /*
-                 * Get schedule.
-                 */
+                /* ==============================
+                 WORKING SCHEDULE VALIDATION
+                 ============================== */
 
-                const schedule =
-                        getScheduleForSelectedDay();
-
-
-                /*
-                 * No schedule for selected day.
-                 */
+                const schedule = getScheduleForSelectedDay();
 
                 if (!schedule) {
 
-
-                    const selectedDay =
-                            getSelectedDay();
-
+                    const selectedDay = getSelectedDay();
 
                     alert(
-                            "The selected dentist does not "
-                            + "have a working schedule on "
-                            + formatDay(selectedDay)
-                            + ". Please select another date."
-
+                            "The selected dentist does not have a working schedule on " +
+                            formatDay(selectedDay) +
+                            ".\n\nPlease select another date."
                             );
 
-
                     dateInput.focus();
-
                     return false;
-
                 }
 
 
                 /*
-                 * Dentist unavailable.
+                 * Dentist availability.
                  */
-
-                if (!schedule.available) {
+                if (schedule.available === false) {
 
                     alert(
-                            "The selected dentist is not "
-                            + "available on "
-                            + formatDay(schedule.day)
-                            + "."
-
+                            "The selected dentist is not available on " +
+                            formatDay(schedule.day) +
+                            "."
                             );
 
-
                     dateInput.focus();
-
                     return false;
-
                 }
 
 
                 /*
                  * Before working hours.
                  */
-
-                if (
-                        selectedTime
-                        < schedule.start
-                        ) {
+                if (selectedTime < schedule.start) {
 
                     alert(
-                            "The dentist starts working at "
-                            + schedule.start
-                            + " on "
-                            + formatDay(schedule.day)
-                            + "."
-
+                            "The dentist starts working at " +
+                            schedule.start +
+                            " on " +
+                            formatDay(schedule.day) +
+                            "."
                             );
 
-
                     timeInput.focus();
-
                     return false;
-
                 }
 
 
                 /*
                  * After working hours.
                  */
-
-                if (
-                        selectedTime
-                        >= schedule.end
-                        ) {
+                if (selectedTime >= schedule.end) {
 
                     alert(
-                            "The dentist's working hours are "
-                            + schedule.start
-                            + " to "
-                            + schedule.end
-                            + "."
-
+                            "The dentist's working hours are " +
+                            schedule.start +
+                            " to " +
+                            schedule.end +
+                            ".\n\nPlease select another time."
                             );
 
-
                     timeInput.focus();
-
                     return false;
-
                 }
 
 
                 /*
-                 * During break.
+                 * Break time.
                  */
-
                 if (
-                        schedule.breakStart
-                        &&
-                        schedule.breakEnd
-                        &&
-                        selectedTime
-                        >= schedule.breakStart
-                        &&
-                        selectedTime
-                        < schedule.breakEnd
+                        schedule.breakStart &&
+                        schedule.breakEnd &&
+                        selectedTime >= schedule.breakStart &&
+                        selectedTime < schedule.breakEnd
                         ) {
 
                     alert(
-                            "The selected time is during the "
-                            + "dentist's break from "
-                            + schedule.breakStart
-                            + " to "
-                            + schedule.breakEnd
-                            + "."
-
+                            "The selected time is during the dentist's break.\n\n" +
+                            "Break time: " +
+                            schedule.breakStart +
+                            " - " +
+                            schedule.breakEnd
                             );
 
-
                     timeInput.focus();
-
                     return false;
-
                 }
 
 
-                /*
-                 * Final confirmation.
-                 */
+                /* ==============================
+                 30-MINUTE TIME SLOT VALIDATION
+                 ============================== */
+
+                const timeParts = selectedTime.split(":");
+
+                const minutes =
+                        parseInt(timeParts[1], 10);
+
+                if (minutes !== 0 && minutes !== 30) {
+
+                    alert(
+                            "Please select an appointment time in 30-minute intervals.\n\n" +
+                            "Example: 09:00, 09:30, 10:00, 10:30."
+                            );
+
+                    timeInput.focus();
+                    return false;
+                }
+
+
+                /* ==============================
+                 PHONE VALIDATION
+                 ============================== */
+
+                if (phoneInput) {
+
+                    const phone = phoneInput.value.trim();
+
+                    if (phone !== "") {
+
+                        /*
+                         * Sri Lankan phone format:
+                         * 07XXXXXXXX
+                         * +947XXXXXXXX
+                         */
+                        const phonePattern =
+                                /^(?:0|94|\+94)7\d{8}$/;
+
+                        const cleanedPhone =
+                                phone.replace(/[\s-]/g, "");
+
+                        if (!phonePattern.test(cleanedPhone)) {
+
+                            alert(
+                                    "Please enter a valid Sri Lankan mobile number.\n\n" +
+                                    "Example: 0712345678"
+                                    );
+
+                            phoneInput.focus();
+                            return false;
+                        }
+                    }
+                }
+
+
+                /* ==============================
+                 ADDRESS VALIDATION
+                 ============================== */
+
+                if (addressInput) {
+
+                    const address =
+                            addressInput.value.trim();
+
+                    if (address.length > 0 &&
+                            address.length < 5) {
+
+                        alert(
+                                "Please enter a valid address."
+                                );
+
+                        addressInput.focus();
+                        return false;
+                    }
+
+                    if (address.length > 255) {
+
+                        alert(
+                                "Address must not exceed 255 characters."
+                                );
+
+                        addressInput.focus();
+                        return false;
+                    }
+                }
+
+
+                /* ==============================
+                 FINAL CONFIRMATION
+                 ============================== */
 
                 return true;
-
             }
-
 
             /*
              * =========================================================

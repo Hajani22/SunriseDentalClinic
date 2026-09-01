@@ -1604,6 +1604,17 @@
 
                 </a>
 
+                <a href="<%=request.getContextPath()%>/DoctorLeaveServlet"
+                   class="nav-link">
+
+                    <i class="fa-solid fa-calendar-xmark"></i>
+
+                    <span>
+                        My Leave
+                    </span>
+
+                </a>
+
 
                 <a href="DoctorNotificationsServlet"
                    class="nav-link notification-link">
@@ -2389,7 +2400,7 @@
 
 
                                 <% if (notifications != null
-                                    && !notifications.isEmpty()) { %>
+                                            && !notifications.isEmpty()) { %>
 
 
                                 <%
@@ -2471,6 +2482,7 @@
 
         </div>
 
+        <jsp:include page="toast.jsp" />
 
     </body>
 

@@ -2,7 +2,6 @@ package dao;
 
 import model.Appointment;
 import model.DoctorOption;
-
 import java.sql.SQLException;
 import java.util.List;
 
@@ -45,6 +44,10 @@ public interface AppointmentDAO {
             int id)
             throws SQLException;
 
+    Appointment getByAppointmentNo(
+            String appointmentNo)
+            throws SQLException;
+
     boolean doctorDecision(
             int appointmentId,
             int doctorId,
@@ -58,12 +61,6 @@ public interface AppointmentDAO {
             String note)
             throws SQLException;
 
-
-    /*
-     * =========================================================
-     * RESCHEDULE
-     * =========================================================
-     */
     boolean isSlotBookedForReschedule(
             int appointmentId,
             int doctorId,
@@ -78,12 +75,6 @@ public interface AppointmentDAO {
             String time)
             throws SQLException;
 
-
-    /*
-     * =========================================================
-     * CANCELLATION
-     * =========================================================
-     */
     boolean cancelAppointment(
             int appointmentId,
             int patientId,

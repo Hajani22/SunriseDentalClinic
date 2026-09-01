@@ -48,7 +48,6 @@ public class ClinicFacade {
 
         return appointmentService.getDoctors();
     }
-
     public boolean bookAppointment(
             Appointment appointment)
             throws SQLException {
@@ -57,7 +56,6 @@ public class ClinicFacade {
                 appointment
         );
     }
-
     public Bill findAppointmentForBilling(
             String appointmentNo)
             throws SQLException {

@@ -19,7 +19,6 @@ public abstract class NotificationServiceDecorator
                     "Notification service cannot be null."
             );
         }
-
         this.wrappedService = wrappedService;
     }
 

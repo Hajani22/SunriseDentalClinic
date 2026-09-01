@@ -3,27 +3,15 @@
 <%@page import="model.Bill"%>
 
 <%
-    /* =========================================================
-       SESSION / ACCESS CONTROL
-       ========================================================= */
-
     if (session == null
-            || session.getAttribute("user") == null) {
-
-        response.sendRedirect(
-                request.getContextPath()
-                + "/Login.jsp"
-        );
-
-        return;
-    }
-
-    String role
-            = String.valueOf(
-                    session.getAttribute("userRole")
-            );
-
-    if (!"cashier".equalsIgnoreCase(role)) {
+            || session.getAttribute("user") == null
+            || !"cashier".equalsIgnoreCase(
+                    String.valueOf(
+                            session.getAttribute(
+                                    "userRole"
+                            )
+                    )
+            )) {
 
         response.sendRedirect(
                 request.getContextPath()
@@ -33,19 +21,6 @@
         return;
     }
 
-    String userName
-            = (String) session.getAttribute("userName");
-
-    if (userName == null
-            || userName.trim().isEmpty()) {
-
-        userName = "Cashier";
-    }
-
-
-    /* =========================================================
-       REQUEST DATA
-       ========================================================= */
     Bill bill
             = (Bill) request.getAttribute("bill");
 
@@ -55,102 +30,51 @@
             );
 
     String error
-            = (String) request.getAttribute("error");
+            = (String) request.getAttribute(
+                    "error"
+            );
 
+    boolean alreadyPaid
+            = Boolean.TRUE.equals(
+                    request.getAttribute(
+                            "alreadyPaid"
+                    )
+            );
 
-    /* =========================================================
-       SAFE BILL VALUES
-       ========================================================= */
-    BigDecimal treatmentAmount
-            = BigDecimal.ZERO;
+    BigDecimal treatment
+            = bill != null
+            && bill.getTreatmentAmount() != null
+            ? bill.getTreatmentAmount()
+            : BigDecimal.ZERO;
 
-    BigDecimal consultationFee
-            = BigDecimal.ZERO;
+    BigDecimal consultation
+            = bill != null
+            && bill.getConsultationFee() != null
+            ? bill.getConsultationFee()
+            : BigDecimal.ZERO;
 
     BigDecimal discount
-            = BigDecimal.ZERO;
+            = bill != null
+            && bill.getDiscount() != null
+            ? bill.getDiscount()
+            : BigDecimal.ZERO;
 
-    BigDecimal totalAmount
-            = BigDecimal.ZERO;
+    BigDecimal paid
+            = bill != null
+            && bill.getPaidAmount() != null
+            ? bill.getPaidAmount()
+            : BigDecimal.ZERO;
 
-    if (bill != null) {
+    BigDecimal total
+            = bill != null
+            && bill.getTotalAmount() != null
+            ? bill.getTotalAmount()
+            : BigDecimal.ZERO;
 
-        if (bill.getTreatmentAmount() != null) {
-
-            treatmentAmount
-                    = bill.getTreatmentAmount();
-
-        }
-
-        if (bill.getConsultationFee() != null) {
-
-            consultationFee
-                    = bill.getConsultationFee();
-
-        }
-
-        if (bill.getDiscount() != null) {
-
-            discount
-                    = bill.getDiscount();
-
-        }
-
-        if (bill.getTotalAmount() != null) {
-
-            totalAmount
-                    = bill.getTotalAmount();
-
-        }
-    }
-
-
-    /* =========================================================
-       SEARCH / ERROR PARAMETERS
-       ========================================================= */
-    String appointmentNoParam
-            = request.getParameter("appointmentNo");
-
-    String errorParam
-            = request.getParameter("error");
-
-    if ((error == null || error.trim().isEmpty())
-            && errorParam != null) {
-
-        if ("payment".equalsIgnoreCase(errorParam)) {
-
-            error
-                    = "Please select a valid payment method.";
-
-        } else if ("bill".equalsIgnoreCase(errorParam)) {
-
-            error
-                    = "Unable to prepare the bill. "
-                    + "The appointment may already have a bill.";
-
-        } else if ("save".equalsIgnoreCase(errorParam)) {
-
-            error
-                    = "Payment could not be saved. "
-                    + "Please try again.";
-
-        } else if ("server".equalsIgnoreCase(errorParam)) {
-
-            error
-                    = "An unexpected error occurred. "
-                    + "Please contact the administrator.";
-
-        } else if ("receipt".equalsIgnoreCase(errorParam)) {
-
-            error
-                    = "Receipt could not be loaded.";
-
-        } else if ("access".equalsIgnoreCase(errorParam)) {
-
-            error
-                    = "You are not authorised to access this page.";
-        }
-    }
+    BigDecimal gross
+            = treatment.add(
+                    consultation
+            );
 %>
 
 <!DOCTYPE html>
@@ -162,1668 +86,361 @@
         <meta charset="UTF-8">
 
         <meta name="viewport"
-              content="width=device-width, initial-scale=1.0">
+              content="width=device-width,
+              initial-scale=1.0">
 
         <title>
-            Billing & Payments | Sunrise Dental Clinic
+            Cashier Billing | Sunrise Dental Clinic
         </title>
-
-
-        <!-- =====================================================
-             GOOGLE FONTS
-             ===================================================== -->
 
         <link
             href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap"
             rel="stylesheet">
 
-
-        <!-- =====================================================
-             FONT AWESOME
-             ===================================================== -->
-
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-
         <style>
-
-            /* =====================================================
-               GLOBAL
-               ===================================================== */
 
             * {
                 box-sizing: border-box;
-                margin: 0;
-                padding: 0;
             }
 
-
             body {
+
+                margin: 0;
+
+                background: #f4f8fb;
+
+                color: #475569;
 
                 font-family:
                     "Open Sans",
                     Arial,
                     sans-serif;
-
-                background:
-                    #f4f8fb;
-
-                color:
-                    #475569;
-
-                min-height:
-                    100vh;
             }
 
+            .page {
 
-            /* =====================================================
-               LAYOUT
-               ===================================================== */
+                max-width: 1100px;
 
-            .layout {
+                margin: auto;
 
-                min-height:
-                    100vh;
-
-                display:
-                    flex;
+                padding: 40px 20px;
             }
-
-
-            /* =====================================================
-               SIDEBAR
-               ===================================================== */
-
-            .sidebar {
-
-                width:
-                    250px;
-
-                position:
-                    fixed;
-
-                inset:
-                    0 auto 0 0;
-
-                background:
-                    #091e3e;
-
-                color:
-                    white;
-
-                padding:
-                    25px 18px;
-
-                z-index:
-                    1000;
-            }
-
-
-            .brand {
-
-                font:
-                    700 21px Jost,
-                    sans-serif;
-
-                margin:
-                    10px 8px 35px;
-
-                display:
-                    flex;
-
-                gap:
-                    10px;
-
-                align-items:
-                    center;
-            }
-
-
-            .brand i {
-
-                background:
-                    #06a3da;
-
-                padding:
-                    12px;
-
-                border-radius:
-                    10px;
-            }
-
-
-            .menu a {
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                gap:
-                    12px;
-
-                padding:
-                    13px 14px;
-
-                color:
-                    #c7d2e0;
-
-                text-decoration:
-                    none;
-
-                border-radius:
-                    8px;
-
-                margin-bottom:
-                    6px;
-
-                transition:
-                    .2s ease;
-            }
-
-
-            .menu a:hover,
-            .menu a.active {
-
-                background:
-                    #06a3da;
-
-                color:
-                    white;
-            }
-
-
-            .menu i {
-
-                width:
-                    18px;
-
-                text-align:
-                    center;
-            }
-
-
-            .logout {
-
-                position:
-                    absolute;
-
-                bottom:
-                    25px;
-
-                left:
-                    18px;
-
-                right:
-                    18px;
-            }
-
-
-            .logout a {
-
-                color:
-                    #ffb4b4;
-
-                text-decoration:
-                    none;
-
-                display:
-                    block;
-
-                padding:
-                    12px;
-
-                border-radius:
-                    8px;
-            }
-
-
-            .logout a:hover {
-
-                background:
-                    rgba(255,255,255,.08);
-            }
-
-
-            /* =====================================================
-               MAIN
-               ===================================================== */
-
-            .main {
-
-                margin-left:
-                    250px;
-
-                width:
-                    calc(100% - 250px);
-
-                min-height:
-                    100vh;
-            }
-
-
-            /* =====================================================
-               TOP BAR
-               ===================================================== */
-
-            .topbar {
-
-                height:
-                    72px;
-
-                background:
-                    white;
-
-                border-bottom:
-                    1px solid #e5ebf0;
-
-                padding:
-                    0 32px;
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                justify-content:
-                    space-between;
-            }
-
-
-            .topbar h2 {
-
-                font:
-                    700 24px Jost,
-                    sans-serif;
-
-                color:
-                    #091e3e;
-            }
-
-
-            .user {
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                gap:
-                    12px;
-            }
-
-
-            .user-details {
-
-                text-align:
-                    right;
-            }
-
-
-            .user-details strong {
-
-                display:
-                    block;
-
-                color:
-                    #091e3e;
-
-                font-size:
-                    14px;
-            }
-
-
-            .user-details small {
-
-                display:
-                    block;
-
-                color:
-                    #7b8794;
-
-                font-size:
-                    12px;
-
-                margin-top:
-                    2px;
-            }
-
-
-            .avatar {
-
-                width:
-                    42px;
-
-                height:
-                    42px;
-
-                border-radius:
-                    50%;
-
-                background:
-                    #e7f7fc;
-
-                color:
-                    #06a3da;
-
-                display:
-                    grid;
-
-                place-items:
-                    center;
-
-                font-size:
-                    17px;
-            }
-
-
-            /* =====================================================
-               CONTENT
-               ===================================================== */
-
-            .content {
-
-                padding:
-                    30px;
-            }
-
-
-            .page-heading {
-
-                margin-bottom:
-                    25px;
-            }
-
-
-            .page-heading h1 {
-
-                font:
-                    700 32px Jost,
-                    sans-serif;
-
-                color:
-                    #091e3e;
-            }
-
-
-            .page-heading p {
-
-                margin-top:
-                    6px;
-
-                color:
-                    #7b8794;
-
-                font-size:
-                    14px;
-            }
-
-
-            /* =====================================================
-               CARDS
-               ===================================================== */
 
             .card {
 
-                background:
-                    white;
+                background: #ffffff;
 
-                border:
-                    1px solid #e5ebf0;
+                border: 1px solid #e2e8f0;
 
-                border-radius:
-                    16px;
+                border-radius: 18px;
 
-                padding:
-                    25px;
+                padding: 25px;
 
-                margin-bottom:
-                    22px;
+                margin-bottom: 22px;
 
                 box-shadow:
-                    0 8px 25px rgba(15,23,42,.05);
+                    0 8px 25px
+                    rgba(16,47,67,.06);
             }
 
+            h1,
+            h2 {
 
-            .section-title {
+                font-family: Jost, sans-serif;
 
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                gap:
-                    10px;
-
-                font:
-                    700 20px Jost,
-                    sans-serif;
-
-                color:
-                    #091e3e;
-
-                margin-bottom:
-                    18px;
+                color: #102f43;
             }
 
+            .header {
 
-            .section-title i {
-
-                color:
-                    #06a3da;
+                margin-bottom: 25px;
             }
 
+            .header h1 {
 
-            /* =====================================================
-               SEARCH
-               ===================================================== */
+                margin: 0;
 
-            .search-form {
-
-                display:
-                    flex;
-
-                gap:
-                    12px;
-
-                width:
-                    100%;
+                font-size: 34px;
             }
 
+            .header p {
 
-            .search-wrapper {
-
-                position:
-                    relative;
-
-                flex:
-                    1;
+                color: #82939e;
             }
 
+            .search {
 
-            .search-wrapper i {
+                display: flex;
 
-                position:
-                    absolute;
-
-                left:
-                    15px;
-
-                top:
-                    50%;
-
-                transform:
-                    translateY(-50%);
-
-                color:
-                    #94a3b8;
+                gap: 12px;
             }
 
+            .search input {
 
-            .search-form input {
+                flex: 1;
 
-                width:
-                    100%;
+                padding: 14px;
 
-                height:
-                    50px;
+                border: 1px solid #d8e3e8;
 
-                border:
-                    1px solid #dbe3eb;
+                border-radius: 10px;
 
-                border-radius:
-                    9px;
-
-                padding:
-                    0 15px 0 43px;
-
-                font-size:
-                    14px;
-
-                outline:
-                    none;
-
-                transition:
-                    .2s ease;
+                font-size: 15px;
             }
 
+            .btn {
 
-            .search-form input:focus {
+                border: 0;
 
-                border-color:
-                    #06a3da;
+                border-radius: 10px;
 
-                box-shadow:
-                    0 0 0 3px rgba(6,163,218,.10);
+                padding: 13px 18px;
+
+                background: #087fa8;
+
+                color: #ffffff;
+
+                font-weight: 700;
+
+                cursor: pointer;
+
+                text-decoration: none;
+
+                display: inline-flex;
+
+                gap: 8px;
+
+                align-items: center;
             }
 
+            .btn:hover {
 
-            .search-form button {
-
-                height:
-                    50px;
-
-                border:
-                    0;
-
-                background:
-                    #06a3da;
-
-                color:
-                    white;
-
-                padding:
-                    0 27px;
-
-                border-radius:
-                    9px;
-
-                font-weight:
-                    700;
-
-                cursor:
-                    pointer;
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                gap:
-                    8px;
-
-                transition:
-                    .2s ease;
+                opacity: .9;
             }
 
+            .btn.secondary {
 
-            .search-form button:hover {
-
-                background:
-                    #078bb9;
+                background: #64748b;
             }
 
+            .alert {
 
-            .helper-text {
+                padding: 14px;
 
-                margin-top:
-                    10px;
+                border-radius: 10px;
 
-                font-size:
-                    12px;
+                background: #fff1f2;
 
-                color:
-                    #94a3b8;
+                color: #be123c;
+
+                margin-bottom: 20px;
             }
 
+            .grid {
 
-            /* =====================================================
-               ERROR
-               ===================================================== */
-
-            .alert-error {
-
-                display:
-                    flex;
-
-                align-items:
-                    flex-start;
-
-                gap:
-                    10px;
-
-                margin-bottom:
-                    20px;
-
-                padding:
-                    14px 16px;
-
-                border-radius:
-                    10px;
-
-                background:
-                    #fff1f2;
-
-                border:
-                    1px solid #fecdd3;
-
-                color:
-                    #b42318;
-
-                font-size:
-                    14px;
-            }
-
-
-            .alert-error i {
-
-                margin-top:
-                    2px;
-            }
-
-
-            /* =====================================================
-               PATIENT INFORMATION
-               ===================================================== */
-
-            .patient-grid {
-
-                display:
-                    grid;
+                display: grid;
 
                 grid-template-columns:
                     repeat(4, 1fr);
 
-                gap:
-                    14px;
-
-                margin-bottom:
-                    25px;
+                gap: 12px;
             }
 
+            .info {
 
-            .info-box {
+                background: #f7fafc;
 
-                background:
-                    #f8fbfd;
+                border-radius: 10px;
 
-                border:
-                    1px solid #edf2f7;
-
-                padding:
-                    16px;
-
-                border-radius:
-                    10px;
+                padding: 14px;
             }
 
+            .info small {
 
-            .info-box label {
+                display: block;
 
-                display:
-                    block;
+                color: #82939e;
 
-                font-size:
-                    11px;
-
-                font-weight:
-                    600;
-
-                color:
-                    #7b8794;
-
-                text-transform:
-                    uppercase;
-
-                letter-spacing:
-                    .3px;
-
-                margin-bottom:
-                    6px;
+                margin-bottom: 5px;
             }
 
+            .info strong {
 
-            .info-box strong {
-
-                display:
-                    block;
-
-                color:
-                    #091e3e;
-
-                font-size:
-                    14px;
-
-                line-height:
-                    1.5;
-
-                word-break:
-                    break-word;
+                color: #102f43;
             }
 
+            .table {
 
-            /* =====================================================
-               BILL TABLE
-               ===================================================== */
+                width: 100%;
 
-            .table-wrapper {
+                border-collapse: collapse;
 
-                overflow-x:
-                    auto;
+                margin-top: 20px;
             }
 
+            .table th,
+            .table td {
 
-            .bill-table {
-
-                width:
-                    100%;
-
-                border-collapse:
-                    collapse;
-
-                margin-top:
-                    5px;
-            }
-
-
-            .bill-table th {
-
-                background:
-                    #091e3e;
-
-                color:
-                    white;
-
-                padding:
-                    14px;
-
-                text-align:
-                    left;
-
-                font-size:
-                    13px;
-
-                font-weight:
-                    700;
-            }
-
-
-            .bill-table th:last-child {
-
-                text-align:
-                    right;
-            }
-
-
-            .bill-table td {
-
-                padding:
-                    15px 14px;
+                padding: 14px;
 
                 border-bottom:
-                    1px solid #edf2f7;
+                    1px solid #e2e8f0;
 
-                font-size:
-                    14px;
+                text-align: left;
             }
 
+            .table th {
 
-            .bill-table td:last-child {
-
-                text-align:
-                    right;
+                background: #f8fafc;
             }
 
+            .right {
 
-            .bill-table tbody tr:hover {
-
-                background:
-                    #fbfdff;
+                text-align: right !important;
             }
 
+            .status {
 
-            .description {
+                margin-top: 25px;
 
-                color:
-                    #334155;
+                padding: 22px;
 
-                font-weight:
-                    600;
-            }
+                border-radius: 14px;
 
+                background: #ecfdf5;
 
-            .amount {
-
-                color:
-                    #091e3e;
-
-                font-weight:
-                    700;
-
-                white-space:
-                    nowrap;
-            }
-
-
-            /* =====================================================
-               DISCOUNT
-               ===================================================== */
-
-            .discount-cell {
-
-                display:
-                    flex;
-
-                justify-content:
-                    space-between;
-
-                align-items:
-                    center;
-
-                gap:
-                    15px;
-            }
-
-
-            .discount-input {
-
-                width:
-                    145px;
-
-                height:
-                    40px;
+                color: #047857;
 
                 border:
-                    1px solid #dbe3eb;
-
-                border-radius:
-                    8px;
-
-                padding:
-                    0 11px;
-
-                outline:
-                    none;
-
-                font-size:
-                    14px;
+                    1px solid #a7f3d0;
             }
 
+            .status h2 {
 
-            .discount-input:focus {
+                margin-top: 0;
 
-                border-color:
-                    #06a3da;
-
-                box-shadow:
-                    0 0 0 3px rgba(6,163,218,.08);
+                color: #047857;
             }
 
+            .status .big {
 
-            /* =====================================================
-               TOTAL
-               ===================================================== */
+                font-size: 20px;
 
-            .total-row td {
+                font-weight: 700;
 
-                padding-top:
-                    20px;
-
-                padding-bottom:
-                    20px;
-
-                background:
-                    #f8fbfd;
-
-                font-size:
-                    17px;
+                margin-top: 10px;
             }
 
+            .discount-options {
 
-            .total-label {
+                display: flex;
 
-                color:
-                    #091e3e;
+                gap: 10px;
 
-                font-weight:
-                    700;
+                flex-wrap: wrap;
+
+                margin: 15px 0;
             }
 
-
-            .total-amount {
-
-                color:
-                    #06a3da;
-
-                font-size:
-                    21px;
-
-                font-weight:
-                    700;
-            }
-
-
-            /* =====================================================
-               PAYMENT AREA
-               ===================================================== */
-
-            .payment-section {
-
-                margin-top:
-                    25px;
-
-                padding-top:
-                    25px;
-
-                border-top:
-                    1px solid #edf2f7;
-
-                display:
-                    grid;
-
-                grid-template-columns:
-                    1fr 1fr;
-
-                gap:
-                    25px;
-
-                align-items:
-                    end;
-            }
-
-
-            .field-label {
-
-                display:
-                    block;
-
-                font-size:
-                    13px;
-
-                font-weight:
-                    700;
-
-                color:
-                    #091e3e;
-
-                margin-bottom:
-                    9px;
-            }
-
-
-            .required {
-
-                color:
-                    #dc2626;
-            }
-
-
-            .payment-methods {
-
-                display:
-                    grid;
-
-                grid-template-columns:
-                    repeat(3, 1fr);
-
-                gap:
-                    10px;
-            }
-
-
-            .payment-option {
-
-                position:
-                    relative;
-
-                cursor:
-                    pointer;
-            }
-
-
-            .payment-option input {
-
-                position:
-                    absolute;
-
-                opacity:
-                    0;
-
-                pointer-events:
-                    none;
-            }
-
-
-            .payment-option span {
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                justify-content:
-                    center;
-
-                gap:
-                    8px;
-
-                min-height:
-                    48px;
-
-                padding:
-                    0 12px;
+            .discount-options label {
 
                 border:
-                    1px solid #dbe3eb;
+                    1px solid #d8e3e8;
 
-                border-radius:
-                    9px;
+                padding: 12px 18px;
 
-                color:
-                    #475569;
+                border-radius: 10px;
 
-                background:
-                    white;
+                cursor: pointer;
 
-                font-size:
-                    13px;
-
-                font-weight:
-                    600;
-
-                transition:
-                    .2s ease;
+                background: #ffffff;
             }
 
+            .discount-options label:hover {
 
-            .payment-option span:hover {
-
-                border-color:
-                    #06a3da;
-
-                background:
-                    #f5fcff;
+                background: #f1f8fa;
             }
 
+            .discount-options input {
 
-            .payment-option input:checked + span {
-
-                border-color:
-                    #06a3da;
-
-                background:
-                    #eaf8fd;
-
-                color:
-                    #067da8;
-
-                box-shadow:
-                    0 0 0 2px rgba(6,163,218,.08);
+                margin-right: 7px;
             }
 
+            .actions {
 
-            .payment-option input:focus + span {
+                display: flex;
 
-                box-shadow:
-                    0 0 0 3px rgba(6,163,218,.15);
+                gap: 12px;
+
+                margin-top: 22px;
+
+                flex-wrap: wrap;
             }
-
-
-            /* =====================================================
-               PAYMENT ACTIONS
-               ===================================================== */
-
-            .payment-actions {
-
-                display:
-                    flex;
-
-                flex-direction:
-                    column;
-
-                gap:
-                    10px;
-            }
-
-
-            .pay-btn {
-
-                width:
-                    100%;
-
-                min-height:
-                    50px;
-
-                padding:
-                    0 20px;
-
-                border:
-                    0;
-
-                border-radius:
-                    9px;
-
-                background:
-                    #198754;
-
-                color:
-                    white;
-
-                font-size:
-                    14px;
-
-                font-weight:
-                    700;
-
-                cursor:
-                    pointer;
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                justify-content:
-                    center;
-
-                gap:
-                    9px;
-
-                transition:
-                    .2s ease;
-            }
-
-
-            .pay-btn:hover {
-
-                background:
-                    #157347;
-
-                transform:
-                    translateY(-1px);
-            }
-
-
-            .pay-btn:disabled {
-
-                opacity:
-                    .6;
-
-                cursor:
-                    not-allowed;
-
-                transform:
-                    none;
-            }
-
-
-            .cancel-btn {
-
-                width:
-                    100%;
-
-                min-height:
-                    44px;
-
-                border:
-                    1px solid #dbe3eb;
-
-                background:
-                    white;
-
-                color:
-                    #64748b;
-
-                border-radius:
-                    9px;
-
-                font-weight:
-                    600;
-
-                cursor:
-                    pointer;
-
-                text-decoration:
-                    none;
-
-                display:
-                    flex;
-
-                align-items:
-                    center;
-
-                justify-content:
-                    center;
-
-                transition:
-                    .2s ease;
-            }
-
-
-            .cancel-btn:hover {
-
-                background:
-                    #f8fafc;
-
-                border-color:
-                    #cbd5e1;
-            }
-
-
-            /* =====================================================
-               EMPTY STATE
-               ===================================================== */
-
-            .empty-state {
-
-                text-align:
-                    center;
-
-                padding:
-                    45px 20px;
-
-                color:
-                    #94a3b8;
-            }
-
-
-            .empty-state i {
-
-                font-size:
-                    38px;
-
-                color:
-                    #cbd5e1;
-
-                margin-bottom:
-                    12px;
-            }
-
-
-            .empty-state h3 {
-
-                color:
-                    #475569;
-
-                font-size:
-                    17px;
-
-                margin-bottom:
-                    5px;
-            }
-
-
-            .empty-state p {
-
-                font-size:
-                    13px;
-            }
-
-
-            /* =====================================================
-               RECENT BILLS
-               ===================================================== */
-
-            .recent-table-wrapper {
-
-                overflow-x:
-                    auto;
-            }
-
-
-            .recent-table {
-
-                width:
-                    100%;
-
-                border-collapse:
-                    collapse;
-
-                min-width:
-                    720px;
-            }
-
-
-            .recent-table th {
-
-                text-align:
-                    left;
-
-                padding:
-                    13px 12px;
-
-                background:
-                    #f1f5f9;
-
-                color:
-                    #334155;
-
-                font-size:
-                    12px;
-
-                text-transform:
-                    uppercase;
-
-                letter-spacing:
-                    .3px;
-            }
-
-
-            .recent-table td {
-
-                padding:
-                    14px 12px;
-
-                border-bottom:
-                    1px solid #edf2f7;
-
-                font-size:
-                    13px;
-            }
-
-
-            .recent-table tbody tr:hover {
-
-                background:
-                    #fbfdff;
-            }
-
-
-            .bill-number {
-
-                color:
-                    #091e3e;
-
-                font-weight:
-                    700;
-            }
-
 
             .paid-badge {
 
-                display:
-                    inline-flex;
+                display: inline-block;
 
-                align-items:
-                    center;
+                padding: 5px 9px;
 
-                gap:
-                    5px;
+                border-radius: 20px;
 
-                padding:
-                    5px 9px;
+                background: #dcfce7;
 
-                border-radius:
-                    20px;
+                color: #15803d;
 
-                background:
-                    #e8f8ef;
+                font-size: 12px;
 
-                color:
-                    #16834b;
-
-                font-size:
-                    11px;
-
-                font-weight:
-                    700;
+                font-weight: 700;
             }
 
+            .print {
 
-            .method-badge {
+                color: #087fa8;
 
-                color:
-                    #475569;
+                font-weight: 700;
 
-                font-weight:
-                    600;
+                text-decoration: none;
             }
 
+            .recent {
 
-            .print-link {
-
-                display:
-                    inline-flex;
-
-                align-items:
-                    center;
-
-                gap:
-                    6px;
-
-                color:
-                    #06a3da;
-
-                text-decoration:
-                    none;
-
-                font-weight:
-                    700;
-
-                font-size:
-                    13px;
+                overflow-x: auto;
             }
 
+            .empty {
 
-            .print-link:hover {
+                text-align: center;
 
-                color:
-                    #0788b6;
+                padding: 35px;
 
-                text-decoration:
-                    underline;
+                color: #82939e;
             }
 
+            @media(max-width:800px) {
 
-            /* =====================================================
-               RESPONSIVE
-               ===================================================== */
-
-            @media (max-width: 1100px) {
-
-                .patient-grid {
+                .grid {
 
                     grid-template-columns:
-                        repeat(2, 1fr);
-                }
-
-                .payment-section {
-
-                    grid-template-columns:
-                        1fr;
+                        repeat(2,1fr);
                 }
             }
 
+            @media(max-width:550px) {
 
-            @media (max-width: 900px) {
-
-                .sidebar {
-
-                    width:
-                        72px;
-
-                    padding:
-                        20px 10px;
-                }
-
-
-                .brand {
-
-                    justify-content:
-                        center;
-
-                    margin:
-                        10px 0 35px;
-                }
-
-
-                .brand span,
-                .menu span,
-                .logout span {
-
-                    display:
-                        none;
-                }
-
-
-                .menu a {
-
-                    justify-content:
-                        center;
-
-                    padding:
-                        13px 8px;
-                }
-
-
-                .logout {
-
-                    left:
-                        10px;
-
-                    right:
-                        10px;
-                }
-
-
-                .logout a {
-
-                    text-align:
-                        center;
-                }
-
-
-                .main {
-
-                    margin-left:
-                        72px;
-
-                    width:
-                        calc(100% - 72px);
-                }
-            }
-
-
-            @media (max-width: 650px) {
-
-                .topbar {
-
-                    padding:
-                        0 18px;
-                }
-
-
-                .topbar h2 {
-
-                    font-size:
-                        19px;
-                }
-
-
-                .user-details {
-
-                    display:
-                        none;
-                }
-
-
-                .content {
-
-                    padding:
-                        18px;
-                }
-
-
-                .page-heading h1 {
-
-                    font-size:
-                        27px;
-                }
-
-
-                .card {
-
-                    padding:
-                        18px;
-                }
-
-
-                .search-form {
-
-                    flex-direction:
-                        column;
-                }
-
-
-                .search-form button {
-
-                    width:
-                        100%;
-
-                    justify-content:
-                        center;
-                }
-
-
-                .patient-grid {
+                .grid {
 
                     grid-template-columns:
                         1fr;
                 }
 
+                .search {
 
-                .payment-methods {
-
-                    grid-template-columns:
-                        1fr;
-                }
-
-
-                .discount-cell {
-
-                    flex-direction:
-                        column;
-
-                    align-items:
-                        flex-start;
-                }
-
-
-                .discount-input {
-
-                    width:
-                        100%;
-                }
-            }
-
-
-            /* =====================================================
-               PRINT
-               ===================================================== */
-
-            @media print {
-
-                .sidebar,
-                .topbar,
-                .search-card,
-                .recent-card,
-                .payment-section {
-
-                    display:
-                        none !important;
-                }
-
-
-                .main {
-
-                    margin:
-                        0;
-
-                    width:
-                        100%;
-                }
-
-
-                body {
-
-                    background:
-                        white;
-                }
-
-
-                .content {
-
-                    padding:
-                        0;
+                    flex-direction: column;
                 }
             }
 
@@ -1831,1087 +448,798 @@
 
     </head>
 
-
     <body>
 
+        <div class="page">
 
-        <div class="layout">
+            <div class="header">
+
+                <h1>
+                    Billing & Payments
+                </h1>
+
+                <p>
+                    Search an appointment number to check payment and billing status.
+                </p>
+
+            </div>
 
 
-            <!-- =====================================================
-                 SIDEBAR
-                 ===================================================== -->
+            <%
+                if (error != null
+                        && !error.trim().isEmpty()) {
+            %>
 
-            <aside class="sidebar">
+            <div class="alert">
 
-                <div class="brand">
+                <i class="fa-solid fa-circle-exclamation"></i>
 
-                    <i class="fa-solid fa-tooth"></i>
+                <%=error%>
 
-                    <span>
-                        Sunrise Dental
-                    </span>
+            </div>
+
+            <%
+                }
+            %>
+
+
+            <!-- SEARCH -->
+
+            <div class="card">
+
+                <h2>
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    Find Appointment
+
+                </h2>
+
+                <form
+                    class="search"
+                    method="get"
+                    action="<%=request.getContextPath()%>/CashierBillingServlet">
+
+                    <input
+
+                        type="text"
+
+                        name="appointmentNo"
+
+                        placeholder="Enter Appointment Number e.g. SDC-0E82E0FE"
+
+                        value="<%=request.getParameter("appointmentNo") != null
+                                ? request.getParameter("appointmentNo")
+                                : ""%>"
+
+                        required>
+
+                    <button
+                        class="btn"
+                        type="submit">
+
+                        <i class="fa-solid fa-search"></i>
+
+                        Search
+
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <%
+                if (bill != null) {
+            %>
+
+
+            <div class="card">
+
+                <h2>
+
+                    <i class="fa-solid fa-file-invoice"></i>
+
+                    Appointment Details
+
+                </h2>
+
+
+                <div class="grid">
+
+                    <div class="info">
+
+                        <small>
+                            Appointment Number
+                        </small>
+
+                        <strong>
+                            <%=bill.getAppointmentNo()%>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info">
+
+                        <small>
+                            Patient
+                        </small>
+
+                        <strong>
+                            <%=bill.getPatientName()%>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info">
+
+                        <small>
+                            Doctor
+                        </small>
+
+                        <strong>
+                            Dr. <%=bill.getDoctorName()%>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info">
+
+                        <small>
+                            Treatment
+                        </small>
+
+                        <strong>
+                            <%=bill.getTreatmentType()%>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info">
+
+                        <small>
+                            Date
+                        </small>
+
+                        <strong>
+                            <%=bill.getAppointmentDate()%>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info">
+
+                        <small>
+                            Time
+                        </small>
+
+                        <strong>
+                            <%=bill.getAppointmentTime()%>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info">
+
+                        <small>
+                            Phone
+                        </small>
+
+                        <strong>
+                            <%=bill.getPatientPhone()%>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="info">
+
+                        <small>
+                            Payment Status
+                        </small>
+
+                        <strong>
+
+                            <%=alreadyPaid
+                                    ? "PAYMENT RECEIVED"
+                                    : "PAYMENT DUE"%>
+
+                        </strong>
+
+                    </div>
 
                 </div>
 
 
-                <nav class="menu">
+                <!-- BILL TABLE -->
 
-                    <a href="cashier-dashboard.jsp">
+                <table class="table">
 
-                        <i class="fa-solid fa-gauge"></i>
+                    <tr>
 
-                        <span>
-                            Dashboard
-                        </span>
+                        <th>
+                            Description
+                        </th>
 
-                    </a>
+                        <th class="right">
+                            Amount (LKR)
+                        </th>
 
-
-                    <a href="CashierBillingServlet"
-                       class="active">
-
-                        <i class="fa-solid fa-file-invoice-dollar"></i>
-
-                        <span>
-                            Billing
-                        </span>
-
-                    </a>
+                    </tr>
 
 
-                    <a href="CashierBillingServlet">
+                    <tr>
 
-                        <i class="fa-solid fa-receipt"></i>
+                        <td>
+                            <%=bill.getTreatmentType()%>
+                        </td>
 
-                        <span>
-                            Payments
-                        </span>
+                        <td class="right">
+                            <%=treatment%>
+                        </td>
 
-                    </a>
-
-                </nav>
-
-
-                <div class="logout">
-
-                    <a href="LogoutServlet">
-
-                        <i class="fa-solid fa-right-from-bracket"></i>
-
-                        <span>
-                            Logout
-                        </span>
-
-                    </a>
-
-                </div>
-
-            </aside>
+                    </tr>
 
 
+                    <tr>
 
-            <!-- =====================================================
-                 MAIN CONTENT
-                 ===================================================== -->
+                        <td>
+                            Consultation Fee
+                        </td>
 
-            <main class="main">
+                        <td class="right">
+                            <%=consultation%>
+                        </td>
+
+                    </tr>
 
 
-                <!-- =================================================
-                     TOP BAR
-                     ================================================= -->
+                    <tr>
 
-                <header class="topbar">
+                        <td>
+                            Discount
+                        </td>
+
+                        <td class="right">
+
+                            -
+                            <%=discount%>
+
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            Already Paid
+                        </td>
+
+                        <td class="right">
+
+                            <%=paid%>
+
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <th>
+                            <%=alreadyPaid
+                                    ? "TOTAL BILL"
+                                    : "BALANCE / PAYABLE"%>
+                        </th>
+
+                        <th class="right">
+
+                            LKR
+                            <span id="payableAmount">
+
+                                <%=total%>
+
+                            </span>
+
+                        </th>
+
+                    </tr>
+
+                </table>
+
+
+                <%
+                    if (alreadyPaid) {
+                %>
+
+
+                <!-- ======================================================
+                     ALREADY PAID
+                     ====================================================== -->
+
+                <div class="status">
 
                     <h2>
 
-                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        <i class="fa-solid fa-circle-check"></i>
 
-                        Billing & Payments
+                        PAYMENT ALREADY RECEIVED
+
+                    </h2>
+
+                    <p>
+
+                        This appointment has already been fully paid.
+
+                    </p>
+
+                    <p>
+
+                        <b>
+                            Cashier must NOT collect payment again.
+                        </b>
+
+                    </p>
+
+                    <div class="big">
+
+                        Paid Amount:
+
+                        LKR <%=paid%>
+
+                    </div>
+
+                    <p>
+
+                        Payment Method:
+
+                        <b>
+                            <%=bill.getPaymentMethod()%>
+                        </b>
+
+                    </p>
+
+                </div>
+
+
+                <div class="actions">
+
+                    <a
+
+                        class="btn"
+
+                        target="_blank"
+
+                        href="<%=request.getContextPath()%>/CashierReceiptServlet?appointmentNo=<%=bill.getAppointmentNo()%>">
+
+                        <i class="fa-solid fa-print"></i>
+
+                        Print Bill / Receipt
+
+                    </a>
+
+                </div>
+
+
+                <%
+                } else {
+                %>
+
+
+                <!-- ======================================================
+                     PAYMENT DUE
+                     ====================================================== -->
+
+                <form
+
+                    method="post"
+
+                    action="<%=request.getContextPath()%>/CashierPaymentServlet"
+
+                    id="paymentForm">
+
+
+                    <input
+
+                        type="hidden"
+
+                        name="appointmentNo"
+
+                        value="<%=bill.getAppointmentNo()%>">
+
+
+                    <h2>
+
+                        <i class="fa-solid fa-tag"></i>
+
+                        Discount
 
                     </h2>
 
 
-                    <div class="user">
+                    <div class="discount-options">
 
-                        <div class="user-details">
-
-                            <strong>
-                                <%= userName%>
-                            </strong>
-
-                            <small>
-                                Cashier
-                            </small>
-
-                        </div>
-
-
-                        <div class="avatar">
-
-                            <i class="fa-solid fa-cash-register"></i>
-
-                        </div>
-
-                    </div>
-
-                </header>
-
-
-
-                <!-- =================================================
-                     PAGE CONTENT
-                     ================================================= -->
-
-                <section class="content">
-
-
-                    <div class="page-heading">
-
-                        <h1>
-                            Patient Billing
-                        </h1>
-
-                        <p>
-                            Search a confirmed appointment, review treatment charges,
-                            collect payment and generate a professional receipt.
-                        </p>
-
-                    </div>
-
-
-
-                    <!-- =================================================
-                         ERROR MESSAGE
-                         ================================================= -->
-
-                    <% if (error != null
-                        && !error.trim().isEmpty()) {%>
-
-                    <div class="alert-error">
-
-                        <i class="fa-solid fa-circle-exclamation"></i>
-
-                        <span>
-                            <%= error%>
-                        </span>
-
-                    </div>
-
-                    <% }%>
-
-
-
-                    <!-- =================================================
-                         SEARCH APPOINTMENT
-                         ================================================= -->
-
-                    <div class="card search-card">
-
-                        <div class="section-title">
-
-                            <i class="fa-solid fa-magnifying-glass"></i>
-
-                            Find Appointment
-
-                        </div>
-
-
-                        <form
-                            method="get"
-                            action="<%= request.getContextPath()%>/CashierBillingServlet"
-                            class="search-form">
-
-
-                            <div class="search-wrapper">
-
-                                <i class="fa-solid fa-calendar-check"></i>
-
-                                <input
-                                    type="text"
-                                    name="appointmentNo"
-                                    value="<%= appointmentNoParam != null
-                                            ? appointmentNoParam
-                                            : (bill != null
-                                            ? bill.getAppointmentNo()
-                                            : "")%>"
-                                    placeholder="Enter appointment number"
-                                    autocomplete="off"
-                                    maxlength="50"
-                                    required>
-
-                            </div>
-
-
-                            <button type="submit">
-
-                                <i class="fa-solid fa-search"></i>
-
-                                Search Appointment
-
-                            </button>
-
-                        </form>
-
-
-                        <div class="helper-text">
-
-                            <i class="fa-solid fa-circle-info"></i>
-
-                            Only confirmed appointments can be billed.
-
-                        </div>
-
-                    </div>
-
-
-
-                    <!-- =================================================
-                         BILL CARD
-                         ================================================= -->
-
-                    <% if (bill != null) {%>
-
-
-                    <div class="card bill-card">
-
-
-                        <div class="section-title">
-
-                            <i class="fa-solid fa-file-invoice"></i>
-
-                            Appointment & Patient Details
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             PATIENT DETAILS
-                             ========================================= -->
-
-                        <div class="patient-grid">
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Appointment No
-                                </label>
-
-                                <strong>
-                                    <%= bill.getAppointmentNo()%>
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Patient
-                                </label>
-
-                                <strong>
-                                    <%= bill.getPatientName()%>
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Contact Number
-                                </label>
-
-                                <strong>
-                                    <%= bill.getPatientPhone() != null
-                                        ? bill.getPatientPhone()
-                                        : "Not available"%>
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Dentist
-                                </label>
-
-                                <strong>
-                                    Dr. <%= bill.getDoctorName()%>
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Treatment
-                                </label>
-
-                                <strong>
-                                    <%= bill.getTreatmentType()%>
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Appointment Date
-                                </label>
-
-                                <strong>
-                                    <%= bill.getAppointmentDate()%>
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Appointment Time
-                                </label>
-
-                                <strong>
-                                    <%= bill.getAppointmentTime()%>
-                                </strong>
-
-                            </div>
-
-
-                            <div class="info-box">
-
-                                <label>
-                                    Billing Status
-                                </label>
-
-                                <strong style="color:#198754;">
-
-                                    <i class="fa-solid fa-circle-check"></i>
-
-                                    Ready for Payment
-
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             PAYMENT FORM
-                             ========================================= -->
-
-                        <form
-                            method="post"
-                            action="<%= request.getContextPath()%>/CashierPaymentServlet"
-                            id="paymentForm">
-
+                        <label>
 
                             <input
-                                type="hidden"
-                                name="appointmentNo"
-                                value="<%= bill.getAppointmentNo()%>">
 
+                                type="radio"
 
+                                name="discountPercent"
 
-                            <!-- =====================================
-                                 BILL DETAILS
-                                 ===================================== -->
+                                value="0"
 
-                            <div class="section-title">
+                                checked>
 
-                                <i class="fa-solid fa-calculator"></i>
+                            0%
 
-                                Bill Summary
+                        </label>
 
-                            </div>
 
+                        <label>
 
-                            <div class="table-wrapper">
+                            <input
 
-                                <table class="bill-table">
+                                type="radio"
 
+                                name="discountPercent"
 
-                                    <thead>
+                                value="5">
 
-                                        <tr>
+                            5%
 
-                                            <th>
-                                                Description
-                                            </th>
+                        </label>
 
-                                            <th>
-                                                Amount (LKR)
-                                            </th>
 
-                                        </tr>
+                        <label>
 
-                                    </thead>
+                            <input
 
+                                type="radio"
 
-                                    <tbody>
+                                name="discountPercent"
 
+                                value="10">
 
-                                        <!-- Treatment -->
-                                        <tr>
+                            10%
 
-                                            <td class="description">
+                        </label>
 
-                                                <i class="fa-solid fa-tooth"
-                                                   style="color:#06a3da;margin-right:7px;">
-                                                </i>
 
-                                                <%= bill.getTreatmentType()%>
+                        <label>
 
-                                            </td>
+                            <input
 
-                                            <td class="amount">
+                                type="radio"
 
-                                                LKR
-                                                <span id="treatmentAmount">
-                                                    <%= treatmentAmount%>
-                                                </span>
+                                name="discountPercent"
 
-                                            </td>
+                                value="15">
 
-                                        </tr>
+                            15%
 
-
-
-                                        <!-- Consultation -->
-                                        <tr>
-
-                                            <td class="description">
-
-                                                <i class="fa-solid fa-user-doctor"
-                                                   style="color:#06a3da;margin-right:7px;">
-                                                </i>
-
-                                                Consultation Fee
-
-                                            </td>
-
-                                            <td class="amount">
-
-                                                LKR
-                                                <span id="consultationAmount">
-                                                    <%= consultationFee%>
-                                                </span>
-
-                                            </td>
-
-                                        </tr>
-
-
-
-                                        <!-- Discount -->
-                                        <tr>
-
-                                            <td>
-
-                                                <div class="discount-cell">
-
-                                                    <span class="description">
-
-                                                        <i class="fa-solid fa-tag"
-                                                           style="color:#f59e0b;margin-right:7px;">
-                                                        </i>
-
-                                                        Discount
-
-                                                    </span>
-
-
-                                                    <input
-                                                        type="number"
-                                                        name="discount"
-                                                        id="discount"
-                                                        class="discount-input"
-                                                        min="0"
-                                                        max="<%= treatmentAmount.add(consultationFee)%>"
-                                                        step="0.01"
-                                                        value="<%= discount%>"
-                                                        placeholder="0.00">
-
-                                                </div>
-
-                                            </td>
-
-
-                                            <td class="amount">
-
-                                                - LKR
-                                                <span id="discountAmount">
-                                                    <%= discount%>
-                                                </span>
-
-                                            </td>
-
-                                        </tr>
-
-
-
-                                        <!-- Total -->
-                                        <tr class="total-row">
-
-                                            <td class="total-label">
-
-                                                TOTAL PAYABLE
-
-                                            </td>
-
-
-                                            <td class="total-amount">
-
-                                                LKR
-                                                <span id="totalAmount">
-                                                    <%= totalAmount%>
-                                                </span>
-
-                                            </td>
-
-                                        </tr>
-
-
-                                    </tbody>
-
-                                </table>
-
-                            </div>
-
-
-
-                            <!-- =====================================
-                                 PAYMENT METHOD + ACTION
-                                 ===================================== -->
-
-                            <div class="payment-section">
-
-
-                                <!-- PAYMENT METHODS -->
-
-                                <div>
-
-                                    <label class="field-label">
-
-                                        Payment Method
-
-                                        <span class="required">
-                                            *
-                                        </span>
-
-                                    </label>
-
-
-                                    <div class="payment-methods">
-
-
-                                        <label class="payment-option">
-
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                value="CASH"
-                                                required>
-
-
-                                            <span>
-
-                                                <i class="fa-solid fa-money-bill-wave"></i>
-
-                                                Cash
-
-                                            </span>
-
-                                        </label>
-
-
-
-                                        <label class="payment-option">
-
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                value="CARD"
-                                                required>
-
-
-                                            <span>
-
-                                                <i class="fa-solid fa-credit-card"></i>
-
-                                                Card
-
-                                            </span>
-
-                                        </label>
-
-
-
-                                        <label class="payment-option">
-
-                                            <input
-                                                type="radio"
-                                                name="paymentMethod"
-                                                value="BANK_TRANSFER"
-                                                required>
-
-
-                                            <span>
-
-                                                <i class="fa-solid fa-building-columns"></i>
-
-                                                Bank Transfer
-
-                                            </span>
-
-                                        </label>
-
-
-                                    </div>
-
-                                </div>
-
-
-
-                                <!-- ACTION BUTTONS -->
-
-                                <div class="payment-actions">
-
-
-                                    <button
-                                        type="submit"
-                                        class="pay-btn"
-                                        id="payButton">
-
-                                        <i class="fa-solid fa-circle-check"></i>
-
-                                        Confirm Payment & Generate Receipt
-
-                                    </button>
-
-
-                                    <a
-                                        href="<%= request.getContextPath()%>/CashierBillingServlet"
-                                        class="cancel-btn">
-
-                                        <i class="fa-solid fa-rotate-left"
-                                           style="margin-right:7px;">
-                                        </i>
-
-                                        Clear Billing
-
-                                    </a>
-
-                                </div>
-
-
-                            </div>
-
-
-                        </form>
-
+                        </label>
 
                     </div>
 
 
-                    <% } else { %>
+                    <h2>
 
+                        <i class="fa-solid fa-credit-card"></i>
 
-                    <!-- =================================================
-                         EMPTY BILL STATE
-                         ================================================= -->
+                        Payment Method
 
-                    <div class="card">
+                    </h2>
 
-                        <div class="empty-state">
 
-                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <div class="discount-options">
 
-                            <h3>
-                                No Appointment Selected
-                            </h3>
+                        <label>
 
-                            <p>
-                                Enter a confirmed appointment number above
-                                to prepare the patient's bill.
-                            </p>
+                            <input
 
-                        </div>
+                                type="radio"
 
-                    </div>
+                                name="paymentMethod"
 
-                    <% } %>
+                                value="CASH"
 
+                                required>
 
+                            Cash
 
-                    <!-- =================================================
-                         RECENT BILLS
-                         ================================================= -->
+                        </label>
 
-                    <div class="card recent-card">
 
+                        <label>
 
-                        <div class="section-title">
+                            <input
 
-                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                type="radio"
 
-                            Recent Bills
+                                name="paymentMethod"
 
-                        </div>
+                                value="CARD"
 
+                                required>
 
-                        <div class="recent-table-wrapper">
+                            Card
 
-                            <table class="recent-table">
+                        </label>
 
 
-                                <thead>
+                        <label>
 
-                                    <tr>
+                            <input
 
-                                        <th>
-                                            Bill No
-                                        </th>
+                                type="radio"
 
-                                        <th>
-                                            Appointment
-                                        </th>
+                                name="paymentMethod"
 
-                                        <th>
-                                            Patient
-                                        </th>
+                                value="BANK_TRANSFER"
 
-                                        <th>
-                                            Treatment
-                                        </th>
+                                required>
 
-                                        <th>
-                                            Total
-                                        </th>
+                            Bank Transfer
 
-                                        <th>
-                                            Payment
-                                        </th>
-
-                                        <th>
-                                            Receipt
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-
-                                <tbody>
-
-
-                                    <%
-                                        if (recentBills != null
-                                                && !recentBills.isEmpty()) {
-
-                                            for (Bill recent
-                                                    : recentBills) {
-                                    %>
-
-
-                                    <tr>
-
-
-                                        <td>
-
-                                            <span class="bill-number">
-
-                                                <%= recent.getBillNo()%>
-
-                                            </span>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <%= recent.getAppointmentNo()%>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <%= recent.getPatientName()%>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <%= recent.getTreatmentType()%>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <strong>
-
-                                                LKR
-                                                <%= recent.getTotalAmount()%>
-
-                                            </strong>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <span class="method-badge">
-
-                                                <%= recent.getPaymentMethod()%>
-
-                                            </span>
-
-                                            <br>
-
-                                            <span class="paid-badge">
-
-                                                <i class="fa-solid fa-check"></i>
-
-                                                <%= recent.getPaymentStatus() != null
-                                                    ? recent.getPaymentStatus()
-                                                    : "PAID"%>
-
-                                            </span>
-
-                                        </td>
-
-
-                                        <td>
-
-                                            <a
-                                                class="print-link"
-                                                href="<%= request.getContextPath()%>/CashierReceiptServlet?id=<%= recent.getId()%>">
-
-                                                <i class="fa-solid fa-print"></i>
-
-                                                Receipt
-
-                                            </a>
-
-                                        </td>
-
-
-                                    </tr>
-
-
-                                    <%
-                                        }
-
-                                    } else {
-                                    %>
-
-
-                                    <tr>
-
-                                        <td colspan="7">
-
-                                            <div class="empty-state"
-                                                 style="padding:30px 10px;">
-
-                                                <i class="fa-solid fa-receipt"
-                                                   style="font-size:25px;">
-                                                </i>
-
-                                                <h3>
-                                                    No Recent Bills
-                                                </h3>
-
-                                                <p>
-                                                    Completed payments will appear here.
-                                                </p>
-
-                                            </div>
-
-                                        </td>
-
-                                    </tr>
-
-
-                                    <%
-                                        }
-                                    %>
-
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
+                        </label>
 
                     </div>
 
 
-                </section>
+                    <div class="actions">
 
-            </main>
+                        <button
+
+                            class="btn"
+
+                            type="submit">
+
+                            <i class="fa-solid fa-check"></i>
+
+                            Confirm Payment & Generate Receipt
+
+                        </button>
+
+
+                        <a
+
+                            class="btn secondary"
+
+                            href="<%=request.getContextPath()%>/CashierBillingServlet">
+
+                            Clear
+
+                        </a>
+
+                    </div>
+
+                </form>
+
+
+                <%
+                    }
+                %>
+
+            </div>
+
+
+            <%
+                }
+            %>
+
+
+            <!-- RECENT BILLS -->
+
+            <div class="card recent">
+
+                <h2>
+
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+
+                    Recent Bills
+
+                </h2>
+
+
+                <%
+                    if (recentBills != null
+                            && !recentBills.isEmpty()) {
+                %>
+
+
+                <table class="table">
+
+                    <tr>
+
+                        <th>
+                            Bill No
+                        </th>
+
+                        <th>
+                            Appointment
+                        </th>
+
+                        <th>
+                            Patient
+                        </th>
+
+                        <th>
+                            Total
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Receipt
+                        </th>
+
+                    </tr>
+
+
+                    <%
+                        for (Bill b : recentBills) {
+                    %>
+
+
+                    <tr>
+
+                        <td>
+                            <%=b.getBillNo()%>
+                        </td>
+
+                        <td>
+                            <%=b.getAppointmentNo()%>
+                        </td>
+
+                        <td>
+                            <%=b.getPatientName()%>
+                        </td>
+
+                        <td>
+                            LKR <%=b.getTotalAmount()%>
+                        </td>
+
+                        <td>
+
+                            <span class="paid-badge">
+
+                                <%=b.getPaymentStatus()%>
+
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <a
+
+                                class="print"
+
+                                target="_blank"
+
+                                href="<%=request.getContextPath()%>/CashierReceiptServlet?id=<%=b.getId()%>">
+
+                                <i class="fa-solid fa-print"></i>
+
+                                Print
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+
+                    <%
+                        }
+                    %>
+
+                </table>
+
+
+                <%
+                } else {
+                %>
+
+                <div class="empty">
+
+                    No recent bills.
+
+                </div>
+
+                <%
+                    }
+                %>
+
+            </div>
+
 
         </div>
 
 
-
-        <!-- =========================================================
-             JAVASCRIPT
-             ========================================================= -->
-
         <script>
 
-            /* =========================================================
-             BILL CALCULATION
-             ========================================================= */
+            /*
+             * =========================================================
+             * DISCOUNT PREVIEW
+             * =========================================================
+             */
 
-            const treatmentElement =
-                    document.getElementById(
-                            "treatmentAmount"
-                            );
+            const gross =
+            <%=gross%>;
 
-            const consultationElement =
-                    document.getElementById(
-                            "consultationAmount"
-                            );
+            const alreadyPaid =
+            <%=paid%>;
 
-            const discountInput =
+            const payableElement =
                     document.getElementById(
-                            "discount"
-                            );
-
-            const discountAmountElement =
-                    document.getElementById(
-                            "discountAmount"
-                            );
-
-            const totalElement =
-                    document.getElementById(
-                            "totalAmount"
+                            "payableAmount"
                             );
 
 
-            function getNumber(value) {
+            document
+                    .querySelectorAll(
+                            'input[name="discountPercent"]'
+                            )
+                    .forEach(
+                            function (radio) {
 
-                const number =
-                        parseFloat(value);
+                                radio.addEventListener(
+                                        "change",
+                                        function () {
 
-                if (isNaN(number)) {
+                                            const selected =
+                                                    document.querySelector(
+                                                            'input[name="discountPercent"]:checked'
+                                                            );
 
-                    return 0;
-                }
+                                            const percent =
+                                                    parseFloat(
+                                                            selected
+                                                            ? selected.value
+                                                            : "0"
+                                                            );
 
-                return number;
-            }
+                                            const discount =
+                                                    Math.round(
+                                                            gross
+                                                            * percent
+                                                            ) / 100;
 
+                                            const balance =
+                                                    Math.max(
+                                                            0,
+                                                            gross
+                                                            - discount
+                                                            - alreadyPaid
+                                                            );
 
-            function formatAmount(value) {
+                                            if (payableElement) {
 
-                return value.toFixed(2);
-            }
-
-
-            function calculateTotal() {
-
-                if (!treatmentElement
-                        || !consultationElement
-                        || !discountInput
-                        || !discountAmountElement
-                        || !totalElement) {
-
-                    return;
-                }
-
-
-                const treatment =
-                        getNumber(
-                                treatmentElement.textContent
+                                                payableElement.textContent =
+                                                        balance.toFixed(2);
+                                            }
+                                        }
                                 );
+                            }
+                    );
 
 
-                const consultation =
-                        getNumber(
-                                consultationElement.textContent
-                                );
-
-
-                let discount =
-                        getNumber(
-                                discountInput.value
-                                );
-
-
-                const subtotal =
-                        treatment + consultation;
-
-
-                /* Prevent negative discount */
-                if (discount < 0) {
-
-                    discount = 0;
-
-                    discountInput.value = "0";
-                }
-
-
-                /* Prevent discount above subtotal */
-                if (discount > subtotal) {
-
-                    discount = subtotal;
-
-                    discountInput.value =
-                            subtotal.toFixed(2);
-                }
-
-
-                const total =
-                        subtotal - discount;
-
-
-                discountAmountElement.textContent =
-                        formatAmount(discount);
-
-
-                totalElement.textContent =
-                        formatAmount(total);
-            }
-
-
-            if (discountInput) {
-
-                discountInput.addEventListener(
-                        "input",
-                        calculateTotal
-                        );
-
-                discountInput.addEventListener(
-                        "change",
-                        calculateTotal
-                        );
-            }
-
-
-            calculateTotal();
-
-
-
-            /* =========================================================
-             PAYMENT FORM VALIDATION
-             ========================================================= */
+            /*
+             * =========================================================
+             * CONFIRM PAYMENT
+             * =========================================================
+             */
 
             const paymentForm =
                     document.getElementById(
@@ -2925,163 +1253,22 @@
                         "submit",
                         function (event) {
 
-
-                            const paymentMethod =
-                                    document.querySelector(
-                                            'input[name="paymentMethod"]:checked'
-                                            );
-
-
-                            const discount =
-                                    getNumber(
-                                            discountInput.value
-                                            );
-
-
-                            const treatment =
-                                    getNumber(
-                                            treatmentElement.textContent
-                                            );
-
-
-                            const consultation =
-                                    getNumber(
-                                            consultationElement.textContent
-                                            );
-
-
-                            const subtotal =
-                                    treatment + consultation;
-
-
-                            const total =
-                                    subtotal - discount;
-
-
-
-                            /* =========================
-                             PAYMENT METHOD
-                             ========================= */
-
-                            if (!paymentMethod) {
-
-                                event.preventDefault();
-
-                                alert(
-                                        "Please select a payment method."
-                                        );
-
-                                return;
-                            }
-
-
-
-                            /* =========================
-                             DISCOUNT VALIDATION
-                             ========================= */
-
-                            if (discount < 0) {
-
-                                event.preventDefault();
-
-                                alert(
-                                        "Discount cannot be negative."
-                                        );
-
-                                return;
-                            }
-
-
-                            if (discount > subtotal) {
-
-                                event.preventDefault();
-
-                                alert(
-                                        "Discount cannot exceed the bill amount."
-                                        );
-
-                                return;
-                            }
-
-
-
-                            /* =========================
-                             TOTAL VALIDATION
-                             ========================= */
-
-                            if (total <= 0) {
-
-                                event.preventDefault();
-
-                                alert(
-                                        "The total payable amount must be greater than zero."
-                                        );
-
-                                return;
-                            }
-
-
-
-                            /* =========================
-                             FINAL CONFIRMATION
-                             ========================= */
-
-                            const selectedMethod =
-                                    paymentMethod.value
-                                    .replace(
-                                            "_",
-                                            " "
-                                            );
-
-
-                            const confirmation =
+                            const confirmed =
                                     confirm(
-                                            "Confirm payment?\n\n"
-                                            + "Payment Method: "
-                                            + selectedMethod
-                                            + "\n"
-                                            + "Total Amount: LKR "
-                                            + total.toFixed(2)
-                                            + "\n\n"
-                                            + "Click OK to complete the payment."
+                                            "Confirm this payment?\n\n"
+                                            + "After saving, this appointment "
+                                            + "cannot be charged again."
                                             );
 
-
-                            if (!confirmation) {
+                            if (!confirmed) {
 
                                 event.preventDefault();
-
-                                return;
                             }
-
-
-
-                            /* =========================
-                             DISABLE BUTTON
-                             ========================= */
-
-                            const button =
-                                    document.getElementById(
-                                            "payButton"
-                                            );
-
-
-                            if (button) {
-
-                                button.disabled =
-                                        true;
-
-                                button.innerHTML =
-                                        '<i class="fa-solid fa-spinner fa-spin"></i>'
-                                        + ' Processing Payment...';
-                            }
-
                         }
                 );
             }
 
         </script>
-
 
     </body>
 

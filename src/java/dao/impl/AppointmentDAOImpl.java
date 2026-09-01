@@ -44,7 +44,6 @@ public class AppointmentDAOImpl
                 = ps.executeQuery()) {
 
             while (rs.next()) {
-
                 DoctorOption doctor
                         = new DoctorOption(
                                 rs.getInt("id"),
@@ -55,11 +54,9 @@ public class AppointmentDAOImpl
                                         "specialization"
                                 )
                         );
-
                 doctors.add(doctor);
             }
         }
-
         return doctors;
     }
 
@@ -69,6 +66,15 @@ public class AppointmentDAOImpl
             String date,
             String time)
             throws SQLException {
+
+        if (doctorId <= 0
+                || date == null
+                || date.trim().isEmpty()
+                || time == null
+                || time.trim().isEmpty()) {
+
+            return false;
+        }
 
         String sql
                 = "SELECT COUNT(*) "
@@ -93,13 +99,24 @@ public class AppointmentDAOImpl
 
             ps.setDate(
                     2,
-                    Date.valueOf(date)
+                    Date.valueOf(
+                            date.trim()
+                    )
             );
+
+            String formattedTime
+                    = time.trim();
+
+            if (formattedTime.length() == 5) {
+
+                formattedTime
+                        = formattedTime + ":00";
+            }
 
             ps.setTime(
                     3,
                     Time.valueOf(
-                            time + ":00"
+                            formattedTime
                     )
             );
 
@@ -107,11 +124,14 @@ public class AppointmentDAOImpl
                     ResultSet rs
                     = ps.executeQuery()) {
 
-                rs.next();
+                if (rs.next()) {
 
-                return rs.getInt(1) > 0;
+                    return rs.getInt(1) > 0;
+                }
             }
         }
+
+        return false;
     }
 
     @Override
@@ -510,6 +530,34 @@ public class AppointmentDAOImpl
         }
 
         return list;
+    }
+
+    /*
+     * =========================================================
+     * GET APPOINTMENT BY APPOINTMENT NUMBER
+     * =========================================================
+     */
+    @Override
+    public Appointment getByAppointmentNo(
+            String appointmentNo)
+            throws SQLException {
+
+        if (appointmentNo == null
+                || appointmentNo.trim().isEmpty()) {
+
+            return null;
+        }
+
+        List<Appointment> list
+                = getList(
+                        selectSQL()
+                        + "WHERE a.appointment_no=?",
+                        appointmentNo.trim()
+                );
+
+        return list.isEmpty()
+                ? null
+                : list.get(0);
     }
 
     @Override

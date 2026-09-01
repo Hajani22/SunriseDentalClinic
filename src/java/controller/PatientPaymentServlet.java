@@ -22,25 +22,13 @@ import java.io.IOException;
 public class PatientPaymentServlet
         extends HttpServlet {
 
-    private final PaymentService paymentService =
-            new PaymentServiceImpl();
+    private final PaymentService paymentService
+            = new PaymentServiceImpl();
 
-    /*
-     * Notification Service
-     *
-     * Decorator Pattern:
-     *
-     * LoggingNotificationServiceDecorator
-     *              ↓
-     * NotificationServiceImpl
-     *              ↓
-     * NotificationDAO
-     */
-    private final NotificationService notificationService =
-            new LoggingNotificationServiceDecorator(
+    private final NotificationService notificationService
+            = new LoggingNotificationServiceDecorator(
                     new NotificationServiceImpl()
             );
-
 
     @Override
     protected void doPost(
@@ -48,37 +36,38 @@ public class PatientPaymentServlet
             HttpServletResponse response)
             throws IOException {
 
-        HttpSession session =
-                request.getSession(false);
+        HttpSession session
+                = request.getSession(false);
 
-
-        /* =====================================================
-           PATIENT LOGIN CHECK
-           ===================================================== */
-
+        /*
+         * =====================================================
+         * SESSION VALIDATION
+         * =====================================================
+         */
         if (session == null
                 || session.getAttribute("user") == null) {
 
             response.sendRedirect(
-                    "Login.jsp"
+                    "Login.jsp?error=session"
             );
 
             return;
         }
 
-
-        /* =====================================================
-           ROLE CHECK
-           ===================================================== */
-
-        String role =
-                String.valueOf(
+        /*
+         * =====================================================
+         * ROLE VALIDATION
+         * =====================================================
+         */
+        String userRole
+                = String.valueOf(
                         session.getAttribute(
                                 "userRole"
                         )
                 );
 
-        if (!"patient".equalsIgnoreCase(role)) {
+        if (!"patient".equalsIgnoreCase(
+                userRole)) {
 
             response.sendRedirect(
                     "Login.jsp?error=access"
@@ -87,191 +76,224 @@ public class PatientPaymentServlet
             return;
         }
 
-
         try {
 
+            int patientId
+                    = Integer.parseInt(
+                            String.valueOf(
+                                    session.getAttribute(
+                                            "userId"
+                                    )
+                            )
+                    );
 
-            /* =================================================
-               PATIENT INFORMATION
-               ================================================= */
-
-            Object userIdObject =
-                    session.getAttribute("userId");
-
-            if (userIdObject == null) {
-
-                response.sendRedirect(
-                        "Login.jsp?error=session"
-                );
-
-                return;
-            }
-
-            int patientId;
-
-            if (userIdObject instanceof Integer) {
-
-                patientId =
-                        (Integer) userIdObject;
-
-            } else {
-
-                patientId =
-                        Integer.parseInt(
-                                String.valueOf(
-                                        userIdObject
-                                )
-                        );
-            }
-
-
-            String patientName =
-                    String.valueOf(
+            String patientName
+                    = String.valueOf(
                             session.getAttribute(
                                     "userName"
                             )
                     );
 
-
-            /* =================================================
-               FORM DATA
-               ================================================= */
-
-            String appointmentIdParameter =
-                    request.getParameter(
+            String appointmentIdParam
+                    = request.getParameter(
                             "appointmentId"
                     );
 
-            String appointmentNo =
-                    request.getParameter(
-                            "appointmentNo"
+            String appointmentNo
+                    = clean(
+                            request.getParameter(
+                                    "appointmentNo"
+                            )
                     );
 
-            String paymentType =
-                    request.getParameter(
-                            "paymentType"
+            String paymentType
+                    = clean(
+                            request.getParameter(
+                                    "paymentType"
+                            )
                     );
 
-            String paymentMethod =
-                    request.getParameter(
-                            "paymentMethod"
+            String paymentMethod
+                    = clean(
+                            request.getParameter(
+                                    "paymentMethod"
+                            )
+                    );
+
+            String cardNumber
+                    = clean(
+                            request.getParameter(
+                                    "cardNumber"
+                            )
+                    );
+
+            String expiry
+                    = clean(
+                            request.getParameter(
+                                    "expiry"
+                            )
+                    );
+
+            String cvv
+                    = clean(
+                            request.getParameter(
+                                    "cvv"
+                            )
                     );
 
 
-            /* =================================================
-               VALIDATE APPOINTMENT ID
-               ================================================= */
+            /*
+             * =================================================
+             * REQUIRED FIELDS
+             * =================================================
+             */
+            if (appointmentIdParam == null
+                    || appointmentNo == null
+                    || paymentType == null
+                    || paymentMethod == null
+                    || cardNumber == null
+                    || expiry == null
+                    || cvv == null) {
 
-            if (appointmentIdParameter == null
-                    || appointmentIdParameter.trim().isEmpty()) {
-
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
+                redirect(
+                        request,
+                        response,
+                        "invalid"
                 );
 
                 return;
             }
-
 
             int appointmentId;
 
             try {
 
-                appointmentId =
-                        Integer.parseInt(
-                                appointmentIdParameter
+                appointmentId
+                        = Integer.parseInt(
+                                appointmentIdParam
                         );
 
             } catch (NumberFormatException e) {
 
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
+                redirect(
+                        request,
+                        response,
+                        "invalid"
                 );
 
                 return;
             }
 
 
-            /* =================================================
-               VALIDATE APPOINTMENT NUMBER
-               ================================================= */
+            /*
+             * =================================================
+             * CARD ONLY
+             * =================================================
+             */
+            if (!"CARD".equalsIgnoreCase(
+                    paymentMethod)) {
 
-            if (appointmentNo == null
-                    || appointmentNo.trim().isEmpty()) {
-
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
+                redirect(
+                        request,
+                        response,
+                        "method"
                 );
 
                 return;
             }
 
 
-            appointmentNo =
-                    appointmentNo.trim();
+            /*
+             * =================================================
+             * CARD VALIDATION
+             *
+             * IMPORTANT:
+             * We validate the format only.
+             * We do NOT store card number/CVV.
+             * =================================================
+             */
+            String normalizedCard
+                    = cardNumber.replace(
+                            " ",
+                            ""
+                    );
 
+            if (!normalizedCard.matches(
+                    "\\d{16}"
+            )) {
 
-            /* =================================================
-               VALIDATE PAYMENT TYPE
-               ================================================= */
+                redirect(
+                        request,
+                        response,
+                        "card"
+                );
 
-            if (paymentType == null
-                    || paymentType.trim().isEmpty()) {
+                return;
+            }
 
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
+            if (!expiry.matches(
+                    "\\d{2}/\\d{2}"
+            )) {
+
+                redirect(
+                        request,
+                        response,
+                        "card"
+                );
+
+                return;
+            }
+
+            if (!cvv.matches(
+                    "\\d{3,4}"
+            )) {
+
+                redirect(
+                        request,
+                        response,
+                        "card"
                 );
 
                 return;
             }
 
 
-            /* =================================================
-               VALIDATE PAYMENT METHOD
-               ================================================= */
+            /*
+             * =================================================
+             * VALID PAYMENT TYPE
+             * =================================================
+             */
+            if (!"CONSULTATION".equalsIgnoreCase(
+                    paymentType)
+                    && !"TREATMENT".equalsIgnoreCase(
+                            paymentType)) {
 
-            if (paymentMethod == null
-                    || paymentMethod.trim().isEmpty()) {
-
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=method"
+                redirect(
+                        request,
+                        response,
+                        "invalid"
                 );
 
                 return;
             }
 
 
-            paymentType =
-                    paymentType.trim();
-
-            paymentMethod =
-                    paymentMethod.trim();
-
-
-            /* =================================================
-               GET APPOINTMENT / PAYMENT INFORMATION
-               ================================================= */
-
-            Payment payment =
-                    paymentService.getAppointment(
+            /*
+             * =================================================
+             * GET APPOINTMENT
+             * =================================================
+             */
+            Payment payment
+                    = paymentService.getAppointment(
                             appointmentNo
                     );
 
-
-            /* =================================================
-               SECURITY VALIDATION
-               ================================================= */
-
             if (payment == null) {
 
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
+                redirect(
+                        request,
+                        response,
+                        "invalid"
                 );
 
                 return;
@@ -279,15 +301,19 @@ public class PatientPaymentServlet
 
 
             /*
-             * Make sure this appointment belongs
-             * to the currently logged-in patient.
+             * =================================================
+             * SECURITY CHECK
+             * =================================================
              */
             if (payment.getPatientId()
-                    != patientId) {
+                    != patientId
+                    || payment.getAppointmentId()
+                    != appointmentId) {
 
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
+                redirect(
+                        request,
+                        response,
+                        "invalid"
                 );
 
                 return;
@@ -295,25 +321,10 @@ public class PatientPaymentServlet
 
 
             /*
-             * Make sure the appointment ID
-             * also matches.
+             * =================================================
+             * SET PAYMENT DATA
+             * =================================================
              */
-            if (payment.getAppointmentId()
-                    != appointmentId) {
-
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
-                );
-
-                return;
-            }
-
-
-            /* =================================================
-               SET PAYMENT INFORMATION
-               ================================================= */
-
             payment.setPatientId(
                     patientId
             );
@@ -323,139 +334,174 @@ public class PatientPaymentServlet
             );
 
             payment.setPaymentMethod(
-                    paymentMethod
+                    "CARD"
             );
 
 
-            /* =================================================
-               PROCESS PAYMENT
-               ================================================= */
-
+            /*
+             * =================================================
+             * PROCESS PAYMENT
+             *
+             * PaymentService itself checks whether
+             * the selected payment type has already
+             * been paid.
+             * =================================================
+             */
             boolean success;
 
-
             if ("CONSULTATION".equalsIgnoreCase(
-                    paymentType
-            )) {
+                    paymentType)) {
 
-                success =
-                        paymentService.payConsultation(
-                                payment
-                        );
-
-            } else if ("TREATMENT".equalsIgnoreCase(
-                    paymentType
-            )) {
-
-                success =
-                        paymentService.payTreatment(
-                                payment
-                        );
+                success
+                        = paymentService
+                                .payConsultation(
+                                        payment
+                                );
 
             } else {
 
+                success
+                        = paymentService
+                                .payTreatment(
+                                        payment
+                                );
+            }
+
+
+            /*
+             * =================================================
+             * FAILED / DUPLICATE PAYMENT
+             * =================================================
+             */
+            if (!success) {
+
+                /*
+                 * IMPORTANT:
+                 * Go back through PageServlet.
+                 *
+                 * It will re-check database status.
+                 */
                 response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=invalid"
+                        request.getContextPath()
+                        + "/PatientPaymentPageServlet?payment=already"
                 );
 
                 return;
             }
 
 
-            /* =================================================
-               PAYMENT SUCCESS
-               ================================================= */
+            /*
+             * =================================================
+             * NOTIFICATION
+             * =================================================
+             */
+            String readableType;
 
-            if (success) {
+            if ("CONSULTATION".equalsIgnoreCase(
+                    paymentType)) {
 
-                String readableType;
+                readableType
+                        = "Consultation Fee";
 
+            } else {
 
-                if ("CONSULTATION".equalsIgnoreCase(
-                        paymentType
-                )) {
+                readableType
+                        = "Treatment Payment";
+            }
 
-                    readableType =
-                            "Consultation Fee";
+            String notificationMessage
+                    = "Payment received from "
+                    + patientName
+                    + ". Appointment: "
+                    + appointmentNo
+                    + ". Payment Type: "
+                    + readableType
+                    + ". Amount Paid: Rs. "
+                    + payment.getAmount()
+                    + ". Payment Method: CARD.";
 
-                } else {
+            try {
 
-                    readableType =
-                            "Treatment Payment";
-                }
-
-
-                String message =
-                        "Payment received from "
-                        + patientName
-                        + ". Appointment: "
-                        + appointmentNo
-                        + ". Payment Type: "
-                        + readableType
-                        + ". Amount Paid: Rs. "
-                        + payment.getAmount()
-                        + ". Payment Method: "
-                        + paymentMethod
-                        + ".";
-
-
-                /* =============================================
-                   NOTIFY CASHIERS
-                   ============================================= */
-
-                /*
-                 * We use the Notification Service instead
-                 * of directly accessing NotificationDAO.
-                 *
-                 * The service layer is also wrapped with
-                 * the Decorator Pattern.
-                 */
                 notificationService.create(
                         0,
                         "cashier",
                         "New Patient Payment Received",
-                        message,
+                        notificationMessage,
                         appointmentId
                 );
 
+            } catch (Exception notificationError) {
 
-                /* =============================================
-                   PATIENT SUCCESS
-                   ============================================= */
-
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=success"
-                );
-
-            } else {
-
-                response.sendRedirect(
-                        "patient-dashboard.jsp"
-                        + "?payment=failed"
-                );
+                /*
+                 * Notification failure should NOT
+                 * make the successful payment fail.
+                 */
+                notificationError.printStackTrace();
             }
 
 
-        } catch (NumberFormatException e) {
-
-            e.printStackTrace();
-
+            /*
+             * =================================================
+             * SUCCESS
+             *
+             * IMPORTANT:
+             * Return to PageServlet so it reloads
+             * payment status from MySQL.
+             * =================================================
+             */
             response.sendRedirect(
-                    "patient-dashboard.jsp"
-                    + "?payment=invalid"
+                    request.getContextPath()
+                    + "/PatientPaymentPageServlet?success=payment"
             );
-
 
         } catch (Exception e) {
 
             e.printStackTrace();
 
             response.sendRedirect(
-                    "patient-dashboard.jsp"
-                    + "?payment=error"
+                    request.getContextPath()
+                    + "/PatientPaymentPageServlet?payment=error"
             );
         }
+    }
+
+
+    /*
+     * =========================================================
+     * REDIRECT HELPER
+     * =========================================================
+     */
+    private void redirect(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String error)
+            throws IOException {
+
+        response.sendRedirect(
+                request.getContextPath()
+                + "/PatientPaymentPageServlet?payment="
+                + error
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * CLEAN INPUT
+     * =========================================================
+     */
+    private String clean(
+            String value) {
+
+        if (value == null) {
+            return null;
+        }
+
+        String result
+                = value.trim();
+
+        return result.isEmpty()
+                ? null
+                : result;
     }
 }

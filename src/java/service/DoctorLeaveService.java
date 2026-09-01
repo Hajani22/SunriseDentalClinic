@@ -16,7 +16,16 @@ public interface DoctorLeaveService {
             throws SQLException;
 
     boolean addLeave(
-            DoctorLeave leave)
+            DoctorLeave leave,
+            String status)
+            throws SQLException;
+
+    boolean approveLeave(
+            int id)
+            throws SQLException;
+
+    boolean rejectLeave(
+            int id)
             throws SQLException;
 
     boolean cancelLeave(
